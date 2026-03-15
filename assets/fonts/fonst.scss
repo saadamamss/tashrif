@@ -1,0 +1,43 @@
+// assets/fonts/fonts.scss
+@font-face {
+  font-family: "alex-regular";
+  src: url("../fonts/alex/Alexandria-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "alex-medium";
+  src: url("../fonts/alex/Alexandria-Medium.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "alex-semi-bold";
+  src: url("../fonts/alex/Alexandria-Bold.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "alex-bold";
+  src: url("../fonts/alex/Alexandria-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "alex-extrabold";
+  src: url("../fonts/alex/Alexandria-ExtraBold.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-semibold {
+  font-family: "alex-bold", sans-serif;
+}
+.font-medium {
+  font-family: "alex-medium", sans-serif;
+}
