@@ -1,3 +1,4 @@
+import type { Contract } from '~~/server/utils/db'
 export default defineEventHandler(async (event) => {
   await delay()
   const session = requireAuth(event)

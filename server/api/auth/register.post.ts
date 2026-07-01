@@ -1,3 +1,4 @@
+import type { User } from '~~/server/utils/db'
 export default defineEventHandler(async (event) => {
   await delay()
   const body = await readBody(event)

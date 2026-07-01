@@ -1,10 +1,5 @@
 import { useAuthStore } from '~/stores/authStore'
-
-interface ApiResponse<T> {
-  data: T | null
-  error: string | null
-  pending: boolean
-}
+import type { ApiResponse } from '~/types/common'
 
 export function useApi() {
   const config = useRuntimeConfig()
@@ -25,11 +20,11 @@ export function useApi() {
     }
 
     try {
-      const data = await $fetch<T>(`${baseURL}${endpoint}`, {
+      const data = await $fetch(`${baseURL}${endpoint}`, {
         ...options,
         headers,
         retry: 0,
-      })
+      }) as T
       return { data, error: null, pending: false }
     } catch (err: any) {
       if (err?.statusCode === 401) {
@@ -41,16 +36,16 @@ export function useApi() {
   }
 
   return {
-    get: <T>(endpoint: string, params?: any) =>
+    get: <T>(endpoint: string, params?: any): Promise<ApiResponse<T>> =>
       request<T>(endpoint, { method: 'GET', params }),
 
-    post: <T>(endpoint: string, body?: any) =>
+    post: <T>(endpoint: string, body?: any): Promise<ApiResponse<T>> =>
       request<T>(endpoint, { method: 'POST', body }),
 
-    put: <T>(endpoint: string, body?: any) =>
+    put: <T>(endpoint: string, body?: any): Promise<ApiResponse<T>> =>
       request<T>(endpoint, { method: 'PUT', body }),
 
-    delete: <T>(endpoint: string) =>
+    delete: <T>(endpoint: string): Promise<ApiResponse<T>> =>
       request<T>(endpoint, { method: 'DELETE' }),
   }
 }

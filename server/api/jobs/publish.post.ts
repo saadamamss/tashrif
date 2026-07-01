@@ -1,3 +1,4 @@
+import type { Job } from '~~/server/utils/db'
 export default defineEventHandler(async (event) => {
   await delay(500)
   const session = requireAuth(event)

@@ -47,6 +47,9 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
+/**
+ * @type {{ items: Array<{value: string|number, label: string}>, placeholder: string, error: string, modelValue: string|number }}
+ */
 const props = defineProps({
   items: Array,
   placeholder: String,
@@ -54,6 +57,9 @@ const props = defineProps({
   modelValue: [String, Number],
 });
 
+/**
+ * @type {import('vue').EmitsOptions}
+ */
 const emit = defineEmits(["update:modelValue"]);
 
 const selectContainer = ref(null);

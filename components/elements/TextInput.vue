@@ -33,27 +33,21 @@ defineOptions({
   inheritAttrs: false,
 });
 const model = defineModel();
+
+/**
+ * @type {{ id: string, label: string, name: string, rules: string, placeholder: string, type: string, required: boolean, height: number, class: string, error: string }}
+ */
 const props = defineProps({
-  id: {
-    type: String,
-    default: "",
-  },
-  error: {
-    type: String,
-    default: "",
-  },
+  id: { type: String, default: "" },
   label: { type: String, default: "" },
   name: { type: String, default: "" },
-  error: { type: String, default: "" },
   rules: { type: String, default: "" },
   placeholder: { type: String, default: "" },
   type: { type: String, default: "" },
   class: { type: String, default: "" },
-  required: {
-    type: Boolean,
-    default: false,
-  },
-  height: { type: String, default: "40" },
+  required: { type: Boolean, default: false },
+  height: { type: Number, default: 38 },
+  error: { type: String, default: "" },
 });
 </script>
 <style scoped lang="scss">

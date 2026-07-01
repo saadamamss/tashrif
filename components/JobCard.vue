@@ -63,7 +63,17 @@
     </div>
   </div>
 </template>
-<script setup></script>
+<script setup>
+/** @type {import('~/types/job').Job} */
+defineProps({
+  job: {
+    type: Object,
+    default: () => ({}),
+  },
+})
+
+defineEmits(['openApplyForm'])
+</script>
 <style lang="scss" scoped>
 .job-card {
   box-shadow: 2.4px 12.8px 35.2px rgba(7, 15, 66, 0.05);

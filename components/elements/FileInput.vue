@@ -42,10 +42,16 @@
 import Pdf from "../icons/pdf.vue";
 
 const filePreview = ref(null);
-const emit = defineEmits(["change"]);
+
+/** @type {{ accept: string }} */
 const props = defineProps({
   accept: { type: String, default: "" },
 });
+
+/**
+ * @type {import('vue').EmitsOptions}
+ */
+const emit = defineEmits(["change"]);
 
 const checkAcceptance = (type) => {
   return props.accept.split(",").some((i) => type.match(i));

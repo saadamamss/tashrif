@@ -1,22 +1,42 @@
 import { defineStore } from "pinia";
 
+/**
+ * @typedef {import('~/types/auth').User} User
+ * @typedef {import('~/types/auth').LoginCredentials} LoginCredentials
+ * @typedef {import('~/types/auth').RegisterData} RegisterData
+ * @typedef {import('~/types/auth').AuthResponse} AuthResponse
+ */
+
 export const useAuthStore = defineStore("auth", {
   state: () => ({
+    /** @type {User | null} */
     user: null,
+    /** @type {string | null} */
     token: null,
+    /** @type {boolean} */
     isAuthenticated: false,
+    /** @type {string | null} */
     refreshToken: null,
+    /** @type {boolean} */
     isLoading: false,
+    /** @type {string | null} */
     error: null,
   }),
 
   getters: {
+    /** @returns {User | null} */
     currentUser: (state) => state.user,
+    /** @returns {string | null} */
     authToken: (state) => state.token,
+    /** @returns {boolean} */
     isAdmin: (state) => state.user?.type === "admin",
+    /** @returns {boolean} */
     isIndividual: (state) => state.user?.type === "individual",
+    /** @returns {boolean} */
     isEntity: (state) => state.user?.type === "entity",
+    /** @returns {string | null} */
     userType: (state) => state.user?.type || null,
+    /** @returns {string} */
     defaultRoute: (state) => {
       switch (state.user?.type) {
         case "individual":
@@ -29,11 +49,13 @@ export const useAuthStore = defineStore("auth", {
           return "/";
       }
     },
+    /** @returns {boolean} */
     canAccessBothDashboards: (state) =>
       ["admin", "super-admin"].includes(state.user?.type || ""),
   },
 
   actions: {
+    /** @returns {Promise<void>} */
     async initialize() {
       if (process.client) {
         const tokenCookie = useCookie("auth:token");
@@ -47,6 +69,10 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    /**
+     * @param {LoginCredentials} credentials
+     * @returns {Promise<boolean>}
+     */
     async login(credentials) {
       this.isLoading = true;
       this.error = null;
@@ -69,6 +95,10 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    /**
+     * @param {RegisterData} userData
+     * @returns {Promise<boolean>}
+     */
     async register(userData) {
       this.isLoading = true;
       this.error = null;
@@ -91,6 +121,9 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    /**
+     * @param {AuthResponse} authData
+     */
     setAuth(authData) {
       this.user = authData.user;
       this.token = authData.token;
@@ -112,6 +145,7 @@ export const useAuthStore = defineStore("auth", {
       refreshCookie.value = authData.refreshToken;
     },
 
+    /** @returns {Promise<boolean>} */
     async refresh() {
       if (!this.refreshToken) return false;
 
@@ -140,6 +174,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    /** @returns {Promise<void>} */
     async logout() {
       try {
         await useApi().post("/auth/logout");
@@ -156,8 +191,9 @@ export const useAuthStore = defineStore("auth", {
       navigateTo("/");
     },
 
+    /** @returns {Promise<boolean>} */
     async fetchUser() {
-      if (!this.token) return;
+      if (!this.token) return false;
 
       try {
         const { data, error } = await useApi().get("/auth/me");

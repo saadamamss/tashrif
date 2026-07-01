@@ -145,6 +145,8 @@ function requireAuth(event: any): { userId: number, type: 'individual' | 'entity
   return session
 }
 
+export type { User, Job, Application, Interview, Contract }
+
 export {
   users, jobs, applications, interviews, contracts, tokens,
   generateToken, hashPassword, delay, getUserFromToken, requireAuth,

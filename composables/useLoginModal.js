@@ -1,6 +1,15 @@
 import { ref, watch } from "vue";
 
+/** @type {import('vue').Ref<boolean>} */
 const isLoginModalShow = ref(false);
+
+/**
+ * @returns {{
+ *   showModal: () => void,
+ *   closeModal: () => void,
+ *   isLoginModalShow: import('vue').Ref<boolean>
+ * }}
+ */
 export default function useAuthModal() {
   const route = useRoute();
   const router = useRouter();
@@ -12,7 +21,6 @@ export default function useAuthModal() {
   function closeModal() {
     isLoginModalShow.value = false;
 
-    // Clean up the redirect query without causing navigation loop
     if (route.query.redirect) {
       const newQuery = { ...route.query };
       delete newQuery.redirect;
@@ -21,15 +29,13 @@ export default function useAuthModal() {
   }
 
   function init() {
-    // Immediate check on composable initialization
     if (route.query.redirect) {
       showModal();
-    }else{
+    } else {
       closeModal()
     }
   }
 
-  // Watch for route changes
   watch(
     () => route.query.redirect,
     (redirect) => {
@@ -39,10 +45,8 @@ export default function useAuthModal() {
     }
   );
 
-
-  // 
   init()
-  // 
+
   return {
     showModal,
     closeModal,

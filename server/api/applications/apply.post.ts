@@ -1,3 +1,4 @@
+import type { Application } from '~~/server/utils/db'
 export default defineEventHandler(async (event) => {
   await delay(400)
   const session = requireAuth(event)
