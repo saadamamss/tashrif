@@ -97,7 +97,7 @@
         >
           <div>
             <h2 class="text-lg font-semibold mb-3">عرض {{ items.length }} نتيجة وظيفة</h2>
-            <p class="text-sm text-[#667178]">
+            <p class="text-sm text-muted">
               بناءً على ملفك الشخصي وتفضيلاتك
             </p>
           </div>

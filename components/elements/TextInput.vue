@@ -15,7 +15,7 @@
       >
         <input
           :type="type"
-          class="text-sm rounded-2xl w-full h-[38px] px-2 bg-[#f5f5f5] border border-[#ECB42B]/0 focus:border-[#ECB42B] outline-none placeholder:text-xs transition duration-300"
+          class="text-sm rounded-2xl w-full h-[38px] px-2 bg-bg-light border border-primary/0 focus:border-primary outline-none placeholder:text-xs transition duration-300"
           v-model="model"
           :placeholder="placeholder"
           :class="[props.class, { invalid: error }]"

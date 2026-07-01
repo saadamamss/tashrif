@@ -20,14 +20,14 @@ const signContractOpen = ref(false);
       <div class="flex flex-row justify-between items-start gap-6">
         <div>
           <h1 class="text-base font-semibold mb-3">تصفية</h1>
-          <p class="text-sm text-[#667178]">
+          <p class="text-sm text-muted">
             قم بتخصيص نتائج البحث لعرض الوظائف التي تناسبك بشكل أفضل.
           </p>
         </div>
         <div>
           <button
             @click="toggleFilterAria"
-            class="text-sm h-10 w-10 px-0 bg-[#f5f5f5] rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-[#ecb42b] transition"
+            class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
           >
             <ChevronUp />
           </button>
@@ -46,7 +46,7 @@ const signContractOpen = ref(false);
               <!-- Job Type -->
               <div class="w-full">
                 <TextInput
-                  class="text-sm placeholder:text-xs w-full px-3 rounded-2xl h-[38px] bg-[#f5f5f5] focus:outline-none border border-[#f5f5f]/0 focus:border-[#ecb42b] transition"
+                  class="text-sm placeholder:text-xs w-full px-3 rounded-2xl h-[38px] bg-bg-light focus:outline-none border border-[#f5f5f]/0 focus:border-primary transition"
                   placeholder="اسم الوظيفة "
                   label="اسم الوظيفة "
                 />
@@ -54,7 +54,7 @@ const signContractOpen = ref(false);
 
               <div class="w-full">
                 <TextInput
-                  class="text-sm placeholder:text-xs w-full px-3 rounded-2xl h-[38px] bg-[#f5f5f5] focus:outline-none border border-[#f5f5f]/0 focus:border-[#ecb42b] transition"
+                  class="text-sm placeholder:text-xs w-full px-3 rounded-2xl h-[38px] bg-bg-light focus:outline-none border border-[#f5f5f]/0 focus:border-primary transition"
                   placeholder="اسم المتقدم "
                   label="اسم المتقدم "
                 />
@@ -89,7 +89,7 @@ const signContractOpen = ref(false);
       <div class="flex flex-col sm:flex-row justify-between items-start gap-6">
         <div>
           <h1 class="text-base font-semibold mb-2">عرض 84 عقد عمل</h1>
-          <p class="text-sm text-[#667178]">بناءً على ملفك الشخصي وتفضيلاتك</p>
+          <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
         </div>
         <div class="self-end">
           <button class="text-sm btn-outline gap-2">

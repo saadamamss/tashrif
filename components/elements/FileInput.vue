@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
     <div
-      class="p-4 md:p-6 bg-[#f5f5f5] overflow-hidden border border-dashed relative rounded-xl border-[#161614] min-h-32"
+      class="p-4 md:p-6 bg-bg-light overflow-hidden border border-dashed relative rounded-xl border-dark min-h-32"
     >
       <input
         @change="handleFileChange"
@@ -29,7 +29,7 @@
           <span class="block text-sm font-medium mb-2">
             {{ filePreview.name }}
           </span>
-          <span class="block text-xs text-[#667178]">
+          <span class="block text-xs text-muted">
             {{ formattedFileSize }}
           </span>
         </div>

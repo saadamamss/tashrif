@@ -1,12 +1,23 @@
 $primary: #ecb42b;
+$muted: #667178;
+$dark: #161614;
+$surface: #25343e;
+$danger: #f53d6b;
+$icon-muted: #696c68;
+$border-muted: #929a9f;
+$bg-subtle: #f8f9f9;
+$bg-light: #f5f5f5;
+$success: #1e874c;
+$badge-green: #35685f;
+
 // Select menu variables
 $select-max-width: 100% !default;
 $select-padding: 0.75rem 1rem !default;
 $select-border-radius: 100px !default;
 $select-border-color: #eff2ee !default;
 $select-hover-border-color: #bbb !default;
-$select-active-border-color: #ECB42B !default;
-$select-bg-color: #f5f5f5 !default;
+$select-active-border-color: $primary !default;
+$select-bg-color: $bg-light !default;
 $select-text-color: #333 !default;
 $select-icon-color: #666 !default;
 $select-dropdown-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !default;

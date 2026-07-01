@@ -20,7 +20,7 @@
             href="#home"
             @click.stop.prevent="goToSection"
             :class="{ active: currentSection == 'home' }"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
           >
             الرئيسية
           </a>
@@ -28,14 +28,14 @@
             href="#about"
             :class="{ active: currentSection == 'about' }"
             @click.stop.prevent="goToSection"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
           >
             عن المنصة
           </a>
           <nuxt-link
             to="/jobs"
             :class="{ active: currentSection == 'jobs' }"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
           >
             الوظائف
           </nuxt-link>
@@ -43,7 +43,7 @@
             href="#partners"
             :class="{ active: currentSection == 'partners' }"
             @click.stop.prevent="goToSection"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
           >
             الأخبار
           </a>
@@ -51,7 +51,7 @@
             href="#contact"
             :class="{ active: currentSection == 'contact' }"
             @click.stop.prevent="goToSection"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
           >
             تواصل معنا
           </a>
@@ -60,12 +60,12 @@
         <div class="hidden md:block" v-if="isAuthenticated">
           <!-- <nuxt-link
             to="/dashboard/profile"
-            class="w-[48px] h-[48px] flex items-center justify-center bg-[#f5f5f5] rounded-full"
+            class="w-[48px] h-[48px] flex items-center justify-center bg-bg-light rounded-full"
           >
             <img src="~/assets/images/profile-image.svg" />
           </nuxt-link> -->
           <DropDown
-            trigger-style="bg-[#f5f5f5] rounded-full border-2 border-[#fff]/0 active:border-[#ecb42b]"
+            trigger-style="bg-bg-light rounded-full border-2 border-[#fff]/0 active:border-primary"
           >
             <template #trigger>
               <span>
@@ -77,7 +77,7 @@
                 <li>
                   <nuxt-link
                     to="/dashboard"
-                    class="block py-2 px-3 hover:bg-[#f8f9f9] text-sm"
+                    class="block py-2 px-3 hover:bg-bg-subtle text-sm"
                   >
                     لوحة التحكم
                   </nuxt-link>
@@ -86,7 +86,7 @@
                   <nuxt-link
                     to="#"
                     @click.stop.prevent="logout"
-                    class="block py-2 px-3 hover:bg-[#f8f9f9] text-sm text-red-500 font-medium"
+                    class="block py-2 px-3 hover:bg-bg-subtle text-sm text-red-500 font-medium"
                   >
                     خروج
                   </nuxt-link>
@@ -143,7 +143,7 @@
               <nuxt-link
                 to="/"
                 @click.once="toggleMobileMenu"
-                class="py-2 text-sm text-[#25343E]"
+                class="py-2 text-sm text-surface"
               >
                 الرئيسية
               </nuxt-link>
@@ -152,7 +152,7 @@
               <a
                 href="#about"
                 @click.stop.prevent="goToSection"
-                class="py-2 text-sm text-[#25343E]"
+                class="py-2 text-sm text-surface"
               >
                 عن المنصة
               </a>
@@ -161,7 +161,7 @@
               <nuxt-link
                 to="/jobs"
                 @click.once="toggleMobileMenu"
-                class="py-2 text-sm text-[#25343E]"
+                class="py-2 text-sm text-surface"
               >
                 الوظائف
               </nuxt-link>
@@ -170,7 +170,7 @@
               <a
                 href="#partners"
                 @click.stop.prevent="goToSection"
-                class="py-2 text-sm text-[#25343E]"
+                class="py-2 text-sm text-surface"
               >
                 الأخبار
               </a>
@@ -179,7 +179,7 @@
               <a
                 href="#contact"
                 @click.stop.prevent="goToSection"
-                class="py-2 text-sm text-[#25343E]"
+                class="py-2 text-sm text-surface"
               >
                 تواصل معنا
               </a>
@@ -191,7 +191,7 @@
               <nuxt-link
                 v-if="isAuthenticated"
                 to="/dashboard"
-                class="text-sm py-2 text-[#25343E]"
+                class="text-sm py-2 text-surface"
               >
                 لوحة التحكم
               </nuxt-link>

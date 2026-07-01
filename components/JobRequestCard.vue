@@ -4,10 +4,10 @@
        <span class="text-xs"> قيد المراجعة</span>
     </div>
     <div class="border-b-2 border-[#E9F1F2] flex flex-col gap-4 pb-6">
-      <h1 class="job-title text-base font-bold text-[#161614]">
+      <h1 class="job-title text-base font-bold text-dark">
         مشرف تنظيم حشود
       </h1>
-      <p class="job-desc text-xs text-[#161614]/70">
+      <p class="job-desc text-xs text-dark/70">
         فرصة مميزة للعمل الموسمي ضمن فريق متخصص في تنظيم الحشود وخدمة ضيوف
         الرحمن.
       </p>
@@ -16,7 +16,7 @@
         <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
           <img src="/images/partner-3.svg" class="w-10 h-6 object-cover" />
         </span>
-        <span class="company-name text-sm text-[#161614]">
+        <span class="company-name text-sm text-dark">
           شركة نسك لخدمات الحجاج
         </span>
       </div>
@@ -27,7 +27,7 @@
           <span>
             <CalenderIcon width="20" height="20" />
           </span>
-          <span class="text-[#667178]">تاريخ التقديم</span>
+          <span class="text-muted">تاريخ التقديم</span>
         </div>
         <div class="font-bold ps-7">10 مايو 2025</div>
       </div>
@@ -37,7 +37,7 @@
           <span>
             <ClockIcon width="20" height="20" />
           </span>
-          <span class="text-[#667178]">آخر تحديث</span>
+          <span class="text-muted">آخر تحديث</span>
         </div>
         <div class="font-bold ps-7">اليوم</div>
       </div>

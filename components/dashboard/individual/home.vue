@@ -32,7 +32,7 @@ const openApplyForm = () => {
           >
             <div class="text-center sm:text-right">
               <div
-                class="border-4 border-[#f5f5f5] mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
+                class="border-4 border-bg-light mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
               >
                 <img
                   src="~/assets/images/avatar.png"
@@ -49,7 +49,7 @@ const openApplyForm = () => {
             <div class="text-center sm:text-right">
               <NuxtLink
                 to="/dashboard/profile"
-                class="flex items-center justify-center gap-2 bg-[#f5f5f5] px-4 py-3 rounded-full text-sm border border-[#ecb42b]/0 hover:border-[#ecb42b] transition"
+                class="flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
               >
                 <EditSmall />
                 <span> تعديل الملف الشخصى </span>
@@ -69,7 +69,7 @@ const openApplyForm = () => {
                 >
                   10
                 </h1>
-                <h3 class="text-sm text-[#667178]">الطلبات المكتملة</h3>
+                <h3 class="text-sm text-muted">الطلبات المكتملة</h3>
               </div>
               <span>
                 <FileIcon width="24" height="24" color="#ECB42B" />
@@ -85,7 +85,7 @@ const openApplyForm = () => {
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">مقابلة عمل</h3>
+                <h3 class="text-sm text-muted">مقابلة عمل</h3>
               </div>
               <span>
                 <ClockIcon width="22" height="22" color="#ECB42B" />
@@ -100,7 +100,7 @@ const openApplyForm = () => {
                 >
                   24
                 </h1>
-                <h3 class="text-sm text-[#667178]">تقدمت للوظائف</h3>
+                <h3 class="text-sm text-muted">تقدمت للوظائف</h3>
               </div>
               <span>
                 <BriefcaseIcon width="22" height="22" color="#ECB42B" />
@@ -115,7 +115,7 @@ const openApplyForm = () => {
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">عروض العمل</h3>
+                <h3 class="text-sm text-muted">عروض العمل</h3>
               </div>
               <span>
                 <EyeIcon width="24" height="24" color="#ECB42B" />
@@ -142,7 +142,7 @@ const openApplyForm = () => {
             />
             <div>
               <h1 class="text-base font-semibold mb-3">أستكمل ملفك الشخصي</h1>
-              <p class="text-sm text-[#667178]">
+              <p class="text-sm text-muted">
                 استكمالك لملفك الشخصي يساعدنا في ترشيح الوظائف الأنسب لك، ويزيد
                 من فرص قبولك لدى الجهات. أضف معلوماتك الشخصية، مؤهلاتك، وخبراتك
                 العملية لتظهر بشكل احترافي أمام أصحاب العمل.
@@ -170,7 +170,7 @@ const openApplyForm = () => {
                 <h1 class="text-base md:text-lg font-semibold mb-3">
                   استكشف طلبات العمل الخاص بك
                 </h1>
-                <p class="text-sm text-[#667178]">
+                <p class="text-sm text-muted">
                   تابع حالة الوظائف التي تقدمت لها، وابقَ على اطلاع بآخر
                   التحديثات من الجهات
                 </p>
@@ -178,7 +178,7 @@ const openApplyForm = () => {
 
               <nuxt-link
                 to="/dashboard/job-requests"
-                class="self-end flex items-center justify-center gap-2 bg-[#f5f5f5] px-4 py-3 rounded-full text-sm border border-[#ecb42b]/0 hover:border-[#ecb42b] transition"
+                class="self-end flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
               >
                 مشاهدة الكل
                 <ChevronLeftIcon width="16" height="16" color="#161614" />
@@ -223,14 +223,14 @@ const openApplyForm = () => {
                 <h1 class="text-base md:text-lg font-semibold mb-3">
                   استكشف الوظائف المضافة مؤخرًا
                 </h1>
-                <p class="text-sm text-[#667178]">
+                <p class="text-sm text-muted">
                   خدمات واستشارات تكنولوجيا المعلومات
                 </p>
               </div>
 
               <nuxt-link
                 to="/dashboard/jobs-explore"
-                class="self-end flex items-center justify-center gap-2 bg-[#f5f5f5] px-4 py-3 rounded-full text-sm border border-[#ecb42b]/0 hover:border-[#ecb42b] transition"
+                class="self-end flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
               >
                 مشاهدة الكل
                 <ChevronLeftIcon width="16" height="16" color="#161614" />

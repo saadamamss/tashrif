@@ -18,7 +18,7 @@
             class="w-full h-full object-cover"
           />
         </span>
-        <span class="company-name font-medium text-sm text-[#161614]">
+        <span class="company-name font-medium text-sm text-dark">
           محمد عبدالله السعود
         </span>
       </div>
@@ -28,19 +28,19 @@
         <span>
           <Calender />
         </span>
-        <span class="text-[#696C68] text-xs"> الأربعاء 10 يوليو 2025 </span>
+        <span class="text-icon-muted text-xs"> الأربعاء 10 يوليو 2025 </span>
       </div>
       <div class="flex gap-2 items-center">
         <span>
           <Clock />
         </span>
-        <span class="text-[#696C68] text-xs"> الساعة 10:00 صباحًا </span>
+        <span class="text-icon-muted text-xs"> الساعة 10:00 صباحًا </span>
       </div>
       <div class="flex gap-2 items-center">
         <span>
           <Location />
         </span>
-        <span class="text-[#696C68] text-xs"> حي العزيزية، مكة المكرمة </span>
+        <span class="text-icon-muted text-xs"> حي العزيزية، مكة المكرمة </span>
       </div>
     </div>
 
@@ -50,14 +50,14 @@
 
       <button
         v-if="interview?.finshed"
-        class="flex-1 py-3 px-3 text-sm rounded-full bg-[#F53D6B] text-white disabled:text-[#F53D6B] disabled:bg-[#F53D6B]/10 hover:bg-[#F53D6B]/85 transition"
+        class="flex-1 py-3 px-3 text-sm rounded-full bg-danger text-white disabled:text-danger disabled:bg-danger/10 hover:bg-danger/85 transition"
       >
         لم يحضر
       </button>
 
       <button
         v-if="interview?.finshed"
-        class="flex-1 py-3 px-3 text-sm rounded-full bg-[#1E874C] text-white disabled:text-[#1E874C] disabled:bg-[#1E874C]/10 hover:bg-[#1E874C]/85 transition"
+        class="flex-1 py-3 px-3 text-sm rounded-full bg-success text-white disabled:text-success disabled:bg-success/10 hover:bg-success/85 transition"
       >
         حضر
       </button>

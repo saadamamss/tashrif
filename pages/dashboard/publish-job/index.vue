@@ -52,7 +52,7 @@ const submitForm = () => {
     <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
       <div>
         <h1 class="text-lg lg:text-xl font-bold mb-3">نشر وظيفة جديدة</h1>
-        <p class="text-sm text-[#667178]">
+        <p class="text-sm text-muted">
           أضف تفاصيل الوظيفة لعرضها في المنصة، ليتمكن الباحثون عن العمل من
           الاطلاع عليها والتقديم.
         </p>
@@ -192,7 +192,7 @@ const submitForm = () => {
               <Field name="job-desc" id="job-desc" v-model="formData.jobDesc">
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="وصف الوظيفة"
                   v-model="formData.jobDesc"
                   :error="errors.jobDesc"
@@ -211,7 +211,7 @@ const submitForm = () => {
               >
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="المزايا والمكافأة "
                   v-model="formData.benefits"
                   :error="errors.benefits"
@@ -233,7 +233,7 @@ const submitForm = () => {
               >
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="المهام والمسؤوليات"
                   v-model="formData.responsibilities"
                   :error="errors.responsibilities"
@@ -252,7 +252,7 @@ const submitForm = () => {
               >
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="شروط القبول"
                   v-model="formData.conditions"
                   :error="errors.conditions"

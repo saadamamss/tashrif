@@ -12,7 +12,7 @@
               @click="$emit('toggleSide')"
               class="flex gap-2 h-[48px] items-center rounded-xl px-3"
               :class="{
-                'bg-[#ecb42b]': $route.name.startsWith(item.name),
+                'bg-primary': $route.name.startsWith(item.name),
                 'bg-[#ecb42a]':
                   $route.name == 'dashboard' && item.name == 'dashboard-index',
               }"

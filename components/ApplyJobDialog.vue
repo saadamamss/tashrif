@@ -2,7 +2,7 @@
   <Dialog v-model="model">
     <div class="bg-white rounded-2xl shadow-md overflow-hidden">
       <!-- Form Title -->
-      <div class="bg-[#f5f5f5] p-6">
+      <div class="bg-bg-light p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-3 text-right">
           التقديم على وظيفة
         </h2>
@@ -24,7 +24,7 @@
                 v-for="(cv, index) in cvs"
                 :key="index"
                 :for="'cv-' + index"
-                class="cursor-pointer mb-3 block bg-[#f5f5f5] rounded-lg border border-[#fff]/0 hover:border-[#ecb42b] active:bg-[#f8f9f9] transition"
+                class="cursor-pointer mb-3 block bg-bg-light rounded-lg border border-[#fff]/0 hover:border-primary active:bg-bg-subtle transition"
               >
                 <div class="flex items-center p-4">
                   <input
@@ -32,7 +32,7 @@
                     :id="'cv-' + index"
                     :value="index"
                     v-model="formData.selectedCv"
-                    class="ml-3 h-[12px] w-[12px] text-primary accent-[#F53D6B] focus:bg-[#ecb42b] active:bg-[#ecb42b] checked:bg-[#ecb42b]"
+                    class="ml-3 h-[12px] w-[12px] text-primary accent-danger focus:bg-primary active:bg-primary checked:bg-primary"
                   />
                   <div class="flex gap-2">
                     <span class="block p-2 bg-white rounded-xl">
@@ -66,7 +66,7 @@
                 v-model="formData.coverLetter"
                 placeholder="أدخل خطاب تعريفي..."
                 rows="5"
-                class="text-sm w-full placeholder:text-xs bg-[#f5f5f5] p-4 border border-[#fff]/0 rounded-lg focus:outline-none focus:border-[#ecb42b] transition"
+                class="text-sm w-full placeholder:text-xs bg-bg-light p-4 border border-[#fff]/0 rounded-lg focus:outline-none focus:border-primary transition"
               ></textarea>
             </Field>
             <ErrorMessage
@@ -78,7 +78,7 @@
 
         <!-- Action Buttons -->
         <div
-          class="p-6 flex justify-between space-x-3 space-x-reverse bg-[#f5f5f5]"
+          class="p-6 flex justify-between space-x-3 space-x-reverse bg-bg-light"
         >
           <button
             @click="cancelApplication"

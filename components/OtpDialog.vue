@@ -30,7 +30,7 @@
                     ref="inputs"
                     type="text"
                     maxlength="1"
-                    class="appearance-none font-bold rounded-xl relative block w-16 h-16 px-3 py-2 placeholder-[#B4B6B7] text-gray-900 bg-[#f5f5f5] focus:outline-none focus:z-10 sm:text-base text-center"
+                    class="appearance-none font-bold rounded-xl relative block w-16 h-16 px-3 py-2 placeholder-[#B4B6B7] text-gray-900 bg-bg-light focus:outline-none focus:z-10 sm:text-base text-center"
                     :class="{ 'border-blue-500': activeIndex === index }"
                   />
                 </div>
@@ -44,7 +44,7 @@
                   <button 
                     type="button"
                     @click="resendOtp"
-                    class="text-base font-medium text-primary text-[#ECB42B]/80 hover:text-[#ECB42B] focus:outline-none underline"
+                    class="text-base font-medium text-primary text-primary/80 hover:text-primary focus:outline-none underline"
                     :disabled="resendDisabled"
                     :class="{
                       'cursor-not-allowed': resendDisabled,

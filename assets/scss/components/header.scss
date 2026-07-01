@@ -5,7 +5,7 @@
   display: inline-block;
   padding: 5px 0px;
   &.active {
-    color: #ecb42b;
+    color: $primary;
   }
 }
 .nav-menu-vertical a {

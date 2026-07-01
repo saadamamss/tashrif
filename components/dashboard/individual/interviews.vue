@@ -14,14 +14,14 @@ const toggleFilterAria = () => {
       <div class="flex flex-row justify-between items-start gap-6">
         <div>
           <h1 class="text-base font-semibold mb-3">تصفية</h1>
-          <p class="text-sm text-[#667178]">
+          <p class="text-sm text-muted">
             قم بتخصيص نتائج البحث لعرض الوظائف التي تناسبك بشكل أفضل.
           </p>
         </div>
         <div>
           <button
             @click="toggleFilterAria"
-            class="text-sm h-10 w-10 px-0 bg-[#f5f5f5] rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-[#ecb42b] transition"
+            class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
           >
             <ChevronUp />
           </button>
@@ -98,7 +98,7 @@ const toggleFilterAria = () => {
       <div class="flex flex-col md:flex-row gap-6 justify-between items-start">
         <div>
           <h1 class="text-base font-semibold mb-3">عرض 84 مقابلة عمل</h1>
-          <p class="text-sm text-[#667178]">بناءً على ملفك الشخصي وتفضيلاتك</p>
+          <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
         </div>
         <div class="self-end">
           <button class="text-sm btn-outline gap-2">

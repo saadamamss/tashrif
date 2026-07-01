@@ -56,7 +56,7 @@ const handleSubmit = async () => {
             <div class="modal-body pt-6">
               <Form @submit="handleSubmit" v-slot="{ errors }">
                 <div
-                  class="flex flex-col space-y-4 bg-[#F8F9F9] px-4 lg:px-6 py-8 rounded-lg mb-6"
+                  class="flex flex-col space-y-4 bg-bg-subtle px-4 lg:px-6 py-8 rounded-lg mb-6"
                 >
                   <div class="mb-4">
                     <TextInput

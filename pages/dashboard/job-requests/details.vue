@@ -49,10 +49,10 @@ const requestStatus = ref({
             </span>
           </div>
           <div class="flex flex-col gap-6">
-            <h1 class="job-title text-lg lg:text-xl font-bold text-[#161614]">
+            <h1 class="job-title text-lg lg:text-xl font-bold text-dark">
               مشرف حجاج
             </h1>
-            <p class="job-desc text-sm text-[#161614]/70 leading-[2]">
+            <p class="job-desc text-sm text-dark/70 leading-[2]">
               تبحث شركة الإسناد الموسمي لخدمات الحجاج عن أفراد مؤهلين للانضمام
               إلى فريقها كمشرفين ميدانيين خلال موسم الحج. ستكون مسؤولاً عن تنظيم
               وإرشاد مجموعة من الحجاج أثناء تنقلهم بين المشاعر المقدسة، وضمان
@@ -68,7 +68,7 @@ const requestStatus = ref({
                   class="w-10 h-6 object-cover"
                 />
               </span>
-              <span class="company-name text-sm text-[#161614]">
+              <span class="company-name text-sm text-dark">
                 شركة نسك لخدمات الحجاج
               </span>
             </div>
@@ -93,19 +93,19 @@ const requestStatus = ref({
                 مميزات خاصة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الإشراف اليومي على مجموعة محددة من الحجاج.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التأكد من التزام الحجاج بخطط التنقل وجدول الحركة بين المشاعر.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التنسيق المستمر مع فرق النقل والدعم اللوجستي.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التعامل مع الحالات الطارئة ورفع التقارير إلى المسؤول المباشر.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   ضمان سلامة وراحة الحجاج خلال تنقلهم وإقامتهم.
                 </li>
               </ul>
@@ -120,22 +120,22 @@ const requestStatus = ref({
                 شروط القبول
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   أن يكون المتقدم سعودي الجنسية.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   العمر بين 22 و45 سنة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   القدرة على العمل الميداني المكثف لساعات طويلة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   يفضّل من لديه خبرة سابقة في العمل الموسمي أو الإشراف الميداني.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الالتزام بالأخلاقيات المهنية والسلوكيات المناسبة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الأولوية لسكان منطقة مكة المكرمة لتسهيل التنقل السريع.
                 </li>
               </ul>
@@ -150,13 +150,13 @@ const requestStatus = ref({
                 المزايا والمكافأة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   مكافأة مقطوعة قدرها 3000 ريال سعودي.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   شهادة خبرة بعد انتهاء المهمة بنجاح.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   تشمل بدل السكن والتنقل.
                 </li>
               </ul>
@@ -175,11 +175,11 @@ const requestStatus = ref({
             <div class="space-y-4 pt-4">
               <div class="p-4 rounded-xl badge" x-status="pending">
                 <h3 class="text-sm mb-3">قيد المراجعة</h3>
-                <p class="text-xs text-[#667178]">
+                <p class="text-xs text-muted">
                   نحن بانتظار رد الجهة المعلنة. سيتم إشعارك فور تحديث الحالة.
                 </p>
               </div>
-              <p class="text-xs text-[#667178]">
+              <p class="text-xs text-muted">
                 تم التقديم في تاريخ: 7 يوليو 2025
               </p>
             </div>
@@ -191,11 +191,11 @@ const requestStatus = ref({
             <div class="space-y-4 pt-4">
               <div class="p-4 rounded-xl badge" x-status="preliminary">
                 <h3 class="text-sm mb-3">تم القبول المبدئي</h3>
-                <p class="text-xs text-[#667178]">
+                <p class="text-xs text-muted">
                   🎉 تهانينا! لقد تم ترشيحك مبدئيًا لوظيفة مشرف حجاج.
                 </p>
               </div>
-              <p class="text-xs text-[#667178]">
+              <p class="text-xs text-muted">
                 تم التقديم في تاريخ: 7 يوليو 2025
               </p>
             </div>
@@ -207,12 +207,12 @@ const requestStatus = ref({
             <div class="space-y-4 pt-4">
               <div class="p-4 rounded-xl badge" x-status="accepted">
                 <h3 class="text-sm mb-3">تم القبول</h3>
-                <p class="text-xs text-[#667178]">
+                <p class="text-xs text-muted">
                   🎉 تهانينا، تم قبولك! لقد تم قبولك نهائيًا لوظيفة مشرف حجاج
                   ضمن فريق شركة الإسناد الموسمي لخدمات الحجاج.
                 </p>
               </div>
-              <p class="text-xs text-[#667178]">
+              <p class="text-xs text-muted">
                 تم التقديم في تاريخ: 7 يوليو 2025
               </p>
             </div>
@@ -231,7 +231,7 @@ const requestStatus = ref({
               <span>
                 <CalenderIcon width="18" height="18" />
               </span>
-              <span class="text-[#696C68] text-xs">
+              <span class="text-icon-muted text-xs">
                 الأربعاء 10 يوليو 2025
               </span>
             </div>
@@ -239,21 +239,21 @@ const requestStatus = ref({
               <span>
                 <Clock />
               </span>
-              <span class="text-[#696C68] text-xs"> الساعة 10:00 صباحًا </span>
+              <span class="text-icon-muted text-xs"> الساعة 10:00 صباحًا </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <Location />
               </span>
-              <span class="text-[#696C68] text-xs">
+              <span class="text-icon-muted text-xs">
                 حي العزيزية، مكة المكرمة
               </span>
             </div>
           </div>
 
-          <div class="p-4 rounded-xl bg-[#F8F9F9] mb-4">
-            <h3 class="text-sm mb-3 text-[#25343E]">📌 ملاحظات مهمة</h3>
-            <div class="text-xs text-[#667178]">
+          <div class="p-4 rounded-xl bg-bg-subtle mb-4">
+            <h3 class="text-sm mb-3 text-surface">📌 ملاحظات مهمة</h3>
+            <div class="text-xs text-muted">
               <p class="mb-2">يرجى الحضور قبل الموعد بـ15 دقيقة.</p>
               <p class="mb-2">إحضار أصل الهوية الوطنية والسيرة الذاتية.</p>
               <p class="">الالتزام بالزي الرسمي.</p>
@@ -278,7 +278,7 @@ const requestStatus = ref({
               <span>
                 <CalenderIcon width="18" height="18" />
               </span>
-              <span class="text-[#696C68] text-xs">
+              <span class="text-icon-muted text-xs">
                 5 – 13 ذو الحجة 1446هـ
               </span>
             </div>
@@ -286,13 +286,13 @@ const requestStatus = ref({
               <span>
                 <Location />
               </span>
-              <span class="text-[#696C68] text-xs">
+              <span class="text-icon-muted text-xs">
                 حي العزيزية، مكة المكرمة
               </span>
             </div>
           </div>
 
-          <div class="p-4 rounded-xl bg-[#F8F9F9] mb-2">
+          <div class="p-4 rounded-xl bg-bg-subtle mb-2">
             <div class="flex justify-between gap-4 items-center">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="block p-2 bg-white rounded-xl">
@@ -312,7 +312,7 @@ const requestStatus = ref({
               </div>
             </div>
           </div>
-          <p class="text-xs text-[#667178] mb-4">
+          <p class="text-xs text-muted mb-4">
             يجب توقيع العقد قبل تاريخ 15 ذو القعدة 1446هـ لتأكيد انضمامك رسميًا.
           </p>
 
@@ -336,7 +336,7 @@ const requestStatus = ref({
               <span>
                 <Location width="20" height="20" />
               </span>
-              <span class="text-xs text-[#696C68]">
+              <span class="text-xs text-icon-muted">
                 مكة المكرمة – المشاعر المقدسة (منى – مزدلفة – عرفات).
               </span>
             </div>
@@ -344,16 +344,16 @@ const requestStatus = ref({
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
-              <span class="text-[#696C68] text-xs"> دوام كامل – 8 ساعات </span>
+              <span class="text-icon-muted text-xs"> دوام كامل – 8 ساعات </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
-              <span class="text-[#696C68] text-xs">
+              <span class="text-icon-muted text-xs">
                 10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
               </span>
-              <span class="text-[#696C68] text-xs">
+              <span class="text-icon-muted text-xs">
                 10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
               </span>
             </div>
@@ -361,13 +361,13 @@ const requestStatus = ref({
               <span>
                 <MoneyIcon />
               </span>
-              <span class="text-xs text-[#696C68]"> مرتب 3000 ريال سعودي </span>
+              <span class="text-xs text-icon-muted"> مرتب 3000 ريال سعودي </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <PersonIcon width="20" height="20" color="#696C68" />
               </span>
-              <span class="text-xs text-[#696C68]">
+              <span class="text-xs text-icon-muted">
                 الذكور فقط لهذه الوظيفة.
               </span>
             </div>

@@ -2,7 +2,7 @@
   <Dialog v-model="model">
     <div class="bg-white rounded-2xl shadow-md overflow-hidden">
       <!-- Form Title -->
-      <div class="bg-[#f5f5f5] p-4 sm:p-6">
+      <div class="bg-bg-light p-4 sm:p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-3 text-right">
           جدولة مواعيد المقابلات
         </h2>
@@ -25,7 +25,7 @@
                 <div class="flex gap-4">
                   <div class="flex-1">
                     <label
-                      class="flex gap-2 items-center rounded-xl px-3 py-3 h-[48px] bg-[#f5f5f5] text-sm active:bg-[#f8f9f9] transition cursor-pointer"
+                      class="flex gap-2 items-center rounded-xl px-3 py-3 h-[48px] bg-bg-light text-sm active:bg-bg-subtle transition cursor-pointer"
                     >
                       <input
                         type="radio"
@@ -39,7 +39,7 @@
                   </div>
                   <div class="flex-1">
                     <label
-                      class="flex gap-2 items-center rounded-xl px-3 py-3 h-[48px] bg-[#f5f5f5] text-sm active:bg-[#f8f9f9] transition cursor-pointer"
+                      class="flex gap-2 items-center rounded-xl px-3 py-3 h-[48px] bg-bg-light text-sm active:bg-bg-subtle transition cursor-pointer"
                     >
                       <input
                         type="radio"
@@ -156,7 +156,7 @@
                 v-model="formData.notes"
                 placeholder="أدخل ملاحظاتك للمتقدم ..."
                 rows="5"
-                class="text-sm w-full p-4 placeholder:text-xs border border-[#fff]/0 bg-[#f5f5f5] rounded-lg focus:outline-none focus:border-[#ecb42b] transition"
+                class="text-sm w-full p-4 placeholder:text-xs border border-[#fff]/0 bg-bg-light rounded-lg focus:outline-none focus:border-primary transition"
               ></textarea>
             </div>
           </div>
@@ -164,7 +164,7 @@
 
         <!-- Action Buttons -->
         <div
-          class="p-4 sm:p-6 flex justify-between space-x-3 space-x-reverse bg-[#f5f5f5]"
+          class="p-4 sm:p-6 flex justify-between space-x-3 space-x-reverse bg-bg-light"
         >
           <button
             type="button"

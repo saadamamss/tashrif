@@ -7,7 +7,7 @@
         <input
           v-if="select"
           type="checkbox"
-          class="hidden xs:block self-center accent-[#ecb42b] w-4 h-4"
+          class="hidden xs:block self-center accent-primary w-4 h-4"
           :value="applicant"
           v-model="model"
         />
@@ -18,10 +18,10 @@
             <img :src="applicant.avatar" class="w-full h-full object-cover" />
           </span>
           <div class="name">
-            <span class="text-sm block font-medium text-[#161614] mb-1">
+            <span class="text-sm block font-medium text-dark mb-1">
               {{ applicant.name }}
             </span>
-            <span class="block text-xs text-[#667178]">
+            <span class="block text-xs text-muted">
               {{ applicant.jobTitle }}
             </span>
           </div>
@@ -37,7 +37,7 @@
           <input
             v-if="select"
             type="checkbox"
-            class="xs:hidden self-center accent-[#ecb42b] w-4 h-4"
+            class="xs:hidden self-center accent-primary w-4 h-4"
             :value="applicant"
             v-model="model"
           />
@@ -51,7 +51,7 @@
             </span>
             <DropDown
               v-if="action"
-              trigger-style="p-2 bg-[#f5f5f5] rounded-xl border border-[#fff]/0 active:border-[#ecb42b]"
+              trigger-style="p-2 bg-bg-light rounded-xl border border-[#fff]/0 active:border-primary"
             >
               <template #trigger>
                 <span>
@@ -64,7 +64,7 @@
                     <a
                       href="#"
                       @click.prevent=""
-                      class="text-xs px-3 py-2 hover:bg-[#f8f9f9] transition block"
+                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block"
                       >إضافة للمرشحين</a
                     >
                   </li>
@@ -72,7 +72,7 @@
                     <a
                       href="#"
                       @click.prevent=""
-                      class="text-xs px-3 py-2 hover:bg-[#f8f9f9] transition block"
+                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block"
                       >إجراء مقابلة</a
                     >
                   </li>
@@ -80,7 +80,7 @@
                     <a
                       href="#"
                       @click.prevent=""
-                      class="text-xs px-3 py-2 hover:bg-[#f8f9f9] transition block"
+                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block"
                       >حذف</a
                     >
                   </li>
@@ -98,7 +98,7 @@
             <span>
               <PersonIcon width="20" height="20" color="#696C68" />
             </span>
-            <span class="text-[#667178]">المؤهل العلمى</span>
+            <span class="text-muted">المؤهل العلمى</span>
           </div>
           <div class="font-bold ps-7">
             {{ applicant.qualification }}
@@ -109,7 +109,7 @@
             <span>
               <Calender />
             </span>
-            <span class="text-[#667178]"> تم التقديم </span>
+            <span class="text-muted"> تم التقديم </span>
           </div>
           <div class="font-bold ps-7">
             {{ applicant.applyDate }}
@@ -121,7 +121,7 @@
             <span>
               <Gender />
             </span>
-            <span class="text-[#667178]">الجنس</span>
+            <span class="text-muted">الجنس</span>
           </div>
           <div class="font-bold ps-7">{{ applicant.gender }}</div>
         </div>
@@ -130,7 +130,7 @@
             <span>
               <City />
             </span>
-            <span class="text-[#667178]">المدينة</span>
+            <span class="text-muted">المدينة</span>
           </div>
           <div class="font-bold ps-7">{{ applicant.city }}</div>
         </div>

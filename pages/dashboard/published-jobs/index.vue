@@ -39,14 +39,14 @@ function retry() {
       <div class="flex gap-6 justify-between items-start">
         <div>
           <h1 class="text-base font-semibold mb-3">تصفية</h1>
-          <p class="text-sm text-[#667178]">
+          <p class="text-sm text-muted">
             قم بتخصيص نتائج البحث لعرض الوظائف التي تناسبك بشكل أفضل.
           </p>
         </div>
         <div>
           <button
             @click="toggleFilterAria"
-            class="text-sm h-10 w-10 px-0 bg-[#f5f5f5] rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-[#ecb42b] transition"
+            class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
           >
             <ChevronUp />
           </button>
@@ -111,7 +111,7 @@ function retry() {
       <div class="flex flex-col md:flex-row justify-between gap-6 items-start">
         <div>
           <h1 class="text-base font-semibold mb-3">عرض {{ items.length }} وظيفة منشورة</h1>
-          <p class="text-sm text-[#667178]">بناءً على ملفك الشخصي وتفضيلاتك</p>
+          <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
         </div>
         <div class="self-end flex gap-3">
           <button class="text-sm btn-outline gap-2">
@@ -132,7 +132,7 @@ function retry() {
           <JobOfferCard
             v-for="item in items"
             :key="item.id"
-            class="border border-[#fff]/0 hover:border-[#ecb42b] transition"
+            class="border border-[#fff]/0 hover:border-primary transition"
             role="button"
             @click="$router.push('/dashboard/published-jobs/details')"
           />

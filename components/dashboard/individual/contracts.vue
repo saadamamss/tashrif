@@ -17,14 +17,14 @@ const signContractOpen = ref(false);
       <div class="flex flex-row gap-6 justify-between items-start gap-6">
         <div>
           <h1 class="text-base font-semibold mb-3">تصفية</h1>
-          <p class="text-sm text-[#667178]">
+          <p class="text-sm text-muted">
             قم بتخصيص نتائج البحث لعرض الوظائف التي تناسبك بشكل أفضل.
           </p>
         </div>
         <div>
           <button
             @click="toggleFilterAria"
-            class="text-sm h-10 w-10 px-0 bg-[#f5f5f5] rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-[#ecb42b] transition"
+            class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
           >
             <ChevronUp />
           </button>
@@ -101,7 +101,7 @@ const signContractOpen = ref(false);
       <div class="flex flex-col sm:flex-row justify-between items-start gap-6">
         <div>
           <h1 class="text-base font-semibold mb-3">عرض 84 عقد عمل</h1>
-          <p class="text-sm text-[#667178]">بناءً على ملفك الشخصي وتفضيلاتك</p>
+          <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
         </div>
         <div class="self-end">
           <button class="text-sm btn-outline gap-2">
@@ -128,7 +128,7 @@ const signContractOpen = ref(false);
                     class="w-10 h-6 object-cover"
                   />
                 </span>
-                <span class="company-name font-medium text-sm text-[#161614]">
+                <span class="company-name font-medium text-sm text-dark">
                   شركة نسك لخدمات الحجاج
                 </span>
               </div>
@@ -138,7 +138,7 @@ const signContractOpen = ref(false);
                 <span>
                   <CalenderIcon width="18" height="18" color="#696C68" />
                 </span>
-                <span class="text-[#696C68] text-xs">
+                <span class="text-icon-muted text-xs">
                   5 – 13 ذو الحجة 1446هـ
                 </span>
               </div>
@@ -146,13 +146,13 @@ const signContractOpen = ref(false);
                 <span>
                   <Location />
                 </span>
-                <span class="text-[#696C68] text-xs">
+                <span class="text-icon-muted text-xs">
                   حي العزيزية، مكة المكرمة
                 </span>
               </div>
             </div>
 
-            <div class="p-4 rounded-xl bg-[#F8F9F9] mb-2">
+            <div class="p-4 rounded-xl bg-bg-subtle mb-2">
               <div class="flex justify-between gap-4 items-center">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="block p-2 bg-white rounded-xl">
@@ -172,7 +172,7 @@ const signContractOpen = ref(false);
                 </div>
               </div>
             </div>
-            <p class="text-xs text-[#667178] mb-6">
+            <p class="text-xs text-muted mb-6">
               يجب توقيع العقد قبل تاريخ 15 ذو القعدة 1446هـ لتأكيد انضمامك
               رسميًا.
             </p>

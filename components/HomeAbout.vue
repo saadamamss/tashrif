@@ -6,7 +6,7 @@
       >
         <div class="order-2 lg:order-1 max-w-[515px]">
           <span
-            class="tag text-[#ECB42B] text-sm font-medium py-1 rounded-full mb-4 inline-block"
+            class="tag text-primary text-sm font-medium py-1 rounded-full mb-4 inline-block"
             >#منصة_تشريف</span
           >
           <h2
@@ -15,7 +15,7 @@
             نربط بين الأفراد المؤهلين والجهات المشغّلة عبر منصة رقمية ذكية
           </h2>
           <div
-            class="richtext text-base text-[#696C68] leading-[1.8] mb-8 space-y-4"
+            class="richtext text-base text-icon-muted leading-[1.8] mb-8 space-y-4"
           >
             <p>
               تعتمد على الموقع الجغرافي والمهارات المطلوبة لضمان تجربة توظيف
@@ -128,7 +128,7 @@
       >
         <div class="order-2 lg:order-2 max-w-[515px]">
           <span
-            class="tag text-[#ECB42B] text-sm font-medium py-1 rounded-full mb-4 inline-block"
+            class="tag text-primary text-sm font-medium py-1 rounded-full mb-4 inline-block"
             >#منصة_تشريف</span
           >
           <h2
@@ -137,7 +137,7 @@
             تمكين التوظيف الموسمي عبر تجربة رقمية سلسة
           </h2>
           <div
-            class="richtext text-base text-[#696C68] leading-[1.8] mb-8 space-y-4"
+            class="richtext text-base text-icon-muted leading-[1.8] mb-8 space-y-4"
           >
             <p>
               تضمن للباحثين عن العمل الوصول للفرص المناسبة، وللجهات المشغّلة

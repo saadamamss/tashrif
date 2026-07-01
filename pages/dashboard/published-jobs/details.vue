@@ -214,11 +214,11 @@ const openFilterDrawer = () => {
             <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4">
               <div class="flex flex-col gap-6">
                 <h1
-                  class="job-title text-lg lg:text-xl font-bold text-[#161614]"
+                  class="job-title text-lg lg:text-xl font-bold text-dark"
                 >
                   مشرف حجاج
                 </h1>
-                <p class="job-desc text-sm text-[#161614]/70 leading-[2]">
+                <p class="job-desc text-sm text-dark/70 leading-[2]">
                   تبحث شركة الإسناد الموسمي لخدمات الحجاج عن أفراد مؤهلين
                   للانضمام إلى فريقها كمشرفين ميدانيين خلال موسم الحج. ستكون
                   مسؤولاً عن تنظيم وإرشاد مجموعة من الحجاج أثناء تنقلهم بين
@@ -234,7 +234,7 @@ const openFilterDrawer = () => {
                       class="w-10 h-6 object-cover"
                     />
                   </span>
-                  <span class="company-name text-sm text-[#161614]">
+                  <span class="company-name text-sm text-dark">
                     شركة نسك لخدمات الحجاج
                   </span>
                 </div>
@@ -248,19 +248,19 @@ const openFilterDrawer = () => {
                 مميزات خاصة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الإشراف اليومي على مجموعة محددة من الحجاج.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التأكد من التزام الحجاج بخطط التنقل وجدول الحركة بين المشاعر.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التنسيق المستمر مع فرق النقل والدعم اللوجستي.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التعامل مع الحالات الطارئة ورفع التقارير إلى المسؤول المباشر.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   ضمان سلامة وراحة الحجاج خلال تنقلهم وإقامتهم.
                 </li>
               </ul>
@@ -273,22 +273,22 @@ const openFilterDrawer = () => {
                 شروط القبول
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   أن يكون المتقدم سعودي الجنسية.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   العمر بين 22 و45 سنة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   القدرة على العمل الميداني المكثف لساعات طويلة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   يفضّل من لديه خبرة سابقة في العمل الموسمي أو الإشراف الميداني.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الالتزام بالأخلاقيات المهنية والسلوكيات المناسبة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الأولوية لسكان منطقة مكة المكرمة لتسهيل التنقل السريع.
                 </li>
               </ul>
@@ -301,13 +301,13 @@ const openFilterDrawer = () => {
                 المزايا والمكافأة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   مكافأة مقطوعة قدرها 3000 ريال سعودي.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   شهادة خبرة بعد انتهاء المهمة بنجاح.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   تشمل بدل السكن والتنقل.
                 </li>
               </ul>
@@ -338,7 +338,7 @@ const openFilterDrawer = () => {
                       class="flex-1 min-w-[250px] flex search relative items-center"
                     >
                       <input
-                        class="w-full ps-10 h-[48px] border bg-[#f5f5f5] py-2 text-sm rounded-xl focus:outline-none focus:border-[#ecb42b] transition"
+                        class="w-full ps-10 h-[48px] border bg-bg-light py-2 text-sm rounded-xl focus:outline-none focus:border-primary transition"
                         type="text"
                         v-model="filter.search"
                         @change="handleSearch"
@@ -352,17 +352,17 @@ const openFilterDrawer = () => {
 
                     <div class="flex flex-wrap gap-2 items-center">
                       <button
-                        class="p-2 rounded-xl border bg-[#fff] hover:border-[#ecb42b] transition"
+                        class="p-2 rounded-xl border bg-[#fff] hover:border-primary transition"
                       >
                         <InboxIcon />
                       </button>
                       <button
-                        class="p-2 rounded-xl border bg-[#fff] hover:border-[#ecb42b] transition"
+                        class="p-2 rounded-xl border bg-[#fff] hover:border-primary transition"
                       >
                         <OutboxIcon />
                       </button>
                       <button
-                        class="p-2 rounded-xl border bg-[#fff] hover:border-[#ecb42b] transition"
+                        class="p-2 rounded-xl border bg-[#fff] hover:border-primary transition"
                         @click="openFilterDrawer()"
                       >
                         <FilterIcon />
@@ -375,22 +375,22 @@ const openFilterDrawer = () => {
                         />
                       </div>
                       <button
-                        class="hidden sm:block p-2 rounded-xl border bg-[#f8f9f9] hover:border-[#ecb42b] transition"
+                        class="hidden sm:block p-2 rounded-xl border bg-bg-subtle hover:border-primary transition"
                         :class="
                           displayMethod == 'card'
-                            ? 'text-[#ecb42b]'
-                            : 'text-[#667178]'
+                            ? 'text-primary'
+                            : 'text-muted'
                         "
                         @click="handleDisplayMethod('card')"
                       >
                         <GridIcon />
                       </button>
                       <button
-                        class="hidden sm:block p-2 rounded-xl border bg-[#f8f9f9] hover:border-[#ecb42b] transition"
+                        class="hidden sm:block p-2 rounded-xl border bg-bg-subtle hover:border-primary transition"
                         :class="
                           displayMethod == 'list'
-                            ? 'text-[#ecb42b]'
-                            : 'text-[#667178]'
+                            ? 'text-primary'
+                            : 'text-muted'
                         "
                         @click="handleDisplayMethod('list')"
                       >
@@ -404,7 +404,7 @@ const openFilterDrawer = () => {
               <template #new>
                 <div v-if="selectedApplicants.length">
                   <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-6 mb-4">
-                    <h2 class="text-sm lg:text-lg font-medium text-[#667178]">
+                    <h2 class="text-sm lg:text-lg font-medium text-muted">
                       تم تحديد {{ selectedApplicants.length }} متقدمين
                     </h2>
                     <div class="self-end flex gap-2">
@@ -428,7 +428,7 @@ const openFilterDrawer = () => {
                     :action="true"
                     :select="true"
                     badge-text="جديد"
-                    badge-style="bg-[#ecb42b]/10 text-[#ecb42b]"
+                    badge-style="bg-primary/10 text-primary"
                     card-style=" bg-[#fff]"
                     v-model="selectedApplicants"
                   />
@@ -454,7 +454,7 @@ const openFilterDrawer = () => {
                     :applicant="applicant"
                     :action="true"
                     badge-text="تم إرسال العقد"
-                    badge-style="bg-[#35685F]/10 text-[#35685F]"
+                    badge-style="bg-badge-green/10 text-badge-green"
                     card-style=" bg-[#fff]"
                     v-model="selectedApplicants"
                   />
@@ -468,7 +468,7 @@ const openFilterDrawer = () => {
                     :applicant="applicant"
                     :action="true"
                     badge-text="تم قبول العقد"
-                    badge-style="bg-[#1E874C]/10 text-[#1E874C]"
+                    badge-style="bg-success/10 text-success"
                     card-style=" bg-[#fff]"
                     v-model="selectedApplicants"
                   />
@@ -482,7 +482,7 @@ const openFilterDrawer = () => {
                     :applicant="applicant"
                     :action="true"
                     badge-text="تم رفض العقد"
-                    badge-style="bg-[#F53D6B]/10 text-[#F53D6B]"
+                    badge-style="bg-danger/10 text-danger"
                     card-style=" bg-[#fff]"
                     v-model="selectedApplicants"
                   />

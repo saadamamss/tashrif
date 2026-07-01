@@ -3,7 +3,7 @@
     <div
       class="max-w-4xl mx-auto bg-white rounded-2xl overflow-hidden relative"
     >
-      <div class="bg-[#f5f5f5] p-6">
+      <div class="bg-bg-light p-6">
         <h2 class="text-lg lg:text-xl font-bold text-gray-800 mb-3">
           توقيع العقد إلكترونيً
         </h2>
@@ -20,7 +20,7 @@
         <div class="mb-6">
           <TextInput
             :label="`تأكيد التوقيع اكتب بالأسفل (${sequenceConfirm})`"
-            class="bg-[#f5f5f5] w-full rounded-2xl h-12 text-sm px-2 placeholder:text-xs"
+            class="bg-bg-light w-full rounded-2xl h-12 text-sm px-2 placeholder:text-xs"
             placeholder="أوافق علي كل بنود العقد"
             v-model="signatureAgreement"
           />
@@ -31,7 +31,7 @@
             <input
               type="checkbox"
               v-model="agreementConfirmed"
-              class="w-4 h-4 text-primary accent-[#ecb42b] rounded border-gray-300 focus:ring-primary"
+              class="w-4 h-4 text-primary accent-primary rounded border-gray-300 focus:ring-primary"
             />
             <span class="mr-2 text-sm font-bold">أوافق وأوقع العقد</span>
           </label>
@@ -39,7 +39,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex justify-between bg-[#f5f5f5] p-6">
+      <div class="flex justify-between bg-bg-light p-6">
         <button @click="cancelContract" class="btn-outline text-sm px-10">
           إلغاء
         </button>

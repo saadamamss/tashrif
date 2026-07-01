@@ -16,7 +16,7 @@
         >
           <img src="/images/partner-3.svg" class="w-10 h-6 object-cover" />
         </span>
-        <span class="company-name font-medium text-sm text-[#161614]">
+        <span class="company-name font-medium text-sm text-dark">
           شركة نسك لخدمات الحجاج
         </span>
       </div>
@@ -26,19 +26,19 @@
         <span>
           <Calender />
         </span>
-        <span class="text-[#696C68] text-xs"> الأربعاء 10 يوليو 2025 </span>
+        <span class="text-icon-muted text-xs"> الأربعاء 10 يوليو 2025 </span>
       </div>
       <div class="flex gap-2 items-center">
         <span>
           <Clock />
         </span>
-        <span class="text-[#696C68] text-xs"> الساعة 10:00 صباحًا </span>
+        <span class="text-icon-muted text-xs"> الساعة 10:00 صباحًا </span>
       </div>
       <div class="flex gap-2 items-center">
         <span>
           <Location />
         </span>
-        <span class="text-[#696C68] text-xs"> حي العزيزية، مكة المكرمة </span>
+        <span class="text-icon-muted text-xs"> حي العزيزية، مكة المكرمة </span>
       </div>
     </div>
 

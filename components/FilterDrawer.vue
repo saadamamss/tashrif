@@ -10,7 +10,7 @@
                 <span>
                   <button
                     @click="closeModal"
-                    class="w-8 h-8 flex items-center justify-center bg-[#f5f5f5] rounded-full"
+                    class="w-8 h-8 flex items-center justify-center bg-bg-light rounded-full"
                   >
                     <Close />
                   </button>

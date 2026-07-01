@@ -21,7 +21,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
           >
             <div class="text-center sm:text-right">
               <div
-                class="border-4 border-[#f5f5f5] mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
+                class="border-4 border-bg-light mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
               >
                 <img
                   src="/images/partner-3.svg"
@@ -38,7 +38,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
             <div class="text-center sm:text-right">
               <NuxtLink
                 to="/dashboard/profile"
-                class="flex items-center justify-center gap-2 bg-[#f5f5f5] px-4 py-3 rounded-full text-sm border border-[#ecb42b]/0 hover:border-[#ecb42b] transition"
+                class="flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
               >
                 <EditSmall />
                 <span> تعديل الملف الشخصى </span>
@@ -56,7 +56,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 >
                   24
                 </h1>
-                <h3 class="text-sm text-[#667178]">وظائفى المنشورة</h3>
+                <h3 class="text-sm text-muted">وظائفى المنشورة</h3>
               </div>
               <span>
                 <BriefcaseIcon width="22" height="22" color="#ECB42B" />
@@ -71,7 +71,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">مقابلات العمل</h3>
+                <h3 class="text-sm text-muted">مقابلات العمل</h3>
               </div>
               <span>
                 <ClockIcon width="22" height="22" color="#ECB42B" />
@@ -87,7 +87,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">عروض العمل</h3>
+                <h3 class="text-sm text-muted">عروض العمل</h3>
               </div>
               <span>
                 <FileIcon width="24" height="24" color="#ECB42B" />
@@ -109,7 +109,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 <h1 class="text-base md:text-lg font-semibold mb-3">
                   وظائفي المنشورة
                 </h1>
-                <p class="text-sm text-[#667178]">
+                <p class="text-sm text-muted">
                   تابع حالة الوظائف التي نشرتها ، وابقَ على اطلاع بآخر التحديثات
                 </p>
               </div>
@@ -131,7 +131,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <JobOfferCard
                 v-for="i in 12"
-                class="border border-[#fff]/0 hover:border-[#ecb42b] transition"
+                class="border border-[#fff]/0 hover:border-primary transition"
                 role="button"
                 @click="$router.push('/dashboard/published-jobs/details')"
               />

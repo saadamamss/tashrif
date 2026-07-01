@@ -10,7 +10,7 @@
             <p class="text-sm md:text-lg md:leading-[1.5rem]">
               نربط الباحثين عن فرص العمل الموسمي بالجهات المشغّلة لخدمة ضيوف الرحمن باحترافية وجودة عالية. من خلال تقنيات ذكية وفلترة متقدمة، نسهّل عملية التوظيف من البداية حتى الانضمام.
             </p>
-            <button class="play-video-btn flex gap-2 bg-[#000]/50 border border-[#fff]/0 rounded-full text-sm py-3 px-5 hover:bg-[#000]/30 hover:border-[#ecb42b]/50 transition duration-300">
+            <button class="play-video-btn flex gap-2 bg-[#000]/50 border border-[#fff]/0 rounded-full text-sm py-3 px-5 hover:bg-[#000]/30 hover:border-primary/50 transition duration-300">
               <span>تشغيل الفيديو</span>
               <Play />
             </button>

@@ -9,10 +9,10 @@
       <span class="text-xs"> نشرت </span>
     </div>
     <div class="border-b-2 border-[#E9F1F2] flex flex-col gap-4 pb-6">
-      <h1 class="job-title text-base lg:text-lg font-semibold text-[#161614]">
+      <h1 class="job-title text-base lg:text-lg font-semibold text-dark">
         مشرف تنظيم حشود
       </h1>
-      <p class="job-desc text-xs text-[#161614]/70 leading-[2.4]">
+      <p class="job-desc text-xs text-dark/70 leading-[2.4]">
         فرصة مميزة للعمل الموسمي ضمن فريق متخصص في تنظيم الحشود وخدمة ضيوف
         الرحمن.
       </p>
@@ -23,7 +23,7 @@
           <span>
             <BriefcaseIcon width="21" height="16" />
           </span>
-          <span class="text-[#667178]">متقدم</span>
+          <span class="text-muted">متقدم</span>
         </div>
         <div class="font-bold ps-7">58</div>
       </div>
@@ -32,7 +32,7 @@
           <span>
             <ClockIcon width="20" height="20" />
           </span>
-          <span class="text-[#667178]">آخر تحديث</span>
+          <span class="text-muted">آخر تحديث</span>
         </div>
         <div class="font-bold ps-7">اليوم</div>
       </div>
@@ -41,7 +41,7 @@
           <span>
             <CalenderIcon width="20" height="20" />
           </span>
-          <span class="text-[#667178]">تاريخ النشر</span>
+          <span class="text-muted">تاريخ النشر</span>
         </div>
         <div class="font-bold ps-7">10 مايو 2025</div>
       </div>
@@ -50,7 +50,7 @@
           <span>
             <CalenderIcon width="20" height="20" />
           </span>
-          <span class="text-[#667178]">تاريخ الإنتهاء</span>
+          <span class="text-muted">تاريخ الإنتهاء</span>
         </div>
         <div class="font-bold ps-7">30 مايو 2025</div>
       </div>

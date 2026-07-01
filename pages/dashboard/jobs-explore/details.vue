@@ -44,10 +44,10 @@ onMounted(async () => {
       <div class="col-span-7 lg:col-span-4 xl:col-span-5">
         <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 md:p-8 mb-8">
           <div class="flex flex-col gap-6">
-            <h1 class="job-title text-lg lg:text-xl font-bold text-[#161614]">
+            <h1 class="job-title text-lg lg:text-xl font-bold text-dark">
               مشرف حجاج
             </h1>
-            <p class="job-desc text-sm text-[#161614]/70 leading-[2]">
+            <p class="job-desc text-sm text-dark/70 leading-[2]">
               تبحث شركة الإسناد الموسمي لخدمات الحجاج عن أفراد مؤهلين للانضمام
               إلى فريقها كمشرفين ميدانيين خلال موسم الحج. ستكون مسؤولاً عن تنظيم
               وإرشاد مجموعة من الحجاج أثناء تنقلهم بين المشاعر المقدسة، وضمان
@@ -63,7 +63,7 @@ onMounted(async () => {
                   class="w-10 h-6 object-cover"
                 />
               </span>
-              <span class="company-name text-sm text-[#161614]">
+              <span class="company-name text-sm text-dark">
                 شركة نسك لخدمات الحجاج
               </span>
             </div>
@@ -88,19 +88,19 @@ onMounted(async () => {
                 مميزات خاصة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الإشراف اليومي على مجموعة محددة من الحجاج.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التأكد من التزام الحجاج بخطط التنقل وجدول الحركة بين المشاعر.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التنسيق المستمر مع فرق النقل والدعم اللوجستي.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   التعامل مع الحالات الطارئة ورفع التقارير إلى المسؤول المباشر.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   ضمان سلامة وراحة الحجاج خلال تنقلهم وإقامتهم.
                 </li>
               </ul>
@@ -115,22 +115,22 @@ onMounted(async () => {
                 شروط القبول
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   أن يكون المتقدم سعودي الجنسية.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   العمر بين 22 و45 سنة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   القدرة على العمل الميداني المكثف لساعات طويلة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   يفضّل من لديه خبرة سابقة في العمل الموسمي أو الإشراف الميداني.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الالتزام بالأخلاقيات المهنية والسلوكيات المناسبة.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   الأولوية لسكان منطقة مكة المكرمة لتسهيل التنقل السريع.
                 </li>
               </ul>
@@ -145,13 +145,13 @@ onMounted(async () => {
                 المزايا والمكافأة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   مكافأة مقطوعة قدرها 3000 ريال سعودي.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   شهادة خبرة بعد انتهاء المهمة بنجاح.
                 </li>
-                <li class="text-sm text-[#667178] mb-4">
+                <li class="text-sm text-muted mb-4">
                   تشمل بدل السكن والتنقل.
                 </li>
               </ul>
@@ -171,7 +171,7 @@ onMounted(async () => {
               <span>
                 <Location width="20" height="20" />
               </span>
-              <span class="text-xs text-[#696C68]">
+              <span class="text-xs text-icon-muted">
                 مكة المكرمة – المشاعر المقدسة (منى – مزدلفة – عرفات).
               </span>
           </div>
@@ -179,16 +179,16 @@ onMounted(async () => {
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
-              <span class="text-[#696C68] text-xs"> دوام كامل – 8 ساعات </span>
+              <span class="text-icon-muted text-xs"> دوام كامل – 8 ساعات </span>
           </div>
           <div class="flex gap-2 items-center">
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
-              <span class="text-[#696C68] text-xs">
+              <span class="text-icon-muted text-xs">
                 10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
               </span>
-            <span class="text-[#696C68] text-xs">
+            <span class="text-icon-muted text-xs">
               10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
             </span>
           </div>
@@ -196,13 +196,13 @@ onMounted(async () => {
             <span>
               <MoneyIcon />
             </span>
-            <span class="text-xs text-[#696C68]"> مرتب 3000 ريال سعودي </span>
+            <span class="text-xs text-icon-muted"> مرتب 3000 ريال سعودي </span>
           </div>
           <div class="flex gap-2 items-center">
               <span>
                 <PersonIcon width="20" height="20" color="#696C68" />
               </span>
-              <span class="text-xs text-[#696C68]">
+              <span class="text-xs text-icon-muted">
                 الذكور فقط لهذه الوظيفة.
               </span>
           </div>

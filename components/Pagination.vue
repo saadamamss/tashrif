@@ -2,7 +2,7 @@
   <div
     class="bg-white p-3 border shadow rounded-xl flex flex-col md:flex-row gap-6 justify-between items-center"
   >
-    <div class="text-sm text-[#667178]">
+    <div class="text-sm text-muted">
       <div class="flex items-center gap-3">
         <CustomSelect v-model="perPageSelect" :items="[9, 12, 15, 21]" style="min-width: 80px; width: 80px;"/>
         <p>

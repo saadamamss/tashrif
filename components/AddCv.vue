@@ -2,7 +2,7 @@
   <Dialog v-model="model">
     <div class="bg-white rounded-2xl shadow-md overflow-hidden">
       <!-- Form Title -->
-      <div class="bg-[#f5f5f5] p-6">
+      <div class="bg-bg-light p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-3 text-right">
           اضافة السيرة الذاتية
         </h2>
@@ -42,7 +42,7 @@
 
         <!-- Action Buttons -->
         <div
-          class="p-6 flex justify-between space-x-3 space-x-reverse bg-[#f5f5f5]"
+          class="p-6 flex justify-between space-x-3 space-x-reverse bg-bg-light"
         >
           <button
             type="button"

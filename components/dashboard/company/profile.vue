@@ -198,7 +198,7 @@ const addcvs = ref(false);
           >
             <div class="text-center sm:text-right">
               <div
-                class="border-4 border-[#f5f5f5] mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
+                class="border-4 border-bg-light mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
               >
                 <img
                   src="/images/partner-3.svg"
@@ -215,7 +215,7 @@ const addcvs = ref(false);
             <div class="text-center sm:text-right">
               <NuxtLink
                 to="/dashboard/profile"
-                class="flex items-center justify-center gap-2 bg-[#f5f5f5] px-4 py-3 rounded-full text-sm border border-[#ecb42b]/0 hover:border-[#ecb42b] transition"
+                class="flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
               >
                 <EditSmall />
                 <span> تعديل الملف الشخصى </span>
@@ -233,7 +233,7 @@ const addcvs = ref(false);
                 >
                   24
                 </h1>
-                <h3 class="text-sm text-[#667178]">وظائفى المنشورة</h3>
+                <h3 class="text-sm text-muted">وظائفى المنشورة</h3>
               </div>
               <span>
                 <BriefcaseIcon width="22" height="22" color="#ECB42B" />
@@ -248,7 +248,7 @@ const addcvs = ref(false);
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">مقابلات العمل</h3>
+                <h3 class="text-sm text-muted">مقابلات العمل</h3>
               </div>
               <span>
                 <PersonIcon width="22" height="22" color="#ECB42B" />
@@ -264,7 +264,7 @@ const addcvs = ref(false);
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">عروض العمل</h3>
+                <h3 class="text-sm text-muted">عروض العمل</h3>
               </div>
               <span>
                 <FileIcon width="24" height="24" color="#ECB42B" />
@@ -291,7 +291,7 @@ const addcvs = ref(false);
             />
             <div>
               <h1 class="text-base font-semibold mb-3">أستكمل ملفك الشخصي</h1>
-              <p class="text-sm text-[#667178]">
+              <p class="text-sm text-muted">
                 استكمالك لملفك الشخصي يساعدنا في ترشيح الوظائف الأنسب لك، ويزيد
                 من فرص قبولك لدى الجهات. أضف معلوماتك الشخصية، مؤهلاتك، وخبراتك
                 العملية لتظهر بشكل احترافي أمام أصحاب العمل.
@@ -320,7 +320,7 @@ const addcvs = ref(false);
           >
             <component :is="i.icon"> </component>
             <div class="text-xs">
-              <span class="block text-[#696C68] mb-2">{{ i.key }}</span>
+              <span class="block text-icon-muted mb-2">{{ i.key }}</span>
               <span class="block text-slate-800 font-bold">{{ i.value }}</span>
             </div>
           </div>
@@ -339,7 +339,7 @@ const addcvs = ref(false);
           >
             <component :is="i.icon"> </component>
             <div class="text-xs">
-              <span class="block text-[#696C68] mb-2">{{ i.key }}</span>
+              <span class="block text-icon-muted mb-2">{{ i.key }}</span>
               <span class="block text-slate-800 font-bold">{{ i.value }}</span>
             </div>
           </div>

@@ -195,7 +195,7 @@ const addcvs = ref(false);
             <div class="text-center sm:text-right">
               <NuxtLink
                 to="/dashboard/profile"
-                class="flex items-center justify-center gap-2 bg-[#f5f5f5] px-4 py-3 rounded-full text-sm border border-[#ecb42b]/0 hover:border-[#ecb42b] transition"
+                class="flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
               >
                 <EditSmall />
                 <span> تعديل الملف الشخصى </span>
@@ -215,7 +215,7 @@ const addcvs = ref(false);
                 >
                   10
                 </h1>
-                <h3 class="text-sm text-[#667178]">الطلبات المكتملة</h3>
+                <h3 class="text-sm text-muted">الطلبات المكتملة</h3>
               </div>
               <span>
                 <FileIcon width="24" height="24" color="#ECB42B" />
@@ -231,7 +231,7 @@ const addcvs = ref(false);
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">مقابلة عمل</h3>
+                <h3 class="text-sm text-muted">مقابلة عمل</h3>
               </div>
               <span>
                 <PersonIcon width="22" height="22" color="#ECB42B" />
@@ -246,7 +246,7 @@ const addcvs = ref(false);
                 >
                   24
                 </h1>
-                <h3 class="text-sm text-[#667178]">تقدمت للوظائف</h3>
+                <h3 class="text-sm text-muted">تقدمت للوظائف</h3>
               </div>
               <span>
                 <BriefcaseIcon width="22" height="22" color="#ECB42B" />
@@ -261,7 +261,7 @@ const addcvs = ref(false);
                 >
                   12
                 </h1>
-                <h3 class="text-sm text-[#667178]">عروض العمل</h3>
+                <h3 class="text-sm text-muted">عروض العمل</h3>
               </div>
               <span>
                 <FileIcon width="24" height="24" color="#ECB42B" />
@@ -289,7 +289,7 @@ const addcvs = ref(false);
 
             <div>
               <h1 class="text-base font-semibold mb-3">أستكمل ملفك الشخصي</h1>
-              <p class="text-sm text-[#667178]">
+              <p class="text-sm text-muted">
                 استكمالك لملفك الشخصي يساعدنا في ترشيح الوظائف الأنسب لك، ويزيد
                 من فرص قبولك لدى الجهات. أضف معلوماتك الشخصية، مؤهلاتك، وخبراتك
                 العملية لتظهر بشكل احترافي أمام أصحاب العمل.
@@ -318,7 +318,7 @@ const addcvs = ref(false);
           >
             <component :is="i.icon"> </component>
             <div class="text-xs">
-              <span class="block text-[#696C68] mb-2">{{ i.key }}</span>
+              <span class="block text-icon-muted mb-2">{{ i.key }}</span>
               <span class="block text-slate-800 font-bold">{{ i.value }}</span>
             </div>
           </div>
@@ -339,30 +339,30 @@ const addcvs = ref(false);
           <div
             v-for="(qual, index) in userQualifications"
             :key="index"
-            class="bg-[#F8F9F9] rounded-2xl p-4 shadow-sm"
+            class="bg-bg-subtle rounded-2xl p-4 shadow-sm"
           >
             <div
               class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-y-8 gap-x-4 text-right items-start"
             >
               <div class="text-xs space-y-2">
-                <p class="font-bold text-[#161614]">المؤهل</p>
-                <p class="text-[#696C68]">{{ qual.qualification }}</p>
+                <p class="font-bold text-dark">المؤهل</p>
+                <p class="text-icon-muted">{{ qual.qualification }}</p>
               </div>
               <div class="text-xs space-y-2">
-                <p class="font-bold text-[#161614]">التخصص</p>
-                <p class="text-[#696C68]">{{ qual.specialization || "-" }}</p>
+                <p class="font-bold text-dark">التخصص</p>
+                <p class="text-icon-muted">{{ qual.specialization || "-" }}</p>
               </div>
               <div class="text-xs space-y-2">
-                <p class="font-bold text-[#161614]">المؤسسة التعليمية</p>
-                <p class="text-[#696C68]">{{ qual.educational_institution }}</p>
+                <p class="font-bold text-dark">المؤسسة التعليمية</p>
+                <p class="text-icon-muted">{{ qual.educational_institution }}</p>
               </div>
               <div class="text-xs space-y-2">
-                <p class="font-bold text-[#161614]">سنة التخرج</p>
-                <p class="text-[#696C68]">{{ qual.graduation_year }}</p>
+                <p class="font-bold text-dark">سنة التخرج</p>
+                <p class="text-icon-muted">{{ qual.graduation_year }}</p>
               </div>
               <div class="text-xs space-y-2">
-                <p class="font-bold text-[#161614]">التقدير</p>
-                <p class="text-[#696C68]">{{ qual.grade }}</p>
+                <p class="font-bold text-dark">التقدير</p>
+                <p class="text-icon-muted">{{ qual.grade }}</p>
               </div>
               <div class="flex justify-end space-x-3 space-x-reverse">
                 <button
@@ -397,7 +397,7 @@ const addcvs = ref(false);
           <div
             v-for="(expert, index) in userExperts"
             :key="index"
-            class="bg-[#F8F9F9] rounded-2xl p-4 shadow-sm"
+            class="bg-bg-subtle rounded-2xl p-4 shadow-sm"
           >
             <div
               class="grid grid-cols-6 lg:grid-cols-5 gap-y-8 gap-x-4 lg:gap-x-6 text-right items-start"
@@ -405,26 +405,26 @@ const addcvs = ref(false);
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">المسمى الوظيفى</p>
-                <p class="text-[#696C68]">{{ expert.job_title }}</p>
+                <p class="font-bold text-dark">المسمى الوظيفى</p>
+                <p class="text-icon-muted">{{ expert.job_title }}</p>
               </div>
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">الجهة</p>
-                <p class="text-[#696C68]">{{ expert.authority || "-" }}</p>
+                <p class="font-bold text-dark">الجهة</p>
+                <p class="text-icon-muted">{{ expert.authority || "-" }}</p>
               </div>
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">الفترة</p>
-                <p class="text-[#696C68]">{{ expert.duration }}</p>
+                <p class="font-bold text-dark">الفترة</p>
+                <p class="text-icon-muted">{{ expert.duration }}</p>
               </div>
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">الموقع</p>
-                <p class="text-[#696C68]">{{ expert.location }}</p>
+                <p class="font-bold text-dark">الموقع</p>
+                <p class="text-icon-muted">{{ expert.location }}</p>
               </div>
               <div
                 class="flex justify-end space-x-3 space-x-reverse col-span-6 sm:col-span-4 lg:col-span-1"
@@ -458,7 +458,7 @@ const addcvs = ref(false);
           <div
             v-for="(item, index) in userFinancial"
             :key="index"
-            class="bg-[#F8F9F9] rounded-2xl p-4 shadow-sm"
+            class="bg-bg-subtle rounded-2xl p-4 shadow-sm"
           >
             <div
               class="grid grid-cols-6 lg:grid-cols-5 gap-y-8 gap-x-4 lg:gap-x-6 text-right items-start"
@@ -466,28 +466,28 @@ const addcvs = ref(false);
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">رقم الأيبان</p>
-                <p class="text-[#696C68]">{{ item.iban }}</p>
+                <p class="font-bold text-dark">رقم الأيبان</p>
+                <p class="text-icon-muted">{{ item.iban }}</p>
               </div>
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">اسم البنك</p>
-                <p class="text-[#696C68]">{{ item.bank_name || "-" }}</p>
+                <p class="font-bold text-dark">اسم البنك</p>
+                <p class="text-icon-muted">{{ item.bank_name || "-" }}</p>
               </div>
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">
+                <p class="font-bold text-dark">
                   حالة إرتباط الأيبان بالمستخدم
                 </p>
-                <p class="text-[#696C68]">{{ item.iban_status }}</p>
+                <p class="text-icon-muted">{{ item.iban_status }}</p>
               </div>
               <div
                 class="text-xs space-y-2 col-span-3 sm:col-span-2 lg:col-span-1"
               >
-                <p class="font-bold text-[#161614]">حالة الحساب</p>
-                <p class="text-[#696C68]">{{ item.account_status }}</p>
+                <p class="font-bold text-dark">حالة الحساب</p>
+                <p class="text-icon-muted">{{ item.account_status }}</p>
               </div>
               <div
                 class="flex justify-end space-x-3 space-x-reverse col-span-6 sm:col-span-4 lg:col-span-1"
@@ -523,7 +523,7 @@ const addcvs = ref(false);
           <div
             v-for="(cv, index) in cvs"
             :key="index"
-            class="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-lg hover:border-primary transition-colors"
+            class="flex items-center justify-between p-4 bg-bg-light rounded-lg hover:border-primary transition-colors"
           >
             <div class="flex items-center">
               <div class="flex gap-2 items-center cursor-pointer">

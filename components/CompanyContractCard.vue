@@ -18,7 +18,7 @@
             class="w-full h-full object-cover"
           />
         </span>
-        <span class="company-name font-medium text-sm text-[#161614]">
+        <span class="company-name font-medium text-sm text-dark">
           محمد عبدالله السعود
         </span>
       </div>
@@ -30,7 +30,7 @@
             <span>
               <CalenderIcon width="18" height="18" />
             </span>
-            <span class="text-[#667178]">تاريخ الإرسال</span>
+            <span class="text-muted">تاريخ الإرسال</span>
           </div>
           <div class="font-bold ps-7">8 مارس 2025</div>
         </div>
@@ -39,13 +39,13 @@
             <span>
             <BriefcaseIcon width="18" height="18" />
             </span>
-            <span class="text-[#667178]">الوظيفة</span>
+            <span class="text-muted">الوظيفة</span>
           </div>
           <div class="font-bold ps-7">مشرف تنظيم حشود</div>
         </div>
       </div>
     </div>
-    <div class="p-4 rounded-xl bg-[#F8F9F9] mb-2">
+    <div class="p-4 rounded-xl bg-bg-subtle mb-2">
       <div class="flex justify-between gap-4 items-center">
         <div class="flex flex-wrap items-center gap-2">
           <span class="block p-2 bg-white rounded-xl">

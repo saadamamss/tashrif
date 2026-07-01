@@ -7,7 +7,7 @@
         <div class="flex items-center">
           <div class="hidden lg:flex search relative items-center">
             <input
-              class="w-full ps-10 max-w-[300px] h-[48px] border bg-[#f5f5f5] py-2 text-sm rounded-xl focus:outline-none focus:border-[#ecb42b] transition"
+              class="w-full ps-10 max-w-[300px] h-[48px] border bg-bg-light py-2 text-sm rounded-xl focus:outline-none focus:border-primary transition"
               type="text"
             />
             <span
@@ -37,7 +37,7 @@
           <!-- :prevent="true" -->
           <DropDown
             prevent
-            trigger-style="bg-[#f5f5f5] rounded-full border-2 border-[#fff]/0 active:border-[#ecb42b]"
+            trigger-style="bg-bg-light rounded-full border-2 border-[#fff]/0 active:border-primary"
           >
             <template #trigger>
               <span class="block w-12 h-12 flex items-center justify-center">
@@ -56,7 +56,7 @@
           </DropDown>
 
           <DropDown
-            trigger-style="bg-[#f5f5f5] rounded-full border-2 border-[#fff]/0 active:border-[#ecb42b]"
+            trigger-style="bg-bg-light rounded-full border-2 border-[#fff]/0 active:border-primary"
           >
             <template #trigger>
               <span>
@@ -68,7 +68,7 @@
                 <li>
                   <nuxt-link
                     to="/dashboard/profile"
-                    class="block py-2 px-3 hover:bg-[#f8f9f9] text-sm"
+                    class="block py-2 px-3 hover:bg-bg-subtle text-sm"
                   >
                     الملف الشخصى
                   </nuxt-link>
@@ -77,7 +77,7 @@
                   <nuxt-link
                     to="#"
                     @click.stop.prevent="logout"
-                    class="block py-2 px-3 hover:bg-[#f8f9f9] text-sm text-red-500 font-medium"
+                    class="block py-2 px-3 hover:bg-bg-subtle text-sm text-red-500 font-medium"
                   >
                     خروج
                   </nuxt-link>

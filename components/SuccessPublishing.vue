@@ -11,13 +11,13 @@
           <h2 class="text-base md:text-lg font-semibold mb-3">
             تم نشر الوظيفة بنجاح!
           </h2>
-          <p class="text-sm text-[#667178] leading-[1.7]">
+          <p class="text-sm text-muted leading-[1.7]">
             تم نشر وظيفة "مشرف حجاج" بنجاح، وستظهر الآن للباحثين عن العمل ضمن
             الوظائف المتاحة على المنصة.
           </p>
         </div>
       </div>
-      <div class="flex justify-between bg-[#f5f5f5] p-6">
+      <div class="flex justify-between bg-bg-light p-6">
         <button @click="model = false" class="btn-outline text-sm px-10">
           إلغاء
         </button>

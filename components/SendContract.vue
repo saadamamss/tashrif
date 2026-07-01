@@ -2,7 +2,7 @@
   <Dialog v-model="model">
     <div class="bg-white rounded-2xl shadow-md overflow-hidden">
       <!-- Form Title -->
-      <div class="bg-[#f5f5f5] p-6">
+      <div class="bg-bg-light p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-3 text-right">
           إرسال العقد الوظيفي
         </h2>
@@ -19,8 +19,8 @@
             :key="i"
             :applicant="applicant"
             badge-text="القائمة المختصرة"
-            badge-style="bg-[#35685F]/10 text-[#35685F]"
-            card-style=" bg-[#f8f9f9]"
+            badge-style="bg-badge-green/10 text-badge-green"
+            card-style=" bg-bg-subtle"
           />
         </div>
       </div>
@@ -52,7 +52,7 @@
 
         <!-- Action Buttons -->
         <div
-          class="p-4 sm:p-6 flex justify-between space-x-3 space-x-reverse bg-[#f5f5f5]"
+          class="p-4 sm:p-6 flex justify-between space-x-3 space-x-reverse bg-bg-light"
         >
           <button
             type="button"

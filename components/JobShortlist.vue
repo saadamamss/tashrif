@@ -5,7 +5,7 @@
         <div
           class="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-4 mb-4"
         >
-          <h2 class="text-sm lg:text-lg font-medium text-[#667178]">
+          <h2 class="text-sm lg:text-lg font-medium text-muted">
             تم تحديد {{ selectedApplicants.length }} متقدمين
           </h2>
           <div class="flex self-end gap-3">
@@ -33,7 +33,7 @@
           :action="true"
           :select="true"
           badge-text="القائمة المختصرة"
-          badge-style="bg-[#35685F]/10 text-[#35685F]"
+          badge-style="bg-badge-green/10 text-badge-green"
           card-style=" bg-[#fff]"
           v-model="selectedApplicants"
         />

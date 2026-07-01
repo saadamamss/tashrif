@@ -107,10 +107,10 @@ const handleSubmit = () => {
       class="card p-6 md:p-8 lg:p-10 max-w-[846px] mx-auto bg-white rounded-2xl"
     >
       <div class="header">
-        <h1 class="text-xl lg:text-2xl font-bold text-[#161614] mb-3">
+        <h1 class="text-xl lg:text-2xl font-bold text-dark mb-3">
           إنشاء حساب جديد
         </h1>
-        <p class="text-sm lg:text-base text-[#161614]">
+        <p class="text-sm lg:text-base text-dark">
           املأ النموذج أدناه ليتم تسجيل حساب جديد والانضمام إلى منصة تشريف.
         </p>
       </div>
@@ -128,7 +128,7 @@ const handleSubmit = () => {
           <div
             class="min-w-12 h-12 text-sm rounded-full flex items-center justify-center"
             :class="
-              currentStep > step ? 'bg-[#ecb42b] text-black' : 'bg-[#f5f5f5]'
+              currentStep > step ? 'bg-primary text-black' : 'bg-bg-light'
             "
           >
             <span v-if="currentStep == step" class="px-3">
@@ -159,7 +159,7 @@ const handleSubmit = () => {
                 <span class="text-red-400">*</span>
               </label>
               <div
-                class="relative w-24 h-24 border border-dashed border-[#ccc] bg-[#f5f5f5] rounded-full overflow-hidden hover:border-solid hover:bg-[#f9f9f9] transition"
+                class="relative w-24 h-24 border border-dashed border-[#ccc] bg-bg-light rounded-full overflow-hidden hover:border-solid hover:bg-[#f9f9f9] transition"
               >
                 <label
                   for="companylogo"
@@ -275,7 +275,7 @@ const handleSubmit = () => {
               label="وصف الشركة"
             >
               <textarea
-                class="text-sm rounded-xl w-full py-2 px-2 bg-[#f5f5f5] border border-[#ECB42B]/0 focus:border-[#ECB42B] outline-none transition duration-300"
+                class="text-sm rounded-xl w-full py-2 px-2 bg-bg-light border border-primary/0 focus:border-primary outline-none transition duration-300"
                 placeholder="أدخل وصف الشركة"
                 v-model="formData.companyDesc"
                 rows="8"

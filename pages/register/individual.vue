@@ -79,10 +79,10 @@ const onSubmit = (values) => {
       class="card p-6 md:p-8 lg:p-10 max-w-[846px] mx-auto bg-white rounded-2xl"
     >
       <div class="header">
-        <h1 class="text-xl lg:text-2xl font-bold text-[#161614] mb-3">
+        <h1 class="text-xl lg:text-2xl font-bold text-dark mb-3">
           إنشاء حساب جديد
         </h1>
-        <p class="text-sm lg:text-base text-[#161614]">
+        <p class="text-sm lg:text-base text-dark">
           املأ النموذج أدناه ليتم تسجيل حساب جديد والانضمام إلى منصة تشريف.
         </p>
       </div>
