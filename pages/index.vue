@@ -1,10 +1,10 @@
 <script setup>
-import HomeHero from "~/components/home-hero.vue";
-import HomeAbout from "~/components/home-about.vue";
-import HomeJobs from "~/components/home-jobs.vue";
-import HomePartners from "~/components/home-partners.vue";
-import HomeContact from "~/components/home-contact.vue";
-import ApplyJobDialog from "~/components/apply-job-dialog.vue";
+import HomeHero from "~/components/HomeHero.vue";
+import HomeAbout from "~/components/HomeAbout.vue";
+import HomeJobs from "~/components/HomeJobs.vue";
+import HomePartners from "~/components/HomePartners.vue";
+import HomeContact from "~/components/HomeContact.vue";
+import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
 
 useScrollSpy();
 

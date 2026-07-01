@@ -2,6 +2,11 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-05-15",
   devtools: { enabled: true },
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: "/api",
+    },
+  },
   app: {
     layoutTransition: { name: "layout", mode: "out-in" },
     pageTransition: { name: "page", mode: "out-in" },

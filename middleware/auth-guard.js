@@ -5,7 +5,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!authStore.isAuthenticated) {
     if (to.query.from) {
-      // delete to.fullPath.from;
       const from = to.query.from;
       delete to.query.from;
       const query = new URLSearchParams(to.query).toString();

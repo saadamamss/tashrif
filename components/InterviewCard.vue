@@ -1,0 +1,59 @@
+<template>
+  <div
+    class="interview-card border bg-white relative overflow-hidden rounded-2xl p-6 lg:p-8"
+    v-bind="$attrs"
+  >
+    <div
+      class="badge absolute top-0 rounded-r-3xl rounded-t-[0px] left-0 px-3 py-2 min-w-24 text-center bg-blue-100"
+      x-status="coming"
+    >
+      <span class="text-xs">قادمة</span>
+    </div>
+    <div class="border-b-2 border-[#E9F1F2] flex flex-col gap-4 pb-6">
+      <div class="flex items-center gap-2">
+        <span
+          class="company-logo border-2 rounded-md overflow-hidden py-1 px-2"
+        >
+          <img src="/images/partner-3.svg" class="w-10 h-6 object-cover" />
+        </span>
+        <span class="company-name font-medium text-sm text-[#161614]">
+          شركة نسك لخدمات الحجاج
+        </span>
+      </div>
+    </div>
+    <div class="details py-6 flex flex-col gap-4">
+      <div class="flex gap-2 items-center">
+        <span>
+          <Calender />
+        </span>
+        <span class="text-[#696C68] text-xs"> الأربعاء 10 يوليو 2025 </span>
+      </div>
+      <div class="flex gap-2 items-center">
+        <span>
+          <Clock />
+        </span>
+        <span class="text-[#696C68] text-xs"> الساعة 10:00 صباحًا </span>
+      </div>
+      <div class="flex gap-2 items-center">
+        <span>
+          <Location />
+        </span>
+        <span class="text-[#696C68] text-xs"> حي العزيزية، مكة المكرمة </span>
+      </div>
+    </div>
+
+    <div class="flex gap-4">
+      <AddToCalendar />
+    </div>
+  </div>
+</template>
+<script setup>
+import Calender from "./icons/calender.vue";
+import Clock from "./icons/clock.vue";
+import Location from "./icons/location.vue";
+</script>
+<style lang="scss" scoped>
+.interview-card {
+  box-shadow: 2.4px 12.8px 35.2px rgba(7, 15, 66, 0.05);
+}
+</style>

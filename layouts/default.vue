@@ -1,6 +1,6 @@
 <script setup>
 import Footer from "~/components/Footer.vue";
-import Header from "~/components/header.vue";
+import Header from "~/components/Header.vue";
 import LoginDialog from "~/components/LoginDialog.vue";
 import RegisterDialog from "~/components/RegisterDialog.vue";
 const { showModal, closeModal } = useLoginModal();

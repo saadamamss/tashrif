@@ -1,6 +1,6 @@
 <script setup>
 import { Form } from "vee-validate";
-import TextInput from "./elements/text-input.vue";
+import TextInput from "./elements/TextInput.vue";
 //
 const { showModal, closeModal, isLoginModalShow } = useLoginModal();
 
@@ -19,11 +19,6 @@ const closeModel = () => {
 const handleSubmit = async () => {
   try {
     isSubmitting.value = true;
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 1000);
-    });
 
     await authStore.login(formData.value.nationalId);
     closeModal();

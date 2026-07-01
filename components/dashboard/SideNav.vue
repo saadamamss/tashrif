@@ -27,6 +27,7 @@
   </div>
 </template>
 <script setup>
+import { useAuthStore } from "~/stores/authStore";
 import File from "~/components/icons/file.vue";
 import Home from "~/components/icons/home.vue";
 import JobRequest from "~/components/icons/job-request.vue";
@@ -34,10 +35,10 @@ import Jobs from "~/components/icons/jobs.vue";
 import Person from "~/components/icons/person.vue";
 import Shake from "~/components/icons/shake.vue";
 
-const userStore = useUserStore();
+const authStore = useAuthStore();
 const props = defineProps(["openSideNav"]);
 const additionalItems = computed(() => {
-  if (userStore.userType === "individual") {
+  if (authStore.userType === "individual") {
     return [
       {
         label: "استكشاف الوظائف",

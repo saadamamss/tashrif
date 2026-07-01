@@ -1,5 +1,5 @@
 <script setup>
-import Header from "~/components/dashboard/header.vue";
+import Header from "~/components/dashboard/Header.vue";
 import SideNav from "~/components/dashboard/SideNav.vue";
 useHead({
   bodyAttrs: {

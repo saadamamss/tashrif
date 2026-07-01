@@ -16,25 +16,33 @@ export const useAuthStore = defineStore("auth", {
     isAdmin: (state) => state.user?.type === "admin",
     isIndividual: (state) => state.user?.type === "individual",
     isEntity: (state) => state.user?.type === "entity",
+    userType: (state) => state.user?.type || null,
+    defaultRoute: (state) => {
+      switch (state.user?.type) {
+        case "individual":
+          return "/individual-dashboard";
+        case "entity":
+          return "/entity-dashboard";
+        case "admin":
+          return "/admin/dashboard";
+        default:
+          return "/";
+      }
+    },
+    canAccessBothDashboards: (state) =>
+      ["admin", "super-admin"].includes(state.user?.type || ""),
   },
 
   actions: {
     async initialize() {
-      const tokenuser = useCookie("user");
-      if (process.server) {
-        if (tokenuser.value) {
-          this.token = "12:jska8fg5f8g8g2f5d8sds5556s9ds8d7sds2d2d2s";
-          this.isAuthenticated = true;
-        }
-      }
       if (process.client) {
-        const token = useCookie("auth:token");
-        const refreshToken = useCookie("auth:refreshToken");
+        const tokenCookie = useCookie("auth:token");
+        const refreshCookie = useCookie("auth:refreshToken");
 
-        if (token.value && refreshToken.value) {
-          this.token = token.value;
-          this.refreshToken = refreshToken.value;
-          await this.refresh();
+        if (tokenCookie.value && refreshCookie.value) {
+          this.token = tokenCookie.value;
+          this.refreshToken = refreshCookie.value;
+          await this.fetchUser();
         }
       }
     },
@@ -44,28 +52,15 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
 
       try {
-        // const { data, error } = await useFetch("/api/auth/login", {
-        //   method: "POST",
-        //   body: credentials,
-        // });
+        const { data, error } = await useApi().post("/auth/login", credentials);
 
-        // if (error.value) {
-        //   throw error.value;
-        // }
-        const data = {
-          value: {
-            id: 1,
-            name: "abdullah",
-            email: "abdullah@gmail.com",
-            type: credentials.includes(1) ? "entity" : "individual",
-            token: "12:ysh88fdasaiifd5dklsa2fdasoaklfdf9dks5",
-          },
-        };
-
-        if (data.value) {
-          this.setAuth(data.value);
-          return true;
+        if (error) {
+          this.error = error;
+          return false;
         }
+
+        this.setAuth(data);
+        return true;
       } catch (err) {
         this.error = err.message || "Login failed";
         return false;
@@ -79,19 +74,15 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
 
       try {
-        const { data, error } = await useFetch("/api/auth/register", {
-          method: "POST",
-          body: userData,
-        });
+        const { data, error } = await useApi().post("/auth/register", userData);
 
-        if (error.value) {
-          throw error.value;
+        if (error) {
+          this.error = error;
+          return false;
         }
 
-        if (data.value) {
-          this.setAuth(data.value);
-          return true;
-        }
+        this.setAuth(data);
+        return true;
       } catch (err) {
         this.error = err.message || "Registration failed";
         return false;
@@ -101,35 +92,48 @@ export const useAuthStore = defineStore("auth", {
     },
 
     setAuth(authData) {
-      const tokenCookie = useCookie("user", {
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-      });
-      // const refreshTokenCookie = useCookie("auth:refreshToken", {
-      //   maxAge: 60 * 60 * 24 * 30, // 1 month
-      // });
-
-      this.user = authData;
+      this.user = authData.user;
       this.token = authData.token;
-      // this.refreshToken = authData.refreshToken;
+      this.refreshToken = authData.refreshToken;
       this.isAuthenticated = true;
 
-      tokenCookie.value = JSON.stringify(authData);
-      // refreshTokenCookie.value = authData.refreshToken;
+      const tokenCookie = useCookie("auth:token", {
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+      const refreshCookie = useCookie("auth:refreshToken", {
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+
+      tokenCookie.value = authData.token;
+      refreshCookie.value = authData.refreshToken;
     },
 
     async refresh() {
       if (!this.refreshToken) return false;
 
       try {
-        const { data } = await useFetch("/api/auth/refresh", {
-          method: "POST",
-          body: { refreshToken: this.refreshToken },
+        const { data, error } = await useApi().post("/auth/refresh", {
+          refreshToken: this.refreshToken,
         });
 
-        if (data.value) {
-          this.setAuth(data.value);
-          return true;
+        if (error) {
+          this.logout();
+          return false;
         }
+
+        this.token = data.token;
+        this.refreshToken = data.refreshToken;
+
+        const tokenCookie = useCookie("auth:token");
+        const refreshCookie = useCookie("auth:refreshToken");
+        tokenCookie.value = data.token;
+        refreshCookie.value = data.refreshToken;
+
+        return true;
       } catch (err) {
         this.logout();
         return false;
@@ -137,45 +141,35 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async logout() {
-      const tokenUser = useCookie("user");
+      try {
+        await useApi().post("/auth/logout");
+      } catch {
+        // ignore logout errors
+      }
+
+      const tokenCookie = useCookie("auth:token");
+      const refreshCookie = useCookie("auth:refreshToken");
+      tokenCookie.value = null;
+      refreshCookie.value = null;
 
       this.$reset();
-      tokenUser.value = null;
       navigateTo("/");
-      return;
-      const tokenCookie = useCookie("auth:token");
-      const refreshTokenCookie = useCookie("auth:refreshToken");
-
-      try {
-        await useFetch("/api/auth/logout", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-          },
-        });
-      } finally {
-        this.$reset();
-        tokenCookie.value = null;
-        refreshTokenCookie.value = null;
-        navigateTo("/login");
-      }
     },
 
     async fetchUser() {
       if (!this.token) return;
 
       try {
-        // const { data } = await useFetch("/api/auth/me", {
-        //   headers: {
-        //     Authorization: `Bearer ${this.token}`,
-        //   },
-        // });
-        const userdataCookie = useCookie("user");
-        const data = { value: userdataCookie.value };
-        if (data.value) {
-          this.user = data.value;
-          return true;
+        const { data, error } = await useApi().get("/auth/me");
+
+        if (error) {
+          this.logout();
+          return false;
         }
+
+        this.user = data;
+        this.isAuthenticated = true;
+        return true;
       } catch (err) {
         this.logout();
         return false;

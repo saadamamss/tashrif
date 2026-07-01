@@ -1,0 +1,12 @@
+<template>
+    <svg :width="width" :height="height" viewBox="0 0 5 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.25 0.75L0.75 4L4.25 7.25" :stroke="color" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+</template>
+<script setup>
+defineProps({
+  width: { type: [Number, String], default: 5 },
+  height: { type: [Number, String], default: 8 },
+  color: { type: String, default: '#667178' },
+})
+</script>

@@ -1,7 +1,8 @@
+import { useAuthStore } from "~/stores/authStore";
 export default defineNuxtRouteMiddleware((to) => {
-  const userStore = useUserStore();
+  const authStore = useAuthStore();
 
-  if (userStore.userType != "individual") {
-    return false;
+  if (authStore.userType !== "individual") {
+    return navigateTo("/dashboard");
   }
 });

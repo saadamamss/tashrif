@@ -1,20 +1,19 @@
 <script setup>
 import { defineAsyncComponent, computed } from "vue";
-import { useUserStore } from "~/stores/userStore";
+import { useAuthStore } from "~/stores/authStore";
 
 definePageMeta({
   layout: "dashboard",
   middleware: ["auth-global","auth-guard", "user-type"],
 });
 
-const userStore = useUserStore();
+const authStore = useAuthStore();
 
-// Computed property for better reactivity
 const currentHomeComponent = computed(() => {
-  if (!userStore.userType) return null; // Handle loading state
+  if (!authStore.userType) return null;
 
   return defineAsyncComponent(() =>
-    userStore.userType === "individual"
+    authStore.userType === "individual"
       ? import("~/components/dashboard/individual/profile.vue")
       : import("~/components/dashboard/company/profile.vue")
   );
@@ -25,6 +24,9 @@ const currentHomeComponent = computed(() => {
   <div>
     <Suspense>
       <component :is="currentHomeComponent" v-if="currentHomeComponent" />
+      <template #fallback>
+        <LoadingSkeleton :rows="3" height="300px" />
+      </template>
     </Suspense>
   </div>
 </template>

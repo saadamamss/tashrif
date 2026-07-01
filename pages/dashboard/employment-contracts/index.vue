@@ -1,20 +1,19 @@
 <script setup>
 import { defineAsyncComponent, computed } from "vue";
-import { useUserStore } from "~/stores/userStore";
+import { useAuthStore } from "~/stores/authStore";
 
 definePageMeta({
   layout: "dashboard",
   middleware: ["auth-global","auth-guard", "user-type"],
 });
 
-const userStore = useUserStore();
+const authStore = useAuthStore();
 
-// Computed property for better reactivity
 const currentHomeComponent = computed(() => {
-  if (!userStore.userType) return null; // Handle loading state
+  if (!authStore.userType) return null;
 
   return defineAsyncComponent(() =>
-    userStore.userType === "individual"
+    authStore.userType === "individual"
       ? import("~/components/dashboard/individual/contracts.vue")
       : import("~/components/dashboard/company/contracts.vue")
   );

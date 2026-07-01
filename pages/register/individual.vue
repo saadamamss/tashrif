@@ -10,13 +10,13 @@ definePageMeta({
 })
 
 import Dialog from "~/components/Dialog.vue";
-import CustomSelect from "~/components/elements/custom-select.vue";
-import FileInput from "~/components/elements/file-input.vue";
-import TextInput from "~/components/elements/text-input.vue";
-import OTPDialog from "~/components/OTP-dialog.vue";
+import CustomSelect from "~/components/elements/CustomSelect.vue";
+import FileInput from "~/components/elements/FileInput.vue";
+import TextInput from "~/components/elements/TextInput.vue";
+import OTPDialog from "~/components/OtpDialog.vue";
 import { Field, Form, ErrorMessage, defineRule } from "vee-validate";
 import { required, email, min, numeric } from "@vee-validate/rules";
-import PhoneInput from "~/components/phone-input.vue";
+import PhoneInput from "~/components/PhoneInput.vue";
 
 // Define validation rules
 defineRule("required", required);
@@ -192,7 +192,6 @@ const onSubmit = (values) => {
                   />
                 </Field>
 
-                <!-- </Field> -->
                 <ErrorMessage name="gender" class="text-red-500 text-xs mt-1" />
               </div>
 

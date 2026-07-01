@@ -1,9 +1,9 @@
 <script setup>
 import { Field, Form } from "vee-validate";
-import Breadcrumbs from "~/components/elements/breadcrumbs.vue";
-import CustomSelect from "~/components/elements/custom-select.vue";
-import TextInput from "~/components/elements/text-input.vue";
-import SuccessPublishing from "~/components/success-publishing.vue";
+import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
+import CustomSelect from "~/components/elements/CustomSelect.vue";
+import TextInput from "~/components/elements/TextInput.vue";
+import SuccessPublishing from "~/components/SuccessPublishing.vue";
 
 definePageMeta({
   layout: "dashboard",
@@ -25,17 +25,17 @@ const breadcrumbs = [
 const succesDialog = ref(false);
 
 const formData = ref({
-  qualification: "1",
-  jobTitle: "abdullah",
-  vacancies: "11",
-  jobPlace: "1",
-  jobType: "1",
-  targets: "1",
-  salary: "1200",
-  jobDesc: "abdullah",
-  benefits: "abdullah",
-  responsibilities: "responsiblities",
-  conditions: "consitions",
+  qualification: "",
+  jobTitle: "",
+  vacancies: "",
+  jobPlace: "",
+  jobType: "",
+  targets: "",
+  salary: "",
+  jobDesc: "",
+  benefits: "",
+  responsibilities: "",
+  conditions: "",
 });
 
 const submitForm = () => {
