@@ -136,7 +136,7 @@ const signContractOpen = ref(false);
             <div class="details py-6 flex flex-col gap-4">
               <div class="flex gap-2 items-center">
                 <span>
-                  <CalendarIcon width="18" height="18" color="#696C68" />
+                  <CalenderIcon width="18" height="18" color="#696C68" />
                 </span>
                 <span class="text-[#696C68] text-xs">
                   5 – 13 ذو الحجة 1446هـ

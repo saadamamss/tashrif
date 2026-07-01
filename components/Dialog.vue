@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-const model = defineModel()
+const model = defineModel();
 
 defineProps({
   isOpen: {
@@ -30,20 +30,20 @@ defineProps({
     type: Boolean,
     default: true,
   },
-})
+});
 
 /**
  * @type {import('vue').EmitsOptions}
  */
-const emit = defineEmits(["close", "confirm"])
+const emit = defineEmits(["close", "confirm"]);
 
 const closeModal = () => {
-  model.value = false
-}
+  model.value = false;
+};
 
 const confirmAction = () => {
-  emit("confirm")
-}
+  emit("confirm");
+};
 </script>
 
 <style scoped lang="scss">
@@ -110,3 +110,4 @@ const confirmAction = () => {
 .modal-confirm-btn {
   @apply px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700;
 }
+</style>

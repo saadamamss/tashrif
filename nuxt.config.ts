@@ -11,6 +11,12 @@ export default defineNuxtConfig({
     layoutTransition: { name: "layout", mode: "out-in" },
     pageTransition: { name: "page", mode: "out-in" },
   },
+  components: {
+    dirs: [
+      { path: '~/components/icons', prefix: '' },
+      '~/components',
+    ],
+  },
   modules: ["@pinia/nuxt"],
   css: ["~/assets/scss/main.scss"],
   postcss: {

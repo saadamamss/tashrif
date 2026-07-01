@@ -62,7 +62,7 @@
                   <div class="items-center flex justify-between mb-3">
                     <span class="text-sm">التعليم</span>
                     <span class="px-3 py-2 bg-[#8C8C8C]/10">
-                      <IconsPlusCircle />
+                      <PlusCircle />
                     </span>
                   </div>
                   <div>
@@ -234,7 +234,7 @@
                 <div class="items-center py-4 px-3 flex justify-between">
                   <span class="text-sm">الخبرات المهنية</span>
                   <span class="px-3 py-2 bg-[#8C8C8C]/10">
-                    <IconsPlusCircle />
+                    <PlusCircle />
                   </span>
                 </div>
               </div>
