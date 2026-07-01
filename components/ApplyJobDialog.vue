@@ -99,6 +99,8 @@ import { ErrorMessage, Field, Form } from "vee-validate";
 import Dialog from "./Dialog.vue";
 import Pdf from "./icons/pdf.vue";
 const model = defineModel();
+
+/** @type {{ cvs: Array<{id: number, name: string, size: string}> }} */
 const props = defineProps({
   cvs: {
     type: Array,

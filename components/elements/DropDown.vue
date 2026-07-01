@@ -29,6 +29,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
+/** @type {{ prevent: boolean, items: Array<any>, placeholder: string, triggerStyle: string, modelValue: string|number|boolean|null }} */
 const props = defineProps({
   prevent: { type: Boolean, default: false },
   items: {
@@ -49,6 +50,7 @@ const props = defineProps({
   },
 });
 
+/** @type {import('vue').EmitsOptions} */
 const emit = defineEmits(["update:modelValue", "change"]);
 
 const isOpen = ref(false);

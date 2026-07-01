@@ -180,6 +180,8 @@ import TextInput from "./elements/TextInput.vue";
 import ApplicantCard from "./ApplicantCard.vue";
 
 const model = defineModel();
+
+/** @type {{ applicants: Array<import('~/types/application').Application> }} */
 const props = defineProps(["applicants"]);
 const form = ref(null);
 const isSubmitting = ref(false);

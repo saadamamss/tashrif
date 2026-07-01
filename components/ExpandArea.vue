@@ -13,6 +13,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 
+/** @type {{ expand: boolean }} */
 const props = defineProps({
   expand: Boolean,
 });

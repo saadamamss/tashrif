@@ -52,6 +52,7 @@
 import AppointmentScheduling from "./AppointmentScheduling.vue";
 import SendInterview from "./SendInterview.vue";
 
+/** @type {{ shorList: Array<import('~/types/application').Application>, displayMethod: string }} */
 const props = defineProps(["shorList", "displayMethod"]);
 const selectedApplicants = ref([]);
 const showInterviewDialog = ref(false);

@@ -46,6 +46,7 @@
 <script setup>
 import ArrowButton from "./ArrowButton.vue";
 
+/** @type {{ tabs: Array<{id: string, title: string, number?: number}>, initialTab: string|null }} */
 const props = defineProps({
   tabs: {
     type: Array,

@@ -83,6 +83,8 @@ import ApplicantCard from "./ApplicantCard.vue";
 import FileInput from "./elements/FileInput.vue";
 
 const model = defineModel();
+
+/** @type {{ applicants: Array<import('~/types/application').Application> }} */
 const props = defineProps(["applicants"]);
 const form = ref(null);
 const isSubmitting = ref(false);

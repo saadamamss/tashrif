@@ -45,6 +45,7 @@
 </template>
 
 <script setup>
+/** @type {{ tabs: Array<{id: string, title: string}>, initialTab: string|null }} */
 const props = defineProps({
   tabs: {
     type: Array,

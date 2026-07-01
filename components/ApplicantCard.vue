@@ -146,6 +146,8 @@ import Gender from "./icons/gender.vue";
 import ListDots from "./icons/list-dots.vue";
 import PersonIcon from "./icons/person.vue";
 const model = defineModel();
+
+/** @type {{ applicant: import('~/types/application').Application, badgeText: string, badgeStyle: string, cardStyle: string, select: boolean, action: boolean }} */
 const props = defineProps([
   "applicant",
   "badgeText",

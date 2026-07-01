@@ -61,6 +61,7 @@ import { ref, computed } from "vue";
 import Dialog from "./Dialog.vue";
 import TextInput from "./elements/TextInput.vue";
 
+/** @type {{ readonly: boolean }} */
 const props = defineProps({
   readonly: {
     type: Boolean,

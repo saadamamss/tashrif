@@ -36,6 +36,7 @@ import Person from "~/components/icons/person.vue";
 import Shake from "~/components/icons/shake.vue";
 
 const authStore = useAuthStore();
+/** @type {{ openSideNav: boolean }} */
 const props = defineProps(["openSideNav"]);
 const additionalItems = computed(() => {
   if (authStore.userType === "individual") {

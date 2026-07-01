@@ -67,6 +67,7 @@
 <script setup>
 import AddToCalendar from './AddToCalendar.vue';
 
+/** @type {{ interview: import('~/types/interview').Interview|null }} */
 const props = defineProps({
   interview: {
     type: Object,

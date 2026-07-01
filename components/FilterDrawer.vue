@@ -103,6 +103,8 @@
 import CustomSelect from "./elements/CustomSelect.vue";
 
 const model = defineModel();
+
+/** @type {{ isOpen: boolean, title: string, subtitle: string, showFooter: boolean }} */
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -123,6 +125,7 @@ const props = defineProps({
 });
 const filters = ref({});
 
+/** @type {import('vue').EmitsOptions} */
 const emit = defineEmits(["close", "confirm"]);
 const closeModal = () => {
   model.value = false;

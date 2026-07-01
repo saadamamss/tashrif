@@ -37,6 +37,7 @@
 <script setup>
 import SendContract from "./SendContract.vue";
 
+/** @type {{ interviewList: Array<import('~/types/application').Application>, displayMethod: string }} */
 const props = defineProps(["interviewList", "displayMethod"]);
 const selectedApplicants = ref([]);
 const showContractDialog = ref(false);

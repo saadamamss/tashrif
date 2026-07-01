@@ -25,6 +25,7 @@ import { ref } from "vue";
 import { VueTelInput } from "vue-tel-input";
 import "vue-tel-input/vue-tel-input.css";
 
+/** @type {{ modelValue: string }} */
 const props = defineProps({
   modelValue: {
     type: String,
@@ -32,6 +33,7 @@ const props = defineProps({
   },
 });
 
+/** @type {import('vue').EmitsOptions} */
 const emit = defineEmits(["update:modelValue", "validation", "country-change"]);
 
 const phone = ref(props.modelValue);

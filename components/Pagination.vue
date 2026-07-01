@@ -89,7 +89,10 @@
 <script setup>
 import CustomSelect from "./elements/CustomSelect.vue";
 
+/** @type {import('vue').EmitsOptions} */
 const emit = defineEmits(["page-changed"]);
+
+/** @type {{ currentPage: number, perPage: number, totalPages: number, maxVisibleButtons: number }} */
 const props = defineProps({
   currentPage: {
     type: Number,

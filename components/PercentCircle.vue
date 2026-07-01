@@ -1,4 +1,5 @@
 <script setup>
+/** @type {{ percent: number, size: number }} */
 const props = defineProps({
   percent: {
     type: Number,

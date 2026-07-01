@@ -14,6 +14,7 @@
   </div>
 </template>
 <script setup>
+/** @type {{ items: Array<{label: string, to: string, active: boolean}> }} */
 defineProps({
   items: {
     type: Array,
