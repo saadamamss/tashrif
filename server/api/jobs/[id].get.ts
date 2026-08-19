@@ -7,5 +7,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'الوظيفة غير موجودة' })
   }
 
-  return job
+  const session = getUserFromToken(event)
+  const isApplied = !!session && applications.some(a => a.jobId === id && a.userId === session.userId)
+  const applicantCount = applications.filter(a => a.jobId === id).length
+
+  return { ...job, isApplied: isApplied, applicantCount }
 })

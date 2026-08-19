@@ -30,9 +30,9 @@
                   نوع الوظيفة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.workTypes"
                   placeholder="اختر"
-                 
+                  v-model="filters.type"
                   key="select-1"
                 />
               </div>
@@ -43,9 +43,9 @@
                   المنطقة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.locations"
                   placeholder="اختر"
-                 
+                  v-model="filters.location"
                   key="select-2"
                 />
               </div>
@@ -56,9 +56,9 @@
                   الجنس <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.genders"
                   placeholder="اختر"
-                 
+                  v-model="filters.gender"
                   key="select-3"
                 />
               </div>
@@ -69,9 +69,9 @@
                   الجهة الموظفة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.entities"
                   placeholder="اختر"
-                 
+                  v-model="filters.entityId"
                   key="select-4"
                 />
               </div>
@@ -80,7 +80,10 @@
               <div
                 class="w-full mt-4 lg:mt-0 sm:col-span-2 lg:col-span-1 flex items-end justify-center"
               >
-                <button class="btn-primary text-sm h-[42px]">
+                <button
+                  class="btn-primary text-sm h-[42px]"
+                  @click="applyFilters"
+                >
                   البحث عن وظيفة
                 </button>
               </div>
@@ -96,10 +99,10 @@
           class="flex flex-col sm:flex-row items-start justify-between gap-8"
         >
           <div>
-            <h2 class="text-lg font-semibold mb-3">عرض {{ items.length }} نتيجة وظيفة</h2>
-            <p class="text-sm text-muted">
-              بناءً على ملفك الشخصي وتفضيلاتك
-            </p>
+            <h2 class="text-lg font-semibold mb-3">
+              عرض {{ items.length }} نتيجة وظيفة
+            </h2>
+            <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
           </div>
           <button class="self-end btn-outline text-sm gap-2">
             <SortBars />
@@ -107,25 +110,40 @@
           </button>
         </div>
       </div>
-      <LoadingSkeleton v-if="loading" :rows="4" :columns="3" height="280px" />
-      <ErrorState v-else-if="error" :message="error" @retry="retry" />
-      <EmptyState v-else-if="!items.length" title="لا توجد نتائج" description="لم يتم العثور على وظائف تطابق معايير البحث" />
+      <UiLoadingSkeleton v-if="loading" :count="12" :columns="3" height="380px" rounded="xl" />
+      <UiErrorState v-else-if="error" :message="error" @retry="retry" />
+      <UiEmptyState
+        v-else-if="!items.length"
+        title="لا توجد نتائج"
+        description="لم يتم العثور على وظائف تطابق معايير البحث"
+      />
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <JobCard v-for="item in items" :key="item.id" @open-apply-form="openApplyForm" />
+        <JobCard
+          v-for="item in items"
+          :key="item.id"
+          :job="item"
+          @open-apply-form="openApplyForm"
+        />
       </div>
 
       <div class="pt-6">
         <Pagination
-          :current-page="currentPage"
+          :current-page="page"
           :total-pages="totalPages"
-          :per-page="9"
+          :per-page="perPage"
           @page-changed="handlePageChange"
+          @per-page-change="onPerPageChange"
         />
       </div>
     </section>
 
     <!--  -->
-    <ApplyJobDialog v-model="applyJobDialog" v-if="authStore.isAuthenticated" />
+    <ApplyJobDialog
+      v-model="applyJobDialog"
+      :job-id="selectedJobId"
+      v-if="isAuthenticated"
+      @applied="markJobApplied"
+    />
   </div>
 </template>
 
@@ -133,42 +151,114 @@
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import Pagination from "~/components/Pagination.vue";
 definePageMeta({
-  middleware: ["auth-global"],
-  auth:false
+  middleware: [],
 });
-// 
+//
+useHead({
+  title: "الوظائف الموسمية",
+  meta: [
+    {
+      name: "description",
+      content:
+        "تصفح الوظائف الموسمية المتاحة في موسم الحج والعمرة، وقدّم على الفرص التي تناسب مهاراتك وخبراتك.",
+    },
+  ],
+});
+
 useScrollSpy();
 
-const authStore = useAuthStore();
+const { isAuthenticated } = useAuth();
 const { showModal, closeModal } = useLoginModal();
 const applyJobDialog = ref(false);
-const openApplyForm = () => {
-  if (authStore.isAuthenticated) {
+const selectedJobId = ref(null);
+const openApplyForm = (jobId) => {
+  if (isAuthenticated.value) {
+    selectedJobId.value = jobId;
     applyJobDialog.value = true;
     return;
   }
   showModal();
 };
-const currentPage = ref(1);
-const totalPages = ref(10);
-const handlePageChange = (page) => {
-  currentPage.value = page;
-};
-const loading = ref(false);
+const loading = ref(true);
 const error = ref(null);
 const items = ref([]);
 
-onMounted(async () => {
+function markJobApplied(jobId) {
+  const item = items.value.find(j => j.id === jobId)
+  if (item) item.isApplied = true
+}
+
+const filterOptions = ref({
+  workTypes: [],
+  locations: [],
+  genders: [],
+  entities: [],
+});
+
+const filters = ref({
+  type: "",
+  location: "",
+  gender: "",
+  entityId: "",
+});
+
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } =
+  usePagination({ perPage: 9 });
+
+const handlePageChange = (p) => {
+  goToPage(p);
+  fetchJobs();
+};
+
+async function fetchFilterOptions() {
+  try {
+    const { data, error } = await useApi().get("/jobs/filter-options");
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+    if (data) {
+      filterOptions.value = data;
+    }
+  } catch (err) {
+    console.error("Failed to load filter options:", err);
+  }
+}
+
+async function fetchJobs() {
   loading.value = true;
   error.value = null;
   try {
-    const { data } = await useApi().get('/jobs');
+    const params = { page: page.value, limit: perPage.value };
+    if (filters.value.type) params.type = filters.value.type;
+    if (filters.value.location) params.location = filters.value.location;
+    if (filters.value.gender) params.gender = filters.value.gender;
+    if (filters.value.entityId) params.entityId = filters.value.entityId;
+
+    const { data, error } = await useApi().get("/jobs", params);
+    if (error) {
+      error.value = error;
+      useToast().show(error, "error");
+      return;
+    }
     items.value = data?.items || [];
+    total.value = data?.total || 0;
   } catch (err) {
-    error.value = err?.message || 'حدث خطأ في تحميل الوظائف';
+    error.value = err?.message || "حدث خطأ في تحميل الوظائف";
+    useToast().show("حدث خطأ في تحميل الوظائف", "error");
   } finally {
     loading.value = false;
   }
+}
+
+function applyFilters() {
+  page.value = 1;
+  fetchJobs();
+}
+
+onMounted(() => {
+  fetchFilterOptions();
+  fetchJobs();
 });
 
 function retry() {
@@ -180,7 +270,8 @@ function retry() {
   .hero-section {
     .section-content {
       min-height: 610px;
-      background: linear-gradient(
+      background:
+        linear-gradient(
           179.24deg,
           rgba(0, 0, 0, 0.7) 12.77%,
           rgba(0, 0, 0, 0) 139.66%

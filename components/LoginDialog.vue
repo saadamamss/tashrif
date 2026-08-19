@@ -4,7 +4,7 @@ import TextInput from "./elements/TextInput.vue";
 //
 const { showModal, closeModal, isLoginModalShow } = useLoginModal();
 
-const authStore = useAuthStore();
+const auth = useAuth();
 const route = useRoute();
 
 const formData = ref({});
@@ -19,15 +19,21 @@ const closeModel = () => {
 const handleSubmit = async () => {
   try {
     isSubmitting.value = true;
+    auth.error.value = null;
 
-    await authStore.login(formData.value.nationalId);
-    closeModal();
-    router.push("/");
-
-    if (route.query.redirect) {
-      router.replace(route.query.redirect);
+    const success = await auth.login({ nationalId: formData.value.nationalId, password: formData.value.password });
+    if (!success) {
+      useToast().show(auth.error.value || "فشل تسجيل الدخول", "error");
+      return;
     }
+
+    closeModal();
+    useToast().show("تم تسجيل الدخول بنجاح", "success");
+
+    const redirectPath = route.query.redirect || "/dashboard";
+    router.replace(redirectPath);
   } catch (error) {
+    useToast().show("حدث خطأ غير متوقع", "error");
   } finally {
     isSubmitting.value = false;
   }

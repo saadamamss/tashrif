@@ -4,6 +4,10 @@ export interface Interview {
   jobId: number
   userId: number
   entityId: number
+  userName: string
+  userAvatar: string
+  entityName: string
+  entityLogo: string
   method: InterviewMethod
   date: string
   time: string

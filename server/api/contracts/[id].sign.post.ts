@@ -16,6 +16,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'العقد قد تم توقيعه مسبقاً' })
   }
 
+  if (contract.endDate && new Date(contract.endDate) <= new Date()) {
+    throw createError({ statusCode: 400, statusMessage: 'انتهت صلاحية توقيع العقد' })
+  }
+
   contract.status = 'signed'
   contract.signedAt = new Date().toISOString()
 

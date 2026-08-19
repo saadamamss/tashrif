@@ -1,19 +1,23 @@
 <script setup>
 import { defineAsyncComponent, computed } from "vue";
-import { useAuthStore } from "~/stores/authStore";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global","auth-guard", "user-type"],
+  middleware: ["auth", "user-type"],
+  meta: { requiresAuth: true },
 });
 
-const authStore = useAuthStore();
+useHead({
+  title: 'الرئيسية',
+})
+
+const { userType } = useAuth();
 
 const currentHomeComponent = computed(() => {
-  if (!authStore.userType) return null;
+  if (!userType.value) return null;
 
   return defineAsyncComponent(() =>
-    authStore.userType === "individual"
+    userType.value === "individual"
       ? import("~/components/dashboard/individual/home.vue")
       : import("~/components/dashboard/company/home.vue")
   );
@@ -24,6 +28,9 @@ const currentHomeComponent = computed(() => {
   <div>
     <Suspense>
       <component :is="currentHomeComponent" v-if="currentHomeComponent" />
+      <template #fallback>
+        <UiLoadingSkeleton :count="8" :columns="2" height="180px" />
+      </template>
     </Suspense>
   </div>
 </template>

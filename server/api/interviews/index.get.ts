@@ -22,5 +22,18 @@ export default defineEventHandler(async (event) => {
   const start = (page - 1) * limit
   const items = result.slice(start, start + limit)
 
-  return { items, total, page, totalPages }
+  return {
+    items: items.map(i => {
+      const entity = users.find(u => u.id === i.entityId)
+      const applicant = users.find(u => u.id === i.userId)
+      return {
+        ...i,
+        entityName: entity?.name || '',
+        entityLogo: entity?.avatarUrl || '',
+        userName: applicant?.name || '',
+        userAvatar: applicant?.avatarUrl || '',
+      }
+    }),
+    total, page, totalPages,
+  }
 })

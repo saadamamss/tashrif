@@ -10,9 +10,40 @@
         <p class="text-gray-600 text-sm">التوقيع محمي وآمن</p>
       </div>
       <!-- Contract Content -->
-      <div class="contract-content p-8">
-        <div class="border rounded-2xl relative overflow-hidden">
-          <img src="~/assets/images/contract.png" />
+      <div class="contract-content p-4 sm:p-6">
+        <div class="border rounded-2xl overflow-hidden">
+          <!-- file header -->
+          <div class="flex items-center justify-between gap-3 bg-bg-light px-4 py-3 border-b">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="block p-2 bg-white rounded-xl shrink-0">
+                <Pdf />
+              </span>
+              <div class="min-w-0">
+                <span class="block text-sm text-slate-900 truncate">
+                  {{ contract?.fileName || 'ملف العقد' }}
+                </span>
+                <span class="text-xs text-slate-400">{{ fileSizeText }}</span>
+              </div>
+            </div>
+            <span class="text-xs text-muted shrink-0">
+              ينتهي التوقيع
+              {{ contract?.endDate ? formatDate(contract.endDate) : '-' }}
+            </span>
+          </div>
+
+          <!-- file preview -->
+          <iframe
+            v-if="previewUrl"
+            :src="previewUrl"
+            title="معاينة العقد"
+            class="w-full h-[60vh] min-h-[420px] bg-white"
+          ></iframe>
+          <div
+            v-else
+            class="h-[420px] flex items-center justify-center text-muted text-sm"
+          >
+            لا يمكن عرض ملف العقد
+          </div>
         </div>
       </div>
       <!-- Signature Confirmation -->
@@ -45,10 +76,10 @@
         </button>
         <button
           @click="submitContract"
-          :disabled="!canSubmit"
+          :disabled="!canSubmit || isSubmitting"
           class="btn-primary text-sm px-10"
         >
-          توثيق العقد
+          {{ isSubmitting ? 'جاري التوقيع...' : 'توقيع العقد' }}
         </button>
       </div>
 
@@ -60,12 +91,25 @@
 import { ref, computed } from "vue";
 import Dialog from "./Dialog.vue";
 import TextInput from "./elements/TextInput.vue";
+import { formatDate } from "~/services/help";
 
-/** @type {{ readonly: boolean }} */
+/** @type {{ readonly: boolean, contractName: string, contractId: number|null, contract: object|null }} */
 const props = defineProps({
   readonly: {
     type: Boolean,
     default: false,
+  },
+  contractName: {
+    type: String,
+    default: 'العقد',
+  },
+  contractId: {
+    type: [Number, String],
+    default: null,
+  },
+  contract: {
+    type: Object,
+    default: null,
   },
 });
 const model = defineModel();
@@ -75,14 +119,54 @@ const agreementConfirmed = ref(false);
 const signatureAgreement = ref(null);
 const showSignaturePad = ref(false);
 
+const fileSizeText = computed(() => {
+  const bytes = Number(props.contract?.fileSize) || 0;
+  if (!bytes) return "";
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} Mb`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} Kb`;
+  return `${bytes} bytes`;
+});
+
+const config = useRuntimeConfig();
+const previewUrl = computed(() => {
+  const url = props.contract?.fileUrl;
+  if (!url) return "";
+  if (/^https?:\/\//.test(url)) return url;
+  try {
+    const apiOrigin = new URL(config.public.apiBaseUrl).origin;
+    return apiOrigin + url;
+  } catch {
+    return url;
+  }
+});
+
   const canSubmit = computed(
     () => agreementConfirmed.value && signatureAgreement.value === sequenceConfirm.value
   );
 
-const submitContract = () => {
-  // Implement contract submission logic
-  console.log("Contract submitted with signature");
-  alert("تم توثيق العقد بنجاح");
+const isSubmitting = ref(false);
+
+const submitContract = async () => {
+  if (!props.contractId) {
+    useToast().show("تعذر تحديد العقد المراد توقيعه", "error");
+    return;
+  }
+  isSubmitting.value = true;
+  try {
+    const { error } = await useApi().post(`/contracts/${props.contractId}/sign`);
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+    useToast().show("تم توقيع العقد وتوثيقه بنجاح", "success");
+    agreementConfirmed.value = false;
+    signatureAgreement.value = null;
+    model.value = false;
+  } catch {
+    useToast().show("حدث خطأ أثناء توقيع العقد", "error");
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const cancelContract = () => {

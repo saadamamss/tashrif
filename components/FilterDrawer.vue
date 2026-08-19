@@ -1,6 +1,6 @@
 <template>
   <Transition name="modal">
-    <div v-if="model" class="modal-mask">
+    <div v-if="model" class="modal-mask" role="dialog" aria-modal="true">
       <div class="modal-container" @click.self="closeModal">
         <div class="modal-content">
           <div class="bg-white drawer sm:rounded-l-3xl p-6">
@@ -11,6 +11,7 @@
                   <button
                     @click="closeModal"
                     class="w-8 h-8 flex items-center justify-center bg-bg-light rounded-full"
+                    aria-label="إغلاق"
                   >
                     <Close />
                   </button>
@@ -31,7 +32,7 @@
                   <div class="flex-1">
                     <label for="" class="text-sm block mb-2">الجنسية</label>
                     <CustomSelect
-                      :items="['سعودى', 'مصرى']"
+                      :items="nationalityOptions"
                       placeholder="الجنسية"
                       v-model="filters.nationality"
                     />
@@ -43,7 +44,7 @@
                       >المؤهل العلمى</label
                     >
                     <CustomSelect
-                      :items="['نعم', 'لا']"
+                      :items="qualificationOptions"
                       placeholder="المؤهل العلمى"
                       v-model="filters.qualification"
                     />
@@ -51,7 +52,7 @@
                   <div class="flex-1">
                     <label for="" class="text-sm block mb-2">التخصص</label>
                     <CustomSelect
-                      :items="['علوم حاسب', 'هندسة']"
+                      :items="specializationOptions"
                       placeholder="التخصص"
                       v-model="filters.specialization"
                     />
@@ -63,7 +64,7 @@
                       تاريخ التقديم
                     </label>
                     <CustomSelect
-                      :items="['2024', '2023', '2022']"
+                      :items="yearOptions"
                       placeholder="تاريخ التقديم"
                       v-model="filters.inrollDate"
                     />
@@ -87,7 +88,7 @@
                     مسح الفلاتر
                   </button>
                   <button class="btn-primary text-sm" @click="closeModal">
-                    تطبيق الفلتر (24 مشروع)
+                    تطبيق الفلتر ({{ resultCount }} مشروع)
                   </button>
                 </div>
               </div>
@@ -104,7 +105,7 @@ import CustomSelect from "./elements/CustomSelect.vue";
 
 const model = defineModel();
 
-/** @type {{ isOpen: boolean, title: string, subtitle: string, showFooter: boolean }} */
+/** @type {{ isOpen: boolean, title: string, subtitle: string, showFooter: boolean, nationalityOptions: string[], qualificationOptions: string[], specializationOptions: string[], yearOptions: string[], resultCount: number }} */
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -121,6 +122,26 @@ const props = defineProps({
   showFooter: {
     type: Boolean,
     default: true,
+  },
+  nationalityOptions: {
+    type: Array,
+    default: () => ['سعودى', 'مصرى'],
+  },
+  qualificationOptions: {
+    type: Array,
+    default: () => ['بكالوريوس', 'ماجستير', 'دكتوراه', 'دبلوم', 'ثانوية عامة'],
+  },
+  specializationOptions: {
+    type: Array,
+    default: () => ['إدارة أعمال', 'هندسة', 'علوم حاسب', 'طب'],
+  },
+  yearOptions: {
+    type: Array,
+    default: () => ['2025', '2024', '2023', '2022'],
+  },
+  resultCount: {
+    type: Number,
+    default: 24,
   },
 });
 const filters = ref({});

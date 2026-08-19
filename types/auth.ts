@@ -25,18 +25,3 @@ export interface RegisterData {
   gender?: string
   nationality?: string
 }
-
-export interface AuthResponse {
-  user: User
-  token: string
-  refreshToken: string
-}
-
-export interface AuthState {
-  user: User | null
-  token: string | null
-  isAuthenticated: boolean
-  refreshToken: string | null
-  isLoading: boolean
-  error: string | null
-}

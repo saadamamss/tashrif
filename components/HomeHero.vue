@@ -21,15 +21,15 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
             <div class="w-full">
               <label class="text-sm mb-2 block">نوع الوظيفة <span class="text-red-500">*</span></label>
-              <CustomSelect :items="['Option 1', 'Option 2', 'Option 3']" placeholder="اختر" />
+              <CustomSelect :items="workTypes" placeholder="اختر" />
             </div>
             <div class="w-full">
               <label class="text-sm mb-2 block">المنطقة <span class="text-red-500">*</span></label>
-              <CustomSelect :items="['Option 1', 'Option 2', 'Option 3']" placeholder="اختر" />
+              <CustomSelect :items="locations" placeholder="اختر" />
             </div>
             <div class="w-full">
               <label class="text-sm mb-2 block">الجنس <span class="text-red-500">*</span></label>
-              <CustomSelect :items="['Option 1', 'Option 2', 'Option 3']" placeholder="اختر" />
+              <CustomSelect :items="genders" placeholder="اختر" />
             </div>
             <div class="w-full">
               <label class="text-sm mb-2 block">الجهة الموظفة <span class="text-red-500">*</span></label>
@@ -47,6 +47,26 @@
 
 <script setup>
 import CustomSelect from "./elements/CustomSelect.vue";
+import { ref, onMounted } from "vue";
+
+const workTypes = ref([])
+const locations = ref([])
+const genders = ref([])
+
+onMounted(async () => {
+  try {
+    const { data, error } = await useApi().get('/jobs/filter-options')
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    if (data) {
+      workTypes.value = data.workTypes || ['ميداني', 'مكتبي', 'عن بعد']
+      locations.value = data.locations || ['مكة المكرمة', 'المدينة المنورة', 'منى', 'عرفات', 'مزدلفة']
+      genders.value = data.genders || ['الكل', 'رجال', 'نساء']
+    }
+  } catch (e) { console.error(e) }
+})
 </script>
 
 <style lang="scss" scoped>

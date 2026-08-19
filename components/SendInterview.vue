@@ -17,6 +17,7 @@
             v-for="(applicant, i) in applicants"
             :key="i"
             :applicant="applicant"
+            :job-title="jobTitle"
             badge-text="القائمة المختصرة"
             badge-style="bg-badge-green/10 text-badge-green"
             card-style=" bg-bg-subtle"
@@ -181,8 +182,8 @@ import ApplicantCard from "./ApplicantCard.vue";
 
 const model = defineModel();
 
-/** @type {{ applicants: Array<import('~/types/application').Application> }} */
-const props = defineProps(["applicants"]);
+/** @type {{ applicants: Array<import('~/types/application').Application>, jobTitle?: string }} */
+const props = defineProps(["applicants", "jobTitle"]);
 const form = ref(null);
 const isSubmitting = ref(false);
 defineRule("validateMethod", (value) => {

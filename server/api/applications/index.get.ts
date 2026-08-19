@@ -16,5 +16,10 @@ export default defineEventHandler(async (event) => {
   const start = (page - 1) * limit
   const items = result.slice(start, start + limit)
 
-  return { items, total, page, totalPages }
+  const attachJob = (app) => {
+    const job = jobs.find(j => j.id === app.jobId)
+    return { ...app, job: job || null }
+  }
+
+  return { items: items.map(attachJob), total, page, totalPages }
 })

@@ -8,7 +8,7 @@
           <h2 class="text-sm lg:text-lg font-medium text-muted">
             تم تحديد {{ selectedApplicants.length }} متقدمين
           </h2>
-          <div class="flex self-end gap-3">
+          <div class="self-end flex gap-3">
             <button
               class="btn-outline text-sm"
               @click="showShecdualDialog = true"
@@ -18,7 +18,7 @@
 
             <button
               class="btn-primary text-sm"
-              @click="showInterviewDialog = true"
+              @click="emit('schedule-interview', [...selectedApplicants])"
             >
               إجراء مقابلة
             </button>
@@ -32,29 +32,29 @@
           :applicant="applicant"
           :action="true"
           :select="true"
+          :job-title="jobTitle"
           badge-text="القائمة المختصرة"
           badge-style="bg-badge-green/10 text-badge-green"
           card-style=" bg-[#fff]"
           v-model="selectedApplicants"
+          @shortlist="emit('shortlist', applicant)"
+          @interview="emit('interview', applicant)"
+          @delete="emit('delete', applicant)"
         />
       </div>
     </div>
 
-    <SendInterview
-      v-model="showInterviewDialog"
-      :applicants="selectedApplicants"
-    />
     <AppointmentScheduling v-model="showShecdualDialog" />
   </div>
 </template>
 
 <script setup>
 import AppointmentScheduling from "./AppointmentScheduling.vue";
-import SendInterview from "./SendInterview.vue";
 
-/** @type {{ shorList: Array<import('~/types/application').Application>, displayMethod: string }} */
-const props = defineProps(["shorList", "displayMethod"]);
+/** @type {{ shorList: Array<import('~/types/application').Application>, jobTitle?: string, displayMethod: string }} */
+const props = defineProps(["shorList", "jobTitle", "displayMethod"]);
 const selectedApplicants = ref([]);
 const showInterviewDialog = ref(false);
 const showShecdualDialog = ref(false);
+const emit = defineEmits(['shortlist', 'delete', 'interview', 'schedule-interview']);
 </script>

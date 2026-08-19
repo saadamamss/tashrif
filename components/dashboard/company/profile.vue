@@ -17,54 +17,40 @@ import ZipCode from "~/components/icons/zip-code.vue";
 import BriefcaseIcon from "~/components/icons/BriefcaseIcon.vue";
 import PersonIcon from "~/components/icons/person.vue";
 import FileIcon from "~/components/icons/file.vue";
+import EditEntityProfile from "~/components/EditEntityProfile.vue";
 
-const userData = ref({
-  companyFiled: "لخدمات الحج والعمرة", // Saudi
-  sector: "اسم القطاع", // 10-digit Saudi ID
-  companySize: "متوسطة", // YYYY-MM-DD format
-  number100700: "1829891", // Calculated from birthDate
-  country: "سعودية", // Male (use "أنثى" for female)
-  city: "الرياض", // Riyadh
-  website: "www.capitalx.com",
-  facebook: "facebook.com/capitalx",
-  twitter: "twitter.com/capitalx",
-  youtube: "youtube.com/capitalx",
-  zone: "الرياض", // Eastern Province
-  district: "حي النخيل", // Al-Nakheel District
-  street: "شارع الملك فهد", // King Fahd Road
-  zipcode: "12345", // Saudi ZIP code
-  name: "سعودى",
-  nationality: "سعودى",
-  role: "مدير تنفيذى",
-  email: "user.example@domain.com",
-  phone: "+966501234567", // Saudi phone number with country code
-});
+const loading = ref(false);
+const editProfile = ref(false);
+const companyData = ref({ name: '', email: '', phone: '', companyField: '', sector: '', companySize: '', commercialReg: '', country: '', city: '', zone: '', district: '', street: '', zipcode: '', website: '', facebookUrl: '', twitterUrl: '', youtubeUrl: '', logoUrl: '' })
+const contactPerson = ref(null)
+const stats = ref({ totalJobs: 0, activeJobs: 0, totalApplicants: 0 })
+const profileCompletion = ref(0)
 
 const userComunicationInformation = computed(() => {
+  const cp = contactPerson.value || {}
   return {
     name: {
-      value: userData.value.name,
+      value: cp.name || companyData.value.name,
       key: " الإسم",
       icon: Earth,
     },
-
     role: {
-      value: userData.value.role,
+      value: cp.role || cp.jobTitle || '',
       key: " المنصب",
       icon: Earth,
     },
     nationality: {
-      value: userData.value.nationality,
+      value: cp.nationality || '',
       key: " الجنسية",
       icon: Earth,
     },
     phone: {
-      value: userData.value.phone,
+      value: cp.phone || companyData.value.phone,
       key: " رقم الحوال",
       icon: Earth,
     },
     email: {
-      value: userData.value.email,
+      value: cp.email || companyData.value.email,
       key: " البريد الإلكترونى",
       icon: Earth,
     },
@@ -73,111 +59,80 @@ const userComunicationInformation = computed(() => {
 const userInformation = computed(() => {
   return {
     companyFiled: {
-      value: userData.value.companyFiled,
+      value: companyData.value.companyField,
       key: " المجال",
       icon: Zone,
     },
     sector: {
-      value: userData.value.sector,
+      value: companyData.value.sector,
       key: "القطاع",
       icon: City,
     },
     companySize: {
-      value: userData.value.companySize,
+      value: companyData.value.companySize,
       key: "حجم الشركة",
       icon: Zone,
     },
-    number100700: {
-      value: userData.value.number100700,
-      key: " رقم ال 100-700",
+    commercialReg: {
+      value: companyData.value.commercialReg,
+      key: " رقم السجل التجاري",
       icon: Identity,
     },
     country: {
-      value: userData.value.country,
+      value: companyData.value.country,
       key: " الدولة",
       icon: Earth,
     },
     zone: {
-      value: userData.value.zone,
+      value: companyData.value.zone,
       key: " المنطقة",
       icon: Zone,
     },
     website: {
-      value: userData.value.website,
+      value: companyData.value.website,
       key: " موقعك الإلكتروني",
       icon: Email,
     },
     facebook: {
-      value: userData.value.facebook,
+      value: companyData.value.facebookUrl,
       key: "فيسبوك",
       icon: Call,
     },
-
     twitter: {
-      value: userData.value.twitter,
+      value: companyData.value.twitterUrl,
       key: "تويتر",
       icon: Call,
     },
     youtube: {
-      value: userData.value.youtube,
+      value: companyData.value.youtubeUrl,
       key: "يوتيوب",
       icon: Call,
     },
   };
 });
 
-const userQualifications = ref([
-  {
-    qualification: "بكالوريوس",
-    specialization: "إدارة أعمال",
-    educational_institution: "جامعة أم القرى",
-    graduation_year: "2025",
-    grade: "جيد جداً",
-  },
-  {
-    qualification: "الثانوية العامة",
-    specialization: "",
-    educational_institution: "مدرية مكة الثانوية",
-    graduation_year: "2020",
-    grade: "جيد جداً",
-  },
-]);
-const userExperts = ref([
-  {
-    job_title: "مشرف ميدانى",
-    authority: "شركة التنظيم الموسمى",
-    duration: "من ذو القعدة 1444هـ إلى ذو الحجة 1444هـ",
-    location: "مكةة المكرمة",
-  },
-  {
-    job_title: "مشرف ميدانى",
-    authority: "شركة التنظيم الموسمى",
-    duration: "من ذو القعدة 1444هـ إلى ذو الحجة 1444هـ",
-    location: "مكةة المكرمة",
-  },
-]);
+const loadProfile = async () => {
+  const [profileRes, cpRes, statsRes] = await Promise.allSettled([
+    useApi().get('/entities/profile'),
+    useApi().get('/contact-persons'),
+    useApi().get('/stats/entity'),
+  ])
+  if (profileRes.status === 'fulfilled' && profileRes.value.data) {
+    companyData.value = profileRes.value.data
+    profileCompletion.value = profileRes.value.data.profileCompletionPct || 0
+  }
+  if (cpRes.status === 'fulfilled' && cpRes.value.data) contactPerson.value = cpRes.value.data.items?.[0] || cpRes.value.data
+  if (statsRes.status === 'fulfilled' && statsRes.value.data) stats.value = statsRes.value.data
+}
 
-const userFinancial = ref([
-  {
-    iban: "955435712452245445",
-    bank_name: "الراجحى",
-    iban_status: "صحيح",
-    account_status: "فعال",
-  },
-]);
-
-const cvs = ref([
-  { name: "السيرة الذاتية 1", size: "2.67 ميجابايت" },
-  { name: "السيرة الذاتية 2", size: "1.89 ميجابايت" },
-  { name: "السيرة الذاتية 3", size: "3.12 ميجابايت" },
-]);
-
-const editQualification = () => {};
-const deleteQualification = () => {};
-//
-const addqualifications = ref(false);
-const addexperts = ref(false);
-const addcvs = ref(false);
+onMounted(async () => {
+  loading.value = true
+  try {
+    await loadProfile()
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -207,19 +162,19 @@ const addcvs = ref(false);
                 />
               </div>
               <div>
-                <h1 class="text-xl font-bold mb-3">شركة نسك لخدمات الحجاج</h1>
-                <p class="text-base text-gray-500">لخدمات الحج والعمرة</p>
+                <h1 class="text-xl font-bold mb-3">{{ companyData.name }}</h1>
+                <p class="text-base text-gray-500">{{ companyData.companyField }}</p>
               </div>
             </div>
 
             <div class="text-center sm:text-right">
-              <NuxtLink
-                to="/dashboard/profile"
+              <button
+                @click="editProfile = true"
                 class="flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
               >
                 <EditSmall />
                 <span> تعديل الملف الشخصى </span>
-              </NuxtLink>
+              </button>
             </div>
           </div>
 
@@ -231,7 +186,7 @@ const addcvs = ref(false);
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  24
+                  {{ stats.totalJobs }}
                 </h1>
                 <h3 class="text-sm text-muted">وظائفى المنشورة</h3>
               </div>
@@ -246,7 +201,7 @@ const addcvs = ref(false);
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  12
+                  {{ stats.activeJobs }}
                 </h1>
                 <h3 class="text-sm text-muted">مقابلات العمل</h3>
               </div>
@@ -262,7 +217,7 @@ const addcvs = ref(false);
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  12
+                  {{ stats.totalApplicants }}
                 </h1>
                 <h3 class="text-sm text-muted">عروض العمل</h3>
               </div>
@@ -283,7 +238,7 @@ const addcvs = ref(false);
         >
           <div class="flex flex-col xs:flex-row gap-6 max-w-[760px]">
             <PercentCircle
-              :percent="57"
+              :percent="profileCompletion"
               gradient-start="#ECB42B05"
               gradient-middle="#ECB42B01"
               gradient-end="#ECB42B"
@@ -299,9 +254,12 @@ const addcvs = ref(false);
             </div>
           </div>
           <div class="">
-            <nuxt-link to="#" class="btn-primary text-nowrap text-sm px-8">
+            <button
+              @click="editProfile = true"
+              class="btn-primary text-nowrap text-sm px-8"
+            >
               إستكمل ملفك الشخصى
-            </nuxt-link>
+            </button>
           </div>
         </div>
       </div>
@@ -346,5 +304,7 @@ const addcvs = ref(false);
         </div>
       </div>
     </div>
+
+    <EditEntityProfile v-model="editProfile" @saved="loadProfile" />
   </div>
 </template>

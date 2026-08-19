@@ -1,6 +1,6 @@
 <template>
   <header class="fixed top-0 left-0 right-0 w-full z-10">
-    <nav class="bg-white py-3 sm:py-4 px-6 relative">
+    <nav class="bg-white py-3 sm:py-4 px-6 relative" aria-label="التنقل الرئيسي">
       <div class="max-wrapper flex justify-between items-center">
         <!-- الجزء الأيمن -->
         <div class="flex items-center space-x-4 space-x-reverse">
@@ -58,46 +58,47 @@
         </div>
         <!-- الجزء الأيسر -->
         <div class="hidden md:block" v-if="isAuthenticated">
-          <!-- <nuxt-link
-            to="/dashboard/profile"
-            class="w-[48px] h-[48px] flex items-center justify-center bg-bg-light rounded-full"
-          >
-            <img src="~/assets/images/profile-image.svg" />
-          </nuxt-link> -->
-          <DropDown
-            trigger-style="bg-bg-light rounded-full border-2 border-[#fff]/0 active:border-primary"
-          >
-            <template #trigger>
-              <span>
-                <img src="~/assets/images/profile-image.svg" />
-              </span>
-            </template>
-            <template #list>
-              <ul class="px-0 min-w-[150px]">
-                <li>
-                  <nuxt-link
-                    to="/dashboard"
-                    class="block py-2 px-3 hover:bg-bg-subtle text-sm"
-                  >
-                    لوحة التحكم
-                  </nuxt-link>
-                </li>
-                <li>
-                  <nuxt-link
-                    to="#"
-                    @click.stop.prevent="logout"
-                    class="block py-2 px-3 hover:bg-bg-subtle text-sm text-red-500 font-medium"
-                  >
-                    خروج
-                  </nuxt-link>
-                </li>
-              </ul>
-            </template>
-          </DropDown>
-        </div>
+            <!-- <nuxt-link
+              to="/dashboard/profile"
+              class="w-[48px] h-[48px] flex items-center justify-center bg-bg-light rounded-full"
+            >
+              <img src="~/assets/images/profile-image.svg" />
+            </nuxt-link> -->
+            <DropDown
+              label="قائمة المستخدم"
+              trigger-style="bg-bg-light rounded-full border-2 border-[#fff]/0 active:border-primary"
+            >
+              <template #trigger>
+                <span>
+                  <img src="~/assets/images/profile-image.svg" alt="صورة المستخدم" />
+                </span>
+              </template>
+              <template #list>
+                <ul class="px-0 min-w-[150px]">
+                  <li>
+                    <nuxt-link
+                      to="/dashboard"
+                      class="block py-2 px-3 hover:bg-bg-subtle text-sm"
+                    >
+                      لوحة التحكم
+                    </nuxt-link>
+                  </li>
+                  <li>
+                    <nuxt-link
+                      to="#"
+                      @click.stop.prevent="logout"
+                      class="block py-2 px-3 hover:bg-bg-subtle text-sm text-red-500 font-medium"
+                    >
+                      خروج
+                    </nuxt-link>
+                  </li>
+                </ul>
+              </template>
+            </DropDown>
+          </div>
         <div
           class="hidden md:flex items-center gap-2"
-          v-else
+          v-if="!isAuthenticated"
         >
           <button
             @click="
@@ -126,6 +127,9 @@
           <button
             class="text-gray-600 hover:text-gray-900"
             @click="toggleMobileMenu"
+            :aria-expanded="isMobileMenuOpen"
+            aria-controls="mobile-nav"
+            aria-label="فتح القائمة"
           >
             <Hamburger />
           </button>
@@ -136,6 +140,7 @@
       <transition name="slide-fade">
         <div
           v-if="isMobileMenuOpen"
+          id="mobile-nav"
           class="absolute mobile-nav right-0 w-full md:hidden bg-white py-2 px-4 shadow-md z-10"
         >
           <ul class="px-0 nav-menu-vertical text-center">
@@ -248,18 +253,14 @@ import DropDown from "./elements/DropDown.vue";
 const { currentSection, goToSection: scrollToSection } = useScrollSpy();
 const router = useRouter();
 const isMobileMenuOpen = ref(false);
-const authStore = useAuthStore();
-//
-const isAuthenticated = computed(() => authStore.isAuthenticated);
+const { isAuthenticated, logout} = useAuth();
+
 //
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
 const dropdown = ref(false);
-const logout = () => {
-  authStore.logout();
-};
 
 const goToSection = (e) => {
   isMobileMenuOpen.value = false;

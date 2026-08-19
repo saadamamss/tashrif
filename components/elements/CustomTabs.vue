@@ -14,10 +14,10 @@
         }"
       >
         {{ tab.title }}
-        <span
+        <!-- <span
           v-if="activeTab === tab.id"
           class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary transition-all duration-300"
-        ></span>
+        ></span> -->
       </button>
     </div>
 
@@ -29,7 +29,7 @@
             <div v-show="activeTab === tab.id">
               <slot :name="tab.id" :tab="tab">
                 <!-- Default content if no slot provided -->
-                <h3 class="text-lg font-bold mb-4 text-gray-800">
+                <h3 class="text-lg font-bold mb-4 text-grey-800">
                   {{ tab.title }}
                 </h3>
                 <div class="text-gray-600">

@@ -1,12 +1,17 @@
 <script setup>
 import CustomSelect from "~/components/elements/CustomSelect.vue";
-import InterviewCard from "~/components/InterviewCard.vue";
 import JobOfferCard from "~/components/JobOfferCard.vue";
+import Pagination from "~/components/Pagination.vue";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global", "auth-guard", "entity"],
+  middleware: ["auth", "entity"],
+  meta: { requiresAuth: true },
 });
+
+useHead({
+  title: 'الوظائف المنشورة',
+})
 
 const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
@@ -17,18 +22,77 @@ const loading = ref(false);
 const error = ref(null);
 const items = ref([]);
 
-onMounted(async () => {
+const filterOptions = ref({
+  workTypes: [],
+  statuses: [],
+})
+
+const filters = ref({
+  type: '',
+  status: '',
+})
+
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
+
+async function fetchFilterOptions() {
+  try {
+    const { data, error } = await useApi().get('/jobs/filter-options')
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    if (data) {
+      filterOptions.value = data
+    }
+  } catch (err) {
+    console.error('Failed to load filter options:', err)
+  }
+}
+
+async function fetchJobs() {
   loading.value = true;
   error.value = null;
   try {
-    const { data } = await useApi().get('/jobs');
+    const params = { page: page.value, limit: perPage.value }
+    if (filters.value.type) params.type = filters.value.type
+    if (filters.value.status) params.status = filters.value.status
+
+    const { data, error } = await useApi().get('/jobs/mine', params);
+    if (error) {
+      error.value = error;
+      useToast().show(error, "error");
+      return;
+    }
     items.value = data?.items || [];
+    total.value = data?.total || 0;
   } catch (err) {
     error.value = err?.message || 'حدث خطأ في تحميل الوظائف';
+    useToast().show("حدث خطأ في تحميل الوظائف", "error");
   } finally {
     loading.value = false;
   }
-});
+}
+
+function applyFilters() {
+  page.value = 1
+  fetchJobs()
+}
+
+function resetFilters() {
+  filters.value = { type: '', status: '' }
+  page.value = 1
+  fetchJobs()
+}
+
+function handlePageChange(p) {
+  goToPage(p)
+  fetchJobs()
+}
+
+onMounted(() => {
+  fetchFilterOptions()
+  fetchJobs()
+})
 
 function retry() {
   window.location.reload();
@@ -47,6 +111,8 @@ function retry() {
           <button
             @click="toggleFilterAria"
             class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
+            :aria-expanded="filterAreaExpands"
+            aria-label="تصفية"
           >
             <ChevronUp />
           </button>
@@ -62,34 +128,23 @@ function retry() {
             <div
               class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full"
             >
-              <!-- Region -->
+              <!-- Job Type -->
               <div class="w-full">
                 <label class="text-sm mb-2 block"> تاريخ النشر </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.workTypes"
                   placeholder="تاريخ النشر"
-                 
+                  v-model="filters.type"
                   key="select-2"
                 />
               </div>
-              <!-- Job Type -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> تاريخ الإنتهاء </label>
-                <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
-                  placeholder="تاريخ الإنتهاء"
-                 
-                  key="select-1"
-                />
-              </div>
-
-              <!-- Employer -->
+              <!-- Status -->
               <div class="w-full">
                 <label class="text-sm mb-2 block"> الحالة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.statuses"
                   placeholder="الحالة"
-                 
+                  v-model="filters.status"
                   key="select-4"
                 />
               </div>
@@ -99,9 +154,9 @@ function retry() {
             <hr />
           </div>
           <div class="flex justify-between items-center">
-            <button class="btn-outline text-sm px-10">إعادة تعيين</button>
+            <button class="btn-outline text-sm px-10" @click="resetFilters">إعادة تعيين</button>
 
-            <button class="btn-primary text-sm px-10">تطبيق</button>
+            <button class="btn-primary text-sm px-10" @click="applyFilters">تطبيق</button>
           </div>
         </div>
       </ExpandArea>
@@ -125,18 +180,29 @@ function retry() {
         </div>
       </div>
       <div class="jobs-container py-8">
-        <LoadingSkeleton v-if="loading" :rows="4" :columns="3" height="200px" />
-        <ErrorState v-else-if="error" :message="error" @retry="retry" />
-        <EmptyState v-else-if="!items.length" title="لا توجد وظائف منشورة" description="لم تقم بنشر أي وظيفة بعد" cta-text="نشر وظيفة جديدة" cta-link="/dashboard/publish-job" />
+        <UiLoadingSkeleton v-if="loading" :count="12" :columns="3" height="200px" />
+        <UiErrorState v-else-if="error" :message="error" @retry="retry" />
+        <UiEmptyState v-else-if="!items.length" title="لا توجد وظائف منشورة" description="لم تقم بنشر أي وظيفة بعد" cta-text="نشر وظيفة جديدة" cta-link="/dashboard/publish-job" />
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <JobOfferCard
             v-for="item in items"
             :key="item.id"
+            :job="item"
             class="border border-[#fff]/0 hover:border-primary transition"
             role="button"
-            @click="$router.push('/dashboard/published-jobs/details')"
+            @click="$router.push(`/dashboard/published-jobs/details?id=${item.id}`)"
           />
         </div>
+      </div>
+
+      <div class="pt-6" v-if="totalPages > 1">
+        <Pagination
+          :current-page="page"
+          :total-pages="totalPages"
+          :per-page="perPage"
+          @page-changed="handlePageChange"
+          @per-page-change="onPerPageChange"
+        />
       </div>
     </div>
   </div>

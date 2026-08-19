@@ -7,7 +7,7 @@
         </h2>
         <button
           class="self-end btn-primary text-sm"
-          @click="showContractDialog = true"
+          @click="emit('send-contract', [...selectedApplicants])"
         >
           إرسال العقد
         </button>
@@ -20,25 +20,22 @@
         :applicant="applicant"
         :action="true"
         :select="true"
+        :job-title="jobTitle"
         badge-text="طلب مقابلة"
         badge-style="bg-badge-green/10 text-badge-green"
         card-style=" bg-[#fff]"
         v-model="selectedApplicants"
+        @shortlist="emit('shortlist', applicant)"
+        @interview="emit('interview', applicant)"
+        @delete="emit('delete', applicant)"
       />
     </div>
-
-    <SendContract
-      v-model="showContractDialog"
-      :applicants="selectedApplicants"
-    />
   </div>
 </template>
 
 <script setup>
-import SendContract from "./SendContract.vue";
-
-/** @type {{ interviewList: Array<import('~/types/application').Application>, displayMethod: string }} */
-const props = defineProps(["interviewList", "displayMethod"]);
+/** @type {{ interviewList: Array<import('~/types/application').Application>, jobTitle?: string, displayMethod: string }} */
+const props = defineProps(["interviewList", "jobTitle", "displayMethod"]);
 const selectedApplicants = ref([]);
-const showContractDialog = ref(false);
+const emit = defineEmits(['send-contract', 'shortlist', 'delete', 'interview']);
 </script>

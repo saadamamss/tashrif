@@ -46,7 +46,7 @@
 <script setup>
 import ArrowButton from "./ArrowButton.vue";
 
-/** @type {{ tabs: Array<{id: string, title: string, number?: number}>, initialTab: string|null }} */
+/** @type {{ tabs: Array<{id: string, title: string, number?: number}>, initialTab: string|null, modelValue: string|null }} */
 const props = defineProps({
   tabs: {
     type: Array,
@@ -57,9 +57,23 @@ const props = defineProps({
     type: String,
     default: null,
   },
+  modelValue: {
+    type: String,
+    default: null,
+  },
 });
 
+const emit = defineEmits(['update:modelValue'])
+
 const activeTab = ref(props.initialTab || props.tabs[0]?.id);
+
+watch(() => props.modelValue, (val) => {
+  if (val) activeTab.value = val
+})
+
+watch(activeTab, (val) => {
+  emit('update:modelValue', val)
+})
 </script>
 
 <style scoped lang="scss">

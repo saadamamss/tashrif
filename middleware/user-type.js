@@ -1,12 +1,7 @@
-import { useAuthStore } from "~/stores/authStore";
-
-/**
- * @param {import('vue-router').RouteLocationNormalized} to
- */
 export default defineNuxtRouteMiddleware((to) => {
-  const authStore = useAuthStore();
+  const { userType } = useAuth()
 
-  if (!["individual", "entity"].includes(authStore.userType)) {
-    return navigateTo("/dashboard");
+  if (!['individual', 'entity'].includes(userType.value || '')) {
+    return navigateTo('/dashboard')
   }
-});
+})

@@ -4,7 +4,7 @@
       <!-- Form Title -->
       <div class="bg-bg-light p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-3 text-right">
-          إضافة مؤهل علمي جديد
+          {{ editing ? "تعديل مؤهل علمي" : "إضافة مؤهل علمي جديد" }}
         </h2>
         <p class="text-gray-600 text-sm text-right">
           أدخل بيانات مؤهلك العلمي بدقة لعرضها ضمن ملفك الشخصي. تساعد المؤهلات
@@ -155,7 +155,21 @@
           >
             إلغاء
           </button>
-          <button type="submit" class="btn-primary text-sm">إضافة</button>
+          <button
+            type="submit"
+            class="btn-primary text-sm"
+            :disabled="isSubmitting"
+          >
+            {{
+              editing
+                ? isSubmitting
+                  ? "جارٍ الحفظ..."
+                  : "حفظ"
+                : isSubmitting
+                  ? "جارٍ الإضافة..."
+                  : "إضافة"
+            }}
+          </button>
         </div>
       </Form>
     </div>
@@ -189,12 +203,75 @@ const graduationYears = ref(
 );
 
 const formData = ref({});
+const isSubmitting = ref(false);
 
-const addQualification = () => {
-  alert("تم تقديم الطلب بنجاح");
+const props = defineProps({
+  editing: { type: Object, default: null },
+});
+const emit = defineEmits(["saved"]);
+
+const resetForm = () => {
+  formData.value = {};
+};
+
+watch(
+  () => props.editing,
+  (editing) => {
+    if (editing) {
+      formData.value = {
+        qualificationType: editing.type,
+        specialization: editing.specialization,
+        institution: editing.institution,
+        grade: editing.grade,
+        graduationYear: editing.graduationYear,
+      };
+    } else {
+      resetForm();
+    }
+  }
+);
+
+const addQualification = async () => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+
+  const payload = {
+    qualificationType: formData.value.qualificationType,
+    specialization: formData.value.specialization,
+    institution: formData.value.institution,
+    grade: formData.value.grade,
+    graduationYear: formData.value.graduationYear,
+  };
+
+  try {
+    const { error } = props.editing
+      ? await useApi().put(`/qualifications/${props.editing.id}`, payload)
+      : await useApi().post("/qualifications", payload);
+
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+
+    useToast().show(
+      props.editing ? "تم تعديل المؤهل بنجاح" : "تم إضافة المؤهل بنجاح",
+      "success"
+    );
+    model.value = false;
+    resetForm();
+    emit("saved");
+  } catch {
+    useToast().show(
+      props.editing ? "حدث خطأ أثناء تعديل المؤهل" : "حدث خطأ أثناء إضافة المؤهل",
+      "error"
+    );
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const cancelQualification = () => {
+  resetForm();
   model.value = false;
 };
 </script>

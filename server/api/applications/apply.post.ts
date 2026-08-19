@@ -25,6 +25,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = users.find(u => u.id === session.userId)
+  const profile = individualProfiles.find(p => p.userId === session.userId)
+  const primaryQualification = qualifications
+    .filter(q => q.userId === session.userId)
+    .sort((a, b) => (b.graduationYear || 0) - (a.graduationYear || 0))[0]
 
   const newApp: Application = {
     id: applications.length + 1,
@@ -32,13 +36,13 @@ export default defineEventHandler(async (event) => {
     userId: session.userId,
     userName: user?.name || '',
     userGender: user?.gender || '',
-    userCity: '',
-    qualification: qualification || '',
+    userCity: profile?.city || '',
+    qualification: qualification || primaryQualification?.type || '',
     status: 'new',
     createdAt: new Date().toISOString(),
   }
 
   applications.unshift(newApp)
 
-  return newApp
+  return { ...newApp, job: job }
 })

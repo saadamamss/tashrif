@@ -1,6 +1,36 @@
 <script setup>
 import "swiper/css";
 import JobOfferCard from "~/components/JobOfferCard.vue";
+
+const loading = ref(false);
+const companyName = ref('')
+const companyField = ref('')
+const stats = ref({ totalJobs: 0, activeJobs: 0, totalApplicants: 0 })
+const jobs = ref([])
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const [profileRes, statsRes, jobsRes] = await Promise.allSettled([
+      useApi().get('/entities/profile'),
+      useApi().get('/stats/entity'),
+      useApi().get('/jobs?limit=12'),
+    ])
+    if (profileRes.status === 'fulfilled' && profileRes.value.data) {
+      companyName.value = profileRes.value.data.name
+      companyField.value = profileRes.value.data.companyField || ''
+    }
+    if (statsRes.status === 'fulfilled' && statsRes.value.data) stats.value = statsRes.value.data
+    if (jobsRes.status === 'fulfilled' && jobsRes.value.data) jobs.value = jobsRes.value.data.items || jobsRes.value.data
+    for (const res of [profileRes, statsRes, jobsRes]) {
+      if (res.status === 'fulfilled' && res.value?.error) {
+        useToast().show(res.value.error, "error")
+      }
+    }
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -30,8 +60,8 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 />
               </div>
               <div>
-                <h1 class="text-xl font-bold mb-3">شركة نسك لخدمات الحجاج</h1>
-                <p class="text-base text-gray-500">لخدمات الحج والعمرة</p>
+                <h1 class="text-xl font-bold mb-3">{{ companyName }}</h1>
+                <p class="text-base text-gray-500">{{ companyField }}</p>
               </div>
             </div>
 
@@ -54,7 +84,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  24
+                  {{ stats.totalJobs }}
                 </h1>
                 <h3 class="text-sm text-muted">وظائفى المنشورة</h3>
               </div>
@@ -69,7 +99,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  12
+                  {{ stats.activeJobs }}
                 </h1>
                 <h3 class="text-sm text-muted">مقابلات العمل</h3>
               </div>
@@ -85,7 +115,7 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  12
+                  {{ stats.totalApplicants }}
                 </h1>
                 <h3 class="text-sm text-muted">عروض العمل</h3>
               </div>
@@ -130,7 +160,9 @@ import JobOfferCard from "~/components/JobOfferCard.vue";
           <div class="px-4 sm:px-6 md:px-8">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <JobOfferCard
-                v-for="i in 12"
+                v-for="job in jobs"
+                :key="job.id"
+                :job="job"
                 class="border border-[#fff]/0 hover:border-primary transition"
                 role="button"
                 @click="$router.push('/dashboard/published-jobs/details')"

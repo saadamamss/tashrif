@@ -7,9 +7,10 @@
         <CustomSelect v-model="perPageSelect" :items="[9, 12, 15, 21]" style="min-width: 80px; width: 80px;"/>
         <p>
           تم عرض من {{ (currentPage - 1) * perPage + 1 }} إلى
-          {{ currentPage * perPage }} من أصل
+          {{ Math.min(currentPage * perPage, perPage * totalPages) }} من أصل
           {{ perPage * totalPages }}
         </p>
+        <span class="text-sm text-muted">صفحة {{ currentPage }} من {{ totalPages }}</span>
       </div>
     </div>
     <nav class="pagination" aria-label="Pagination">
@@ -90,7 +91,7 @@
 import CustomSelect from "./elements/CustomSelect.vue";
 
 /** @type {import('vue').EmitsOptions} */
-const emit = defineEmits(["page-changed"]);
+const emit = defineEmits(["page-changed", "per-page-change"]);
 
 /** @type {{ currentPage: number, perPage: number, totalPages: number, maxVisibleButtons: number }} */
 const props = defineProps({
@@ -117,6 +118,10 @@ const props = defineProps({
 });
 
 const perPageSelect = ref(props.perPage);
+
+watch(perPageSelect, (val) => {
+  emit("per-page-change", val);
+});
 
 const showFirstPage = computed(() => {
   return props.currentPage > Math.floor(props.maxVisibleButtons / 2) + 1;

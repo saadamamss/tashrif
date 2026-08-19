@@ -1,51 +1,41 @@
-import { useAuthStore } from '~/stores/authStore'
 import type { ApiResponse } from '~/types/common'
 
 export function useApi() {
-  const config = useRuntimeConfig()
-  const baseURL = config.public.apiBaseUrl || '/api'
+  function getApi() {
+    return useNuxtApp().$api as ReturnType<typeof import('axios').create>
+  }
 
-  async function request<T>(endpoint: string, options: any = {}): Promise<ApiResponse<T>> {
-    const authStore = useAuthStore()
-    const headers: Record<string, string> = {
-      ...options.headers,
-    }
-
-    if (authStore.authToken) {
-      headers['Authorization'] = `Bearer ${authStore.authToken}`
-    }
-
-    if (!(options.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json'
-    }
-
+  async function request<T>(method: string, endpoint: string, data?: any): Promise<ApiResponse<T>> {
     try {
-      const data = await $fetch(`${baseURL}${endpoint}`, {
-        ...options,
-        headers,
-        retry: 0,
-      }) as T
-      return { data, error: null, pending: false }
-    } catch (err: any) {
-      if (err?.statusCode === 401) {
-        authStore.logout()
+      const api = getApi()
+      let response
+      if (method === 'GET') {
+        response = await api.get<T>(endpoint, { params: data })
+      } else if (method === 'POST') {
+        response = await api.post<T>(endpoint, data)
+      } else if (method === 'PUT') {
+        response = await api.put<T>(endpoint, data)
+      } else if (method === 'DELETE') {
+        response = await api.delete<T>(endpoint)
       }
-      const message = err?.data?.statusMessage || err?.message || 'An error occurred'
+      return { data: response!.data, error: null, pending: false }
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.response?.data?.statusMessage || err?.message || 'An error occurred'
       return { data: null, error: message, pending: false }
     }
   }
 
   return {
     get: <T>(endpoint: string, params?: any): Promise<ApiResponse<T>> =>
-      request<T>(endpoint, { method: 'GET', params }),
+      request<T>('GET', endpoint, params),
 
     post: <T>(endpoint: string, body?: any): Promise<ApiResponse<T>> =>
-      request<T>(endpoint, { method: 'POST', body }),
+      request<T>('POST', endpoint, body),
 
     put: <T>(endpoint: string, body?: any): Promise<ApiResponse<T>> =>
-      request<T>(endpoint, { method: 'PUT', body }),
+      request<T>('PUT', endpoint, body),
 
     delete: <T>(endpoint: string): Promise<ApiResponse<T>> =>
-      request<T>(endpoint, { method: 'DELETE' }),
+      request<T>('DELETE', endpoint),
   }
 }

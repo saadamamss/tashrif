@@ -11,6 +11,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
 
+  const profile = entityProfiles.find(p => p.userId === session.userId)
+
   const myJobs = jobs.filter(j => j.entityId === session.userId)
   const stats = {
     totalJobs: myJobs.length,
@@ -24,6 +26,24 @@ export default defineEventHandler(async (event) => {
     email: user.email,
     phone: user.phone,
     type: user.type,
+    ...profile ? {
+      companyField: profile.companyField,
+      sector: profile.sector,
+      companySize: profile.companySize,
+      commercialReg: profile.commercialReg,
+      country: profile.country,
+      city: profile.city,
+      zone: profile.zone,
+      district: profile.district,
+      street: profile.street,
+      zipcode: profile.zipcode,
+      website: profile.website,
+      facebookUrl: profile.facebookUrl,
+      twitterUrl: profile.twitterUrl,
+      youtubeUrl: profile.youtubeUrl,
+      logoUrl: profile.logoUrl,
+      profileCompletionPct: profile.profileCompletionPct,
+    } : {},
     stats,
   }
 })

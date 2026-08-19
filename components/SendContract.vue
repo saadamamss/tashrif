@@ -18,6 +18,7 @@
             v-for="(applicant, i) in applicants"
             :key="i"
             :applicant="applicant"
+            :job-title="jobTitle"
             badge-text="القائمة المختصرة"
             badge-style="bg-badge-green/10 text-badge-green"
             card-style=" bg-bg-subtle"
@@ -46,6 +47,37 @@
             <ErrorMessage
               name="contractFile"
               class="text-xs block text-red-500"
+            />
+          </div>
+
+          <!-- Contract expiry date -->
+          <div class="mt-5">
+            <TextInput
+              name="endDate"
+              id="contract-end-date"
+              type="date"
+              label="تاريخ انتهاء صلاحية التوقيع"
+              height="48"
+              placeholder="تاريخ الانتهاء"
+              v-model="formData.endDate"
+              rules="validateEndDate"
+              required
+              :error="errors.endDate"
+            />
+          </div>
+
+          <!-- Contract notes -->
+          <div class="mt-5">
+            <label for="notes" class="block text-sm mb-2">
+              ملاحظات العقد
+            </label>
+            <Field
+              name="notes"
+              v-model="formData.notes"
+              as="textarea"
+              rows="3"
+              placeholder="أضف أي ملاحظات أو شروط إضافية للعقد (اختياري)"
+              class="text-sm rounded-2xl w-full px-3 py-3 bg-bg-light border border-primary/0 focus:border-primary outline-none placeholder:text-xs transition duration-300 resize-none"
             />
           </div>
         </div>
@@ -81,11 +113,12 @@ import { defineRule, ErrorMessage, Field, Form } from "vee-validate";
 import Dialog from "./Dialog.vue";
 import ApplicantCard from "./ApplicantCard.vue";
 import FileInput from "./elements/FileInput.vue";
+import TextInput from "./elements/TextInput.vue";
 
 const model = defineModel();
 
-/** @type {{ applicants: Array<import('~/types/application').Application> }} */
-const props = defineProps(["applicants"]);
+/** @type {{ applicants: Array<import('~/types/application').Application>, jobTitle?: string }} */
+const props = defineProps(["applicants", "jobTitle"]);
 const form = ref(null);
 const isSubmitting = ref(false);
 defineRule("validateContractFile", (value) => {
@@ -94,9 +127,20 @@ defineRule("validateContractFile", (value) => {
   return true;
 });
 
+defineRule("validateEndDate", (value) => {
+  if (!value) return "حدد تاريخ انتهاء صلاحية التوقيع";
+
+  const endDate = new Date(`${value}T23:59:59`);
+  if (endDate <= new Date()) return "يجب أن يكون تاريخ الانتهاء في المستقبل";
+
+  return true;
+});
+
 // Form data structure
 const formData = reactive({
   contractFile: null,
+  notes: "",
+  endDate: "",
   applicantIds: props.applicants.map((applicant) => applicant.id), // Assuming applicants have IDs
 });
 
@@ -105,16 +149,16 @@ const handleSubmit = async (values, { resetForm }) => {
   try {
     isSubmitting.value = true;
 
-    // Prepare FormData for submission
-    const formPayload = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        formPayload.append(key, value);
-      }
+    emit("submit-contract", {
+      file: formData.contractFile,
+      notes: formData.notes,
+      endDate: formData.endDate,
+      applicantIds: [...formData.applicantIds],
     });
 
-    emit("submit-contract", formPayload);
     resetForm();
+    formData.notes = "";
+    formData.endDate = "";
     model.value = false;
   } catch (error) {
     console.error("Submission error:", error);

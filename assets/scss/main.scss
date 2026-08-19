@@ -30,6 +30,7 @@ body {
 
 .badge[x-status="coming"],
 .badge[x-status="warning"],
+.badge[x-status="new"],
 .badge[x-status="waiting"] {
   background-color: #fff9eb;
   color: #bf9c68;
@@ -42,7 +43,7 @@ body {
 }
 
 .badge[x-status="applied"] {
-  background-color: #f5f9f9;
+  background-color: #c9fecc;
   color: $surface;
 }
 

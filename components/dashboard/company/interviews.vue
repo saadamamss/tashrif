@@ -3,11 +3,28 @@ import CompanyInterviewCard from "~/components/CompanyInterviewCard.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import TextInput from "~/components/elements/TextInput.vue";
 
+const statusOptions = ['الكل', 'قادمة', 'منتهية', 'ملغية']
+const interviewTypeOptions = ['مقابلة شخصية', 'مقابلة عن بعد', 'مقابلة هاتفية']
 const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
 };
-//
+const loading = ref(false);
+const items = ref([]);
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const { data, error } = await useApi().get('/interviews')
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    if (data?.items) items.value = data.items
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -42,9 +59,9 @@ const toggleFilterAria = () => {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> تاريخ المقابلة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="statusOptions"
                   placeholder="تاريخ المقابلة"
-                 
+                  
                   key="select-2"
                 />
               </div>
@@ -68,9 +85,9 @@ const toggleFilterAria = () => {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> نوع المقابلة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="interviewTypeOptions"
                   placeholder="نوع المقابلة "
-                 
+                  
                   key="select-1"
                 />
               </div>
@@ -91,7 +108,7 @@ const toggleFilterAria = () => {
     <div>
       <div class="flex flex-col md:flex-row justify-between items-start gap-6">
         <div>
-          <h1 class="text-base font-semibold mb-2">عرض 84 مقابلة عمل</h1>
+          <h1 class="text-base font-semibold mb-2">عرض {{ items.length }} مقابلة عمل</h1>
           <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
         </div>
         <div class="self-end">
@@ -104,7 +121,7 @@ const toggleFilterAria = () => {
       </div>
       <div class="jobs-container py-8">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <CompanyInterviewCard v-for="i in 12" />
+          <CompanyInterviewCard v-for="item in items" :key="item.id" :interview="item" />
         </div>
       </div>
     </div>

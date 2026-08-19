@@ -5,13 +5,63 @@ import PercentCircle from "~/components/PercentCircle.vue";
 import JobCard from "~/components/JobCard.vue";
 import JobRequestCard from "~/components/JobRequestCard.vue";
 import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
+import EditIndividualProfile from "~/components/EditIndividualProfile.vue";
 import ChevronLeftIcon from "~/components/icons/ChevronLeftIcon.vue";
 
 const applyJobDialog = ref(false);
-const openApplyForm = () => {
+const editProfile = ref(false);
+const selectedJobId = ref(null);
+const loading = ref(false);
+const userData = ref({ name: '', jobTitle: '' })
+const stats = ref({ totalApplications: 0, pendingApps: 0, interviews: 0, signedContracts: 0 })
+const profileCompletion = ref(0)
+const applications = ref([])
+const jobs = ref([])
+const route = useRoute()
+
+const findJob = (jobId) => jobs.value.find(j => j.id === jobId)
+
+const openApplyForm = (jobId) => {
+  selectedJobId.value = jobId;
   applyJobDialog.value = true;
-  return;
 };
+
+const markJobApplied = (jobId) => {
+  const job = findJob(jobId);
+  if (job) job.isApplied = true;
+};
+
+const loadProfile = async () => {
+  const [profileRes, statsRes] = await Promise.allSettled([
+    useApi().get('/individuals/profile'),
+    useApi().get('/stats/individual'),
+  ])
+  if (profileRes.status === 'fulfilled' && profileRes.value.data) {
+    userData.value = profileRes.value.data
+    profileCompletion.value = profileRes.value.data.profileCompletionPct || 0
+  }
+  if (statsRes.status === 'fulfilled' && statsRes.value.data) stats.value = statsRes.value.data
+}
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const [appsRes, allJobsRes] = await Promise.allSettled([
+      useApi().get('/applications?limit=8'),
+      useApi().get('/jobs?limit=8'),
+    ])
+    await loadProfile()
+    if (appsRes.status === 'fulfilled' && appsRes.value.data) applications.value = appsRes.value.data.items || appsRes.value.data
+    if (allJobsRes.status === 'fulfilled' && allJobsRes.value.data) jobs.value = allJobsRes.value.data.items || allJobsRes.value.data
+    for (const res of [appsRes, allJobsRes]) {
+      if (res.status === 'fulfilled' && res.value?.error) {
+        useToast().show(res.value.error, "error")
+      }
+    }
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -41,8 +91,8 @@ const openApplyForm = () => {
                 />
               </div>
               <div>
-                <h1 class="text-xl font-bold mb-3">عبدالله محمد الحربي</h1>
-                <p class="text-base text-gray-500">مشرف تنظيم حشود</p>
+                <h1 class="text-xl font-bold mb-3">{{ userData.name }}</h1>
+                <p class="text-base text-gray-500">{{ userData.jobTitle }}</p>
               </div>
             </div>
 
@@ -67,7 +117,7 @@ const openApplyForm = () => {
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  10
+                  {{ stats.pendingApps }}
                 </h1>
                 <h3 class="text-sm text-muted">الطلبات المكتملة</h3>
               </div>
@@ -83,7 +133,7 @@ const openApplyForm = () => {
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  12
+                  {{ stats.interviews }}
                 </h1>
                 <h3 class="text-sm text-muted">مقابلة عمل</h3>
               </div>
@@ -98,7 +148,7 @@ const openApplyForm = () => {
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  24
+                  {{ stats.totalApplications }}
                 </h1>
                 <h3 class="text-sm text-muted">تقدمت للوظائف</h3>
               </div>
@@ -113,7 +163,7 @@ const openApplyForm = () => {
                 <h1
                   class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
                 >
-                  12
+                  {{ stats.signedContracts }}
                 </h1>
                 <h3 class="text-sm text-muted">عروض العمل</h3>
               </div>
@@ -134,7 +184,7 @@ const openApplyForm = () => {
         >
           <div class="flex flex-col sm:flex-row gap-6 max-w-[760px]">
             <PercentCircle
-              :percent="57"
+              :percent="profileCompletion"
               gradient-start="#ECB42B05"
               gradient-middle="#ECB42B01"
               gradient-end="#ECB42B"
@@ -150,9 +200,12 @@ const openApplyForm = () => {
             </div>
           </div>
           <div class="">
-            <nuxt-link to="#" class="btn-primary text-nowrap text-sm px-8">
+            <button
+              @click="editProfile = true"
+              class="btn-primary text-nowrap text-sm px-8"
+            >
               إستكمل ملفك الشخصى
-            </nuxt-link>
+            </button>
           </div>
         </div>
       </div>
@@ -204,8 +257,8 @@ const openApplyForm = () => {
               direction="horizontal"
               dir="rtl"
             >
-              <SwiperSlide v-for="(item, index) in 8" :key="index">
-                <JobRequestCard />
+              <SwiperSlide v-for="app in applications" :key="app.id">
+                <JobRequestCard :application="app" :job="findJob(app.jobId)" />
               </SwiperSlide>
             </Swiper>
           </div>
@@ -256,8 +309,8 @@ const openApplyForm = () => {
               direction="horizontal"
               dir="rtl"
             >
-              <SwiperSlide v-for="(item, index) in 8" :key="index">
-                <JobCard @open-apply-form="openApplyForm" />
+              <SwiperSlide v-for="job in jobs" :key="job.id">
+                <JobCard :job="job" @open-apply-form="openApplyForm" />
               </SwiperSlide>
             </Swiper>
           </div>
@@ -266,6 +319,7 @@ const openApplyForm = () => {
     </section>
 
     <!--  -->
-    <ApplyJobDialog v-model="applyJobDialog" />
+    <ApplyJobDialog v-model="applyJobDialog" :job-id="selectedJobId" @applied="markJobApplied" />
+    <EditIndividualProfile v-model="editProfile" @saved="loadProfile" />
   </div>
 </template>

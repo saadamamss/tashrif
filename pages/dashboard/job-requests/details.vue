@@ -4,36 +4,93 @@ import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
+import { formatDate } from "~/services/help";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global", "auth-guard", "individual"],
+  middleware: ["auth", "individual"],
+  meta: { requiresAuth: true },
 });
 
-const breadcrumbs = [
+useHead({
+  title: 'تفاصيل الطلب',
+})
+
+const statusMeta = {
+  new: { label: 'قيد المراجعة', badge: 'new', title: 'قيد المراجعة', msg: 'نحن بانتظار رد الجهة المعلنة. سيتم إشعارك فور تحديث الحالة.' },
+  shortlisted: { label: 'قبول مبدئي', badge: 'preliminary', title: 'تم القبول المبدئي', msg: '🎉 تهانينا! لقد تم ترشيحك مبدئياً لهذه الوظيفة. وسيتم تحديد موعد للمقابلة قريباً.' },
+  interview: { label: 'مقابلة', badge: 'interview', title: 'مقابلة شخصية', msg: 'تم تحديد موعد للمقابلة، يرجى مراجعة تفاصيل الموعد والالتزام بالحضور.' },
+  contract_sent: { label: 'تم إرسال العقد', badge: 'contract_sent', title: 'تم إرسال العقد', msg: '🎉 تم قبولك! اطلع على العقد ووقّعه إلكترونياً لتأكيد انضمامك.' },
+  accepted: { label: 'مقبول', badge: 'accepted', title: 'تم القبول', msg: '🎉 تهانينا! لقد تم قبولك نهائياً لهذه الوظيفة.' },
+  refused: { label: 'مرفوض', badge: 'refused', title: 'لم يتم القبول', msg: 'نأسف لإعلامك بعدم قبول طلبك لهذه الوظيفة حالياً.' },
+}
+
+const breadcrumbs = computed(() => [
   {
     label: "طلبات العمل",
     to: "/dashboard/job-requests",
     active: true,
   },
-
   {
-    label: "مشرف حجاج",
+    label: application.value?.job?.title || 'الوظيفة',
     active: false,
   },
-];
+]);
 
 const signContractOpen = ref(false);
-const currentStatus = ref("preliminary");
-const requestStatus = ref({
-  pending: "قيد المراجعة",
-  preliminary: "قبول مبدئي",
-  accepted: "مقبول",
+const application = ref(null);
+const interview = ref(null);
+const contract = ref(null);
+const route = useRoute();
+const loading = ref(true);
+
+const currentStatus = computed(() => application.value?.status || '')
+const meta = computed(() => statusMeta[currentStatus.value] || statusMeta.new)
+
+onMounted(async () => {
+  loading.value = true;
+  const appId = route.query.id || route.params.id || 1
+  try {
+    const { data, error } = await useApi().get(`/applications/${appId}`);
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+    if (data) {
+      application.value = data
+      const [iv, ct] = await Promise.all([
+        useApi().get('/interviews?limit=100'),
+        useApi().get('/contracts?limit=100'),
+      ])
+      if (iv.error) useToast().show(iv.error, "error")
+      if (ct.error) useToast().show(ct.error, "error")
+      interview.value = (iv.data?.items || []).find(i => i.applicationId === data.id) || null
+      contract.value = (ct.data?.items || []).find(c => c.applicationId === data.id) || null
+    }
+  } catch {
+    useToast().show("حدث خطأ أثناء تحميل بيانات الطلب", "error");
+  } finally {
+    loading.value = false;
+  }
 });
+
+
+function downloadContract() {
+  if (!contract.value?.fileUrl) return
+  const link = document.createElement('a')
+  link.href = contract.value.fileUrl
+  link.download = 'contract.pdf'
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+}
 </script>
 <template>
   <div class="px-4 lg:px-0 mb-8">
     <Breadcrumbs :items="breadcrumbs" />
+    <UiLoadingSkeleton v-if="loading" :count="1" height="420px" rounded="2xl" />
+    <template v-else-if="application">
     <!--  -->
     <div class="grid grid-cols-7 gap-6 items-start mt-4">
       <div class="col-span-7 lg:col-span-4 xl:col-span-5">
@@ -42,34 +99,26 @@ const requestStatus = ref({
         >
           <div
             class="badge absolute top-0 rounded-r-3xl rounded-t-[0px] left-0 px-3 py-2 min-w-24 text-center bg-blue-100"
-            :x-status="currentStatus"
+            :x-status="meta.badge"
           >
             <span class="text-xs">
-              {{ requestStatus[currentStatus] }}
+              {{ meta.label }}
             </span>
           </div>
           <div class="flex flex-col gap-6">
             <h1 class="job-title text-lg lg:text-xl font-bold text-dark">
-              مشرف حجاج
+              {{ application?.job?.title }}
             </h1>
             <p class="job-desc text-sm text-dark/70 leading-[2]">
-              تبحث شركة الإسناد الموسمي لخدمات الحجاج عن أفراد مؤهلين للانضمام
-              إلى فريقها كمشرفين ميدانيين خلال موسم الحج. ستكون مسؤولاً عن تنظيم
-              وإرشاد مجموعة من الحجاج أثناء تنقلهم بين المشاعر المقدسة، وضمان
-              التزامهم بالتعليمات والخطط التشغيلية.
+              {{ application?.job?.description || application?.description }}
             </p>
 
             <div class="flex items-center gap-2">
-              <span
-                class="company-logo border rounded-md overflow-hidden py-1 px-2"
-              >
-                <img
-                  src="/images/partner-3.svg"
-                  class="w-10 h-6 object-cover"
-                />
+              <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
+                <img :src="application?.job?.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
               </span>
               <span class="company-name text-sm text-dark">
-                شركة نسك لخدمات الحجاج
+                {{ application?.job?.entityName || application?.entityName }}
               </span>
             </div>
           </div>
@@ -87,26 +136,12 @@ const requestStatus = ref({
           <!-- Named slots for each tab content -->
           <template #benefits>
             <div class="p-5 bg-white rounded-2xl border-2">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
+              <h3 class="text-base font-semibold text-black pb-5 border-b mb-4">
                 مميزات خاصة
               </h3>
-              <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  الإشراف اليومي على مجموعة محددة من الحجاج.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التأكد من التزام الحجاج بخطط التنقل وجدول الحركة بين المشاعر.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التنسيق المستمر مع فرق النقل والدعم اللوجستي.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التعامل مع الحالات الطارئة ورفع التقارير إلى المسؤول المباشر.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  ضمان سلامة وراحة الحجاج خلال تنقلهم وإقامتهم.
+              <ul v-if="application?.job?.benefits?.length" class="ps-2 mt-2 list-disc list-inside">
+                <li v-for="benefit in application.job.benefits" :key="benefit" class="text-sm text-muted mb-4">
+                  {{ benefit }}
                 </li>
               </ul>
             </div>
@@ -114,29 +149,12 @@ const requestStatus = ref({
 
           <template #conditions>
             <div class="p-5 bg-white rounded-2xl border-2">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
+              <h3 class="text-base font-semibold text-black pb-5 border-b mb-4">
                 شروط القبول
               </h3>
-              <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  أن يكون المتقدم سعودي الجنسية.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  العمر بين 22 و45 سنة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  القدرة على العمل الميداني المكثف لساعات طويلة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  يفضّل من لديه خبرة سابقة في العمل الموسمي أو الإشراف الميداني.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  الالتزام بالأخلاقيات المهنية والسلوكيات المناسبة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  الأولوية لسكان منطقة مكة المكرمة لتسهيل التنقل السريع.
+              <ul v-if="application?.job?.conditions?.length" class="ps-2 mt-2 list-disc list-inside">
+                <li v-for="condition in application.job.conditions" :key="condition" class="text-sm text-muted mb-4">
+                  {{ condition }}
                 </li>
               </ul>
             </div>
@@ -144,20 +162,12 @@ const requestStatus = ref({
 
           <template #tasks>
             <div class="p-5 bg-white rounded-2xl border-2">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
-                المزايا والمكافأة
+              <h3 class="text-base font-semibold text-black pb-5 border-b mb-4">
+                المهام والمسؤوليات
               </h3>
-              <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  مكافأة مقطوعة قدرها 3000 ريال سعودي.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  شهادة خبرة بعد انتهاء المهمة بنجاح.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  تشمل بدل السكن والتنقل.
+              <ul v-if="application?.job?.responsibilities?.length" class="ps-2 mt-2 list-disc list-inside">
+                <li v-for="resp in application.job.responsibilities" :key="resp" class="text-sm text-muted mb-4">
+                  {{ resp }}
                 </li>
               </ul>
             </div>
@@ -168,59 +178,23 @@ const requestStatus = ref({
       <div class="col-span-7 lg:col-span-3 xl:col-span-2 space-y-6">
         <!-- status -->
         <div class="bg-white rounded-xl p-6 shadow-md">
-          <div v-if="currentStatus == 'pending'">
-            <div class="pb-4 border-b-2">
-              <h3 class="text-lg font-medium">حالة الطلب</h3>
-            </div>
-            <div class="space-y-4 pt-4">
-              <div class="p-4 rounded-xl badge" x-status="pending">
-                <h3 class="text-sm mb-3">قيد المراجعة</h3>
-                <p class="text-xs text-muted">
-                  نحن بانتظار رد الجهة المعلنة. سيتم إشعارك فور تحديث الحالة.
-                </p>
-              </div>
-              <p class="text-xs text-muted">
-                تم التقديم في تاريخ: 7 يوليو 2025
-              </p>
-            </div>
+          <div class="pb-4 border-b-2">
+            <h3 class="text-lg font-medium">حالة الطلب</h3>
           </div>
-          <div v-if="currentStatus == 'preliminary'">
-            <div class="pb-4 border-b-2">
-              <h3 class="text-lg font-medium">حالة الطلب</h3>
+          <div class="space-y-4 pt-4">
+            <div class="p-4 rounded-xl badge" :x-status="meta.badge">
+              <h3 class="text-sm mb-3">{{ meta.title }}</h3>
+              <p class="text-xs text-muted">{{ meta.msg }}</p>
             </div>
-            <div class="space-y-4 pt-4">
-              <div class="p-4 rounded-xl badge" x-status="preliminary">
-                <h3 class="text-sm mb-3">تم القبول المبدئي</h3>
-                <p class="text-xs text-muted">
-                  🎉 تهانينا! لقد تم ترشيحك مبدئيًا لوظيفة مشرف حجاج.
-                </p>
-              </div>
-              <p class="text-xs text-muted">
-                تم التقديم في تاريخ: 7 يوليو 2025
-              </p>
-            </div>
-          </div>
-          <div v-if="currentStatus == 'accepted'">
-            <div class="pb-4 border-b-2">
-              <h3 class="text-lg font-medium">حالة الطلب</h3>
-            </div>
-            <div class="space-y-4 pt-4">
-              <div class="p-4 rounded-xl badge" x-status="accepted">
-                <h3 class="text-sm mb-3">تم القبول</h3>
-                <p class="text-xs text-muted">
-                  🎉 تهانينا، تم قبولك! لقد تم قبولك نهائيًا لوظيفة مشرف حجاج
-                  ضمن فريق شركة الإسناد الموسمي لخدمات الحجاج.
-                </p>
-              </div>
-              <p class="text-xs text-muted">
-                تم التقديم في تاريخ: 7 يوليو 2025
-              </p>
-            </div>
+            <p class="text-xs text-muted">
+              تم التقديم في تاريخ: {{ formatDate(application.createdAt) }}
+            </p>
           </div>
         </div>
+
         <!-- interview -->
         <div
-          v-if="currentStatus == 'preliminary'"
+          v-if="interview"
           class="interview-card shadow-md bg-white relative overflow-hidden rounded-2xl p-6"
         >
           <div class="pb-4 border-b-2">
@@ -232,42 +206,53 @@ const requestStatus = ref({
                 <CalenderIcon width="18" height="18" />
               </span>
               <span class="text-icon-muted text-xs">
-                الأربعاء 10 يوليو 2025
+                {{ formatDate(interview.date) }}
               </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <Clock />
               </span>
-              <span class="text-icon-muted text-xs"> الساعة 10:00 صباحًا </span>
+              <span class="text-icon-muted text-xs"> الساعة {{ interview.time }} </span>
             </div>
-            <div class="flex gap-2 items-center">
+            <div class="flex gap-2 items-center" v-if="interview.location">
               <span>
                 <Location />
               </span>
               <span class="text-icon-muted text-xs">
-                حي العزيزية، مكة المكرمة
+                {{ interview.location }}
+              </span>
+            </div>
+            <div class="flex gap-2 items-center" v-else-if="interview.link">
+              <span>
+                <Location />
+              </span>
+              <span class="text-icon-muted text-xs">
+                مقابلة عن بعد — {{ interview.link }}
               </span>
             </div>
           </div>
 
-          <div class="p-4 rounded-xl bg-bg-subtle mb-4">
-            <h3 class="text-sm mb-3 text-surface">📌 ملاحظات مهمة</h3>
+          <div class="p-4 rounded-xl bg-bg-subtle mb-4" v-if="interview.notes">
+            <h3 class="text-sm mb-3 text-surface">📌 ملاحظات</h3>
             <div class="text-xs text-muted">
-              <p class="mb-2">يرجى الحضور قبل الموعد بـ15 دقيقة.</p>
-              <p class="mb-2">إحضار أصل الهوية الوطنية والسيرة الذاتية.</p>
-              <p class="">الالتزام بالزي الرسمي.</p>
+              <p>{{ interview.notes }}</p>
             </div>
           </div>
 
           <div class="flex gap-4">
-            <AddToCalendar />
+            <AddToCalendar
+              :title="`مقابلة شخصية لوظيفة ${application?.job?.title || ''}`"
+              :start="interview.date"
+              :start-time="interview.time"
+              :location="interview.location || interview.link"
+            />
           </div>
         </div>
 
         <!-- contract -->
         <div
-          v-if="currentStatus == 'accepted'"
+          v-if="contract"
           class="interview-card shadow-md bg-white relative overflow-hidden rounded-2xl p-6"
         >
           <div class="pb-4 border-b-2">
@@ -279,15 +264,7 @@ const requestStatus = ref({
                 <CalenderIcon width="18" height="18" />
               </span>
               <span class="text-icon-muted text-xs">
-                5 – 13 ذو الحجة 1446هـ
-              </span>
-            </div>
-            <div class="flex gap-2 items-center">
-              <span>
-                <Location />
-              </span>
-              <span class="text-icon-muted text-xs">
-                حي العزيزية، مكة المكرمة
+                {{ contract.status === 'signed' ? 'تم توقيع العقد' : 'العقد بانتظار التوقيع' }}
               </span>
             </div>
           </div>
@@ -300,28 +277,38 @@ const requestStatus = ref({
                 </span>
                 <div>
                   <span class="block text-slate-900 text-sm mb-1">
-                    pdf السيرة الذاتية
+                    عقد العمل
                   </span>
-                  <span class="text-xs block text-slate-400"> 1.2Mb </span>
+                  <span class="text-xs block text-slate-400">
+                    {{ contract.status === 'signed' ? 'تم التوقيع' : 'PDF' }}
+                  </span>
                 </div>
               </div>
               <div>
-                <button class="block shadow-sm p-2 bg-white rounded-lg">
+                <button
+                  class="block shadow-sm p-2 bg-white rounded-lg"
+                  @click="downloadContract"
+                >
                   <Download />
                 </button>
               </div>
             </div>
           </div>
-          <p class="text-xs text-muted mb-4">
-            يجب توقيع العقد قبل تاريخ 15 ذو القعدة 1446هـ لتأكيد انضمامك رسميًا.
-          </p>
 
           <div class="flex gap-4">
             <button
+              v-if="contract.status === 'sent'"
               @click="signContractOpen = true"
               class="flex-1 text-center btn-primary text-sm"
             >
               توقيع العقد الإلكترونى
+            </button>
+            <button
+              v-else
+              disabled
+              class="flex-1 text-center btn-outline text-sm"
+            >
+              ✅ تم التوقيع
             </button>
           </div>
         </div>
@@ -337,38 +324,35 @@ const requestStatus = ref({
                 <Location width="20" height="20" />
               </span>
               <span class="text-xs text-icon-muted">
-                مكة المكرمة – المشاعر المقدسة (منى – مزدلفة – عرفات).
+                {{ application?.job?.location || application?.location }}
               </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
-              <span class="text-icon-muted text-xs"> دوام كامل – 8 ساعات </span>
+              <span class="text-icon-muted text-xs"> {{ application?.job?.hours || application?.hours }} </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
               <span class="text-icon-muted text-xs">
-                10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
-              </span>
-              <span class="text-icon-muted text-xs">
-                10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
+                {{ application?.job?.duration || application?.duration }}
               </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <MoneyIcon />
               </span>
-              <span class="text-xs text-icon-muted"> مرتب 3000 ريال سعودي </span>
+              <span class="text-xs text-icon-muted"> {{ application?.job?.salary || application?.salary }} </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
                 <PersonIcon width="20" height="20" color="#696C68" />
               </span>
               <span class="text-xs text-icon-muted">
-                الذكور فقط لهذه الوظيفة.
+                {{ (application?.job?.gender || application?.gender) === 'male' ? 'الذكور فقط' : (application?.job?.gender || application?.gender) === 'female' ? 'الإناث فقط' : 'رجال ونساء' }}
               </span>
             </div>
           </div>
@@ -376,6 +360,7 @@ const requestStatus = ref({
       </div>
     </div>
 
+    </template>
     <!--  -->
     <SignContract v-model="signContractOpen" />
   </div>

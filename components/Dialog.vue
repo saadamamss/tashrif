@@ -1,8 +1,8 @@
 <template>
   <Transition name="modal">
-    <div v-if="model" class="modal-mask">
+    <div v-if="model" class="modal-mask" role="dialog" aria-modal="true">
       <div class="modal-container" @click.self="closeModal">
-        <div class="modal-content">
+        <div class="modal-content" role="document">
           <slot></slot>
         </div>
       </div>

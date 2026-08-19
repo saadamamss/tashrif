@@ -1,6 +1,6 @@
 # Tashrif (تشريف) - Senior Frontend Engineering Rules
 
-> Seasonal employment platform for Hajj/Umrah connecting companies (entities) with job seekers (individuals). Nuxt 3, Vue 3 Composition API, Pinia, Tailwind CSS + SCSS, VeeValidate, Arabic RTL.
+> Seasonal employment platform for Hajj/Umrah connecting companies (entities) with job seekers (individuals). Nuxt 3, Vue 3 Composition API, Tailwind CSS + SCSS, VeeValidate, Arabic RTL.
 
 ---
 
@@ -16,14 +16,13 @@ frontend/
 │   ├── dashboard/        # company/ and individual/ dashboard components
 │   ├── elements/         # Reusable UI primitives (CustomSelect, TextInput, FileInput, ArrowButton, Tabs)
 │   └── icons/            # SVG icon components (one per file)
-├── composables/          # Shared reactive logic (useLoginModal, useScrollSpy)
+├── composables/          # Shared reactive logic (useAuth, useApi, useLoginModal, useScrollSpy)
 ├── layouts/              # default (public), dashboard (auth), login-layout
-├── middleware/            # Route guards (auth-global, auth-guard, guest, individual, entity, user-type)
+├── middleware/           # Route guards (auth, individual, entity, user-type)
 ├── pages/                # File-based routing
 │   ├── dashboard/        # Authenticated pages (job management, interviews, contracts, profile)
 │   └── register/         # Individual and entity registration flows
-├── plugins/              # VeeValidate rules, ripple directive, error handler
-├── stores/               # Pinia stores (authStore, userStore)
+├── plugins/              # axios (401 queue), auth.server, VeeValidate rules, ripple directive
 └── server/               # Nuxt server routes (API layer)
 ```
 
@@ -31,7 +30,7 @@ frontend/
 - **Individual (فرد)**: explore jobs, apply, track requests, attend interviews, sign contracts
 - **Entity (جهة)**: publish jobs, manage applicants, shortlist, interview, send contracts
 
-Dashboard pages use `defineAsyncComponent` to load the correct component based on `userStore.userType`.
+Dashboard pages use `defineAsyncComponent` to load the correct component based on `useAuth().userType`.
 
 ---
 
@@ -40,8 +39,7 @@ Dashboard pages use `defineAsyncComponent` to load the correct component based o
 ### File Naming
 - Components: **kebab-case** → `job-card.vue`, `filter-drawer.vue`, `apply-job-dialog.vue`
 - Pages: follow Nuxt file-based routing conventions
-- Composables: **camelCase** with `use` prefix → `useLoginModal.js`, `useScrollSpy.js`
-- Stores: **camelCase** → `authStore.js`, `userStore.js`
+- Composables: **camelCase** with `use` prefix → `useAuth.ts`, `useLoginModal.js`
 - SCSS partials: **underscore prefix** → `_variables.scss`, `_mixins.scss`
 
 ### Vue SFC Order
@@ -187,13 +185,12 @@ If a component's `<template>` exceeds **150 lines**, it MUST be split into sub-c
 Dashboard pages that differ by user type use this pattern:
 ```vue
 <script setup>
-import { useUserStore } from '~/stores/userStore'
+import { useAuth } from '~/composables/useAuth'
 
-const userStore = useUserStore()
+const { userType } = useAuth()
 const DashboardComponent = computed(() => {
-  const type = userStore.userType
-  if (type === 'individual') return defineAsyncComponent(() => import('~/components/dashboard/individual/Home.vue'))
-  if (type === 'entity') return defineAsyncComponent(() => import('~/components/dashboard/company/Home.vue'))
+  if (userType.value === 'individual') return defineAsyncComponent(() => import('~/components/dashboard/individual/Home.vue'))
+  if (userType.value === 'entity') return defineAsyncComponent(() => import('~/components/dashboard/company/Home.vue'))
   return null
 })
 </script>
@@ -205,95 +202,68 @@ const DashboardComponent = computed(() => {
 
 ---
 
-## 5. STATE MANAGEMENT (PINIA)
+## 5. STATE MANAGEMENT (COMPOSABLES)
 
-### Store Structure
-```js
-import { defineStore } from 'pinia'
+There is **no Pinia**. Shared state lives in composables using Nuxt's `useState` (SSR-safe). Auth state is the canonical example (`composables/useAuth.ts`).
 
-export const useExampleStore = defineStore('example', {
-  state: () => ({
-    items: [],
-    isLoading: false,
-    error: null,
-  }),
+### Composable Pattern
+```ts
+// composables/useExample.ts
+export function useExample() {
+  const items = useState<any[]>("example:items", () => [])
+  const isLoading = useState<boolean>("example:isLoading", () => false)
+  const error = useState<string | null>("example:error", () => null)
 
-  getters: {
-    activeItems: (state) => state.items.filter(i => i.active),
-    itemCount: (state) => state.items.length,
-  },
+  async function fetchItems() {
+    isLoading.value = true
+    error.value = null
+    try {
+      const { data } = await useApi().get<any[]>("/items")
+      items.value = data
+    } catch (err: any) {
+      error.value = err?.message || "Failed"
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-  actions: {
-    async fetchItems() {
-      this.isLoading = true
-      this.error = null
-      try {
-        const data = await $fetch('/api/items')
-        this.items = data
-      } catch (err) {
-        this.error = err.message
-      } finally {
-        this.isLoading = false
-      }
-    },
-  },
-})
+  return {
+    items: readonly(items),
+    isLoading: readonly(isLoading),
+    error,
+    fetchItems,
+  }
+}
 ```
 
-### Store Rules
+### Composable Rules
+- Always give `useState` a unique key (namespaced with the feature name)
 - Every async action must set `isLoading` before and after
-- Every async action must catch errors and set `this.error`
-- Never store derived data — use getters
-- Never mutate state outside actions
-- Use `this.$reset()` to clear store state (built-in Pinia method)
+- Every async action must catch errors and set `error`
+- Never store derived data — use `computed`
+- Return state via `readonly(...)` and expose mutation functions explicitly
 
 ### Auth Flow
-- `authStore` — handles login, logout, token management, auth state
-- `userStore` — handles user profile, user type detection
-- `auth-global` middleware runs on every route to initialize auth from cookies
-- `auth-guard` middleware protects dashboard routes
+- `useAuth()` (`composables/useAuth.ts`) — useState-based: `user`, `isAuthenticated`, `userType`, `isIndividual`, `isEntity`, `isAdmin`, `init()`, `login()`, `register()`, `logout()`
+- `plugins/auth.server.ts` — restores session on SSR via `useAuth().init()` → `GET /auth/me`
+- `auth` middleware is the single guard: checks `meta.requiresAuth` (redirects to `/?redirect=<path>` when logged out) and `meta.guest` (redirects to `/dashboard` when logged in)
 - `individual` / `entity` middleware gates role-specific pages
+- `user-type` middleware routes to the correct dashboard
 
 ---
 
 ## 6. API INTEGRATION
 
-### Use `$fetch` for API Calls
-```js
-// In store actions or composables — use $fetch (Nuxt's ofetch wrapper)
-const data = await $fetch('/api/jobs', {
-  method: 'GET',
-  headers: { Authorization: `Bearer ${token}` },
-})
-
-// In components for server-rendered data — use useFetch or useAsyncData
-const { data, pending, error, refresh } = await useFetch('/api/jobs')
+### Use `useApi()` for API Calls
+```ts
+// composables/useApi.ts — thin wrapper over the $api axios instance
+const { data, error, pending } = await useApi().get("/jobs", { params })
 ```
 
-### API Composable Pattern
-```js
-// composables/useApi.js
-export function useApi() {
-  const authStore = useAuthStore()
-
-  const apiFetch = (url, options = {}) => {
-    return $fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        ...(authStore.token && { Authorization: `Bearer ${authStore.token}` }),
-      },
-      onResponseError({ response }) {
-        if (response.status === 401) {
-          authStore.logout()
-        }
-      },
-    })
-  }
-
-  return { apiFetch }
-}
-```
+All requests go through the `$api` axios instance created in `plugins/axios.ts`:
+- `withCredentials: true` — session cookies are sent automatically
+- Request interceptor forwards cookies on SSR
+- Response interceptor handles the 401 refresh queue (`POST /auth/refresh`) and rotates cookies
 
 ### Server Routes (Mock API)
 For features without a real backend, create Nuxt server routes:
@@ -359,8 +329,8 @@ defineRule('phone', (value) => {
 
 ### Middleware Order
 For protected pages, middleware runs in this order:
-1. `auth-global` (always, on every route) — initializes auth from cookie
-2. `auth-guard` — redirects to `/` if not authenticated
+1. `auth` — checks `meta.requiresAuth` / `meta.guest` against `useAuth().isAuthenticated`
+2. `user-type` — routes to the correct dashboard
 3. `individual` OR `entity` — checks user type matches
 
 ### Applying Middleware to Pages
@@ -368,7 +338,8 @@ For protected pages, middleware runs in this order:
 <script setup>
 definePageMeta({
   layout: 'dashboard',
-  middleware: ['auth-guard', 'individual'],
+  middleware: ['auth', 'individual'],
+  meta: { requiresAuth: true },
 })
 </script>
 ```
@@ -525,21 +496,21 @@ describe('JobCard', () => {
 })
 ```
 
-### Store Tests
+### Composable Tests (useAuth)
 ```js
-import { describe, it, expect, beforeEach } from 'vitest'
-import { setActivePinia, createPinia } from 'pinia'
-import { useAuthStore } from '~/stores/authStore'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { useAuth } from '~/composables/useAuth'
 
-describe('authStore', () => {
-  beforeEach(() => setActivePinia(createPinia()))
-
+// Stub useAuth globals (see __tests__/stores -> composables/useAuth.test.ts)
+describe('useAuth', () => {
   it('starts unauthenticated', () => {
-    const store = useAuthStore()
-    expect(store.isAuthenticated).toBe(false)
+    const auth = useAuth()
+    expect(auth.isAuthenticated.value).toBe(false)
   })
 })
 ```
+
+See `__tests__/composables/useAuth.test.ts` for the full pattern (stubs `useAuth` globals).
 
 ---
 
@@ -594,12 +565,12 @@ refactor/filter-section-component
 ### Adding a New Dashboard Feature
 1. Create company and individual variants in `components/dashboard/`
 2. Create the page in `pages/dashboard/` with dynamic component loading
-3. Apply correct middleware (`auth-guard` + `individual`/`entity`)
+3. Apply correct middleware (`auth` + `individual`/`entity`)
 4. Add to SideNav navigation items
 
 ### Adding a New API Endpoint
 1. Create server route in `server/api/`
-2. Create or update the relevant store action
+2. Create or update the relevant composable / `useApi` call
 3. Use `useApi` composable for authenticated requests
 4. Handle loading/error/empty states in the consuming component
 
@@ -653,8 +624,8 @@ refactor/filter-section-component
 | Page Group | Layout | Middleware |
 |---|---|---|
 | `/`, `/jobs` | default | none |
-| `/login` | login-layout | guest |
-| `/register/*` | login-layout | guest |
-| `/dashboard` (individual) | dashboard | auth-guard, individual |
-| `/dashboard` (entity) | dashboard | auth-guard, entity |
-| `/dashboard` (shared) | dashboard | auth-guard, user-type |
+| `/login` | login-layout | auth (guest meta) |
+| `/register/*` | login-layout | auth (guest meta) |
+| `/dashboard` (individual) | dashboard | auth, individual |
+| `/dashboard` (entity) | dashboard | auth, entity |
+| `/dashboard` (shared) | dashboard | auth, user-type |

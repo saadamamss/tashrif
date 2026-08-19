@@ -1,9 +1,19 @@
 export default defineEventHandler(async (event) => {
   await delay()
-  const auth = getHeader(event, 'authorization')
-  if (auth && auth.startsWith('Bearer ')) {
-    const token = auth.slice(7)
-    delete tokens[token]
-  }
-  return { success: true }
+
+  deleteCookie(event, 'access_token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+  })
+
+  deleteCookie(event, 'refresh_token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+  })
+
+  return { message: 'تم تسجيل الخروج بنجاح' }
 })

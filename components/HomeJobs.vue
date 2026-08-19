@@ -23,8 +23,8 @@
           :space-between="20"
           dir="rtl"
         >
-          <swiper-slide v-for="i in 8" :key="i" class="py-10 max-w-[400px]">
-            <JobCard style="border-radius: 40px; border: none; max-width: 400px" @open-apply-form="$emit('apply')" />
+          <swiper-slide v-for="job in jobs" :key="job.id" class="py-10 max-w-[400px]">
+            <JobCard :job="job" style="border-radius: 40px; border: none; max-width: 400px" @open-apply-form="(id) => $emit('apply', id)" />
           </swiper-slide>
         </swiper>
       </div>
@@ -32,10 +32,10 @@
       <div class="flex flex-col md:flex-row items-center gap-10 max-w-[1300px] mx-auto  px-4 sm:px-3 xl:px-0">
         <div id="swiper-scrollbar" class="w-full h-1 bg-white rounded-2"></div>
         <div class="flex gap-2 py-2 justify-end">
-          <button id="prevButton" class="bg-white rounded-md py-3 px-4">
+          <button id="prevButton" class="bg-white rounded-md py-3 px-4" aria-label="السابق">
             <ChevronLeftIcon width="24" height="16" color="#BEC2C5" />
           </button>
-          <button id="nextButton" class="bg-white rounded-md py-3 px-4">
+          <button id="nextButton" class="bg-white rounded-md py-3 px-4" aria-label="التالي">
             <ChevronRightIcon width="24" height="16" color="#BEC2C5" />
           </button>
         </div>
@@ -54,6 +54,20 @@ import JobCard from "./JobCard.vue";
 import ChevronLeftIcon from "./icons/ChevronLeftIcon.vue";
 import ChevronRightIcon from "./icons/ChevronRightIcon.vue";
 
+import { ref, onMounted } from "vue";
+
 const modules = [Navigation, Scrollbar];
 defineEmits(['apply']);
+
+const jobs = ref([])
+onMounted(async () => {
+  try {
+    const { data, error } = await useApi().get('/jobs?limit=8')
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    if (data) jobs.value = data.items || data
+  } catch (e) { console.error(e) }
+})
 </script>

@@ -8,6 +8,7 @@
       @blur="onBlur"
       :aria-expanded="isOpen"
       aria-haspopup="true"
+      :aria-label="label"
     >
       <slot name="trigger"></slot>
     </button>
@@ -29,12 +30,12 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
-/** @type {{ prevent: boolean, items: Array<any>, placeholder: string, triggerStyle: string, modelValue: string|number|boolean|null }} */
 const props = defineProps({
+  label: { type: String, default: undefined },
   prevent: { type: Boolean, default: false },
   items: {
     type: Array,
-    default: [],
+    default: () => [],
   },
   placeholder: {
     type: String,

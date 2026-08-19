@@ -15,7 +15,20 @@ export default defineEventHandler(async (event) => {
   const total = result.length
   const totalPages = Math.ceil(total / limit)
   const start = (page - 1) * limit
-  const items = result.slice(start, start + limit)
+  const items = result.slice(start, start + limit).map(c => {
+    const user = users.find(u => u.id === c.userId)
+    const job = jobs.find(j => j.id === c.jobId)
+    const entity = users.find(u => u.id === c.entityId)
+    return {
+      ...c,
+      userName: user?.name || '',
+      userAvatar: user?.avatarUrl || '',
+      jobTitle: job?.title || '',
+      entityName: entity?.name || '',
+      entityLogo: entity?.avatarUrl || '',
+      fileName: c.fileUrl ? c.fileUrl.split('/').pop() : undefined,
+    }
+  })
 
   return { items, total, page, totalPages }
 })

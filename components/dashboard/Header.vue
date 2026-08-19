@@ -20,6 +20,7 @@
           <button
             class="block lg:hidden text-gray-600 hover:text-gray-900"
             @click="$emit('toggleSide')"
+            aria-label="فتح القائمة الجانبية"
           >
             <Hamburger />
           </button>
@@ -37,6 +38,7 @@
           <!-- :prevent="true" -->
           <DropDown
             prevent
+            label="الإشعارات"
             trigger-style="bg-bg-light rounded-full border-2 border-[#fff]/0 active:border-primary"
           >
             <template #trigger>
@@ -96,10 +98,7 @@ import { ref } from "vue";
 import Logo from "../icons/logo.vue";
 import DropDown from "../elements/DropDown.vue";
 
-const authStore = useAuthStore();
-const logout = () => {
-  authStore.logout();
-};
+const { logout } = useAuth();
 </script>
 
 <style scoped lang="scss">

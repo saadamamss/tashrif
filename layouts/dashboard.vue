@@ -2,6 +2,13 @@
 import Header from "~/components/dashboard/Header.vue";
 import SideNav from "~/components/dashboard/SideNav.vue";
 useHead({
+  titleTemplate: (title) => {
+    if (!title) return 'لوحة التحكم | منصة تشريف'
+    return `${title} | لوحة التحكم | منصة تشريف`
+  },
+  meta: [
+    { name: "robots", content: "noindex, nofollow" },
+  ],
   bodyAttrs: {
     class: "dashboard-layout",
   },
@@ -21,17 +28,19 @@ const isHidden = computed(() => {
 
 <template>
   <div>
+    <a href="#dashboard-content" class="skip-link">تخطى إلى المحتوى الرئيسي</a>
     <Header @toggleSide="toggleSideNav" />
     <SideNav
       :open-side-nav="sideOpen"
       @toggleSide="toggleSideNav"
       :class="{ hide_side: isHidden }"
     />
-    <main class="max-wrapper pt-[90px] sm:pt-[90px] md:pt-[110px]">
+    <main id="dashboard-content" class="max-wrapper pt-[90px] sm:pt-[90px] md:pt-[110px]" tabindex="-1">
       <div class="main-content" :class="{ hide_side: isHidden }">
         <slot />
       </div>
     </main>
+    <Toast />
   </div>
 </template>
 <style scoped lang="scss">

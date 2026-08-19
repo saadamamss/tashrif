@@ -5,6 +5,15 @@ export interface Contract {
   userId: number
   entityId: number
   fileUrl: string
+  fileSize?: number
+  fileName?: string
+  userName?: string
+  userAvatar?: string
+  jobTitle?: string
+  entityName?: string
+  entityLogo?: string
+  notes?: string
+  endDate?: string
   status: ContractStatus
   signedAt?: string
   createdAt: string

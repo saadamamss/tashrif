@@ -2,11 +2,27 @@
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import InterviewCard from "~/components/InterviewCard.vue";
 
+const statusOptions = ['الكل', 'قادمة', 'منتهية', 'ملغية']
 const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
 };
-//
+const loading = ref(false);
+const items = ref([]);
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const { data, error } = await useApi().get('/interviews')
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    if (data?.items) items.value = data.items
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -42,9 +58,9 @@ const toggleFilterAria = () => {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> تاريخ المقابلة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="statusOptions"
                   placeholder="تاريخ المقابلة"
-                 
+                  
                   key="select-2"
                 />
               </div>
@@ -52,9 +68,9 @@ const toggleFilterAria = () => {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> نوع الوظيفة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="statusOptions"
                   placeholder="اختر"
-                 
+                  
                   key="select-1"
                 />
               </div>
@@ -63,9 +79,9 @@ const toggleFilterAria = () => {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> الموقع </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="statusOptions"
                   placeholder="الموقع"
-                 
+                  
                   key="select-4"
                 />
               </div>
@@ -74,9 +90,9 @@ const toggleFilterAria = () => {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> الشركة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="statusOptions"
                   placeholder="الشركة"
-                 
+                  
                   key="select-3"
                 />
               </div>
@@ -97,7 +113,7 @@ const toggleFilterAria = () => {
     <div>
       <div class="flex flex-col md:flex-row gap-6 justify-between items-start">
         <div>
-          <h1 class="text-base font-semibold mb-3">عرض 84 مقابلة عمل</h1>
+          <h1 class="text-base font-semibold mb-3">عرض {{ items.length }} مقابلة عمل</h1>
           <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
         </div>
         <div class="self-end">
@@ -110,7 +126,7 @@ const toggleFilterAria = () => {
       </div>
       <div class="jobs-container py-8">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <InterviewCard v-for="i in 12" />
+          <InterviewCard v-for="item in items" :key="item.id" :interview="item" />
         </div>
       </div>
     </div>

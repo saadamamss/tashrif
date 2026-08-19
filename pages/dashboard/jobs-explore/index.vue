@@ -2,11 +2,17 @@
 import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import JobCard from "~/components/JobCard.vue";
+import Pagination from "~/components/Pagination.vue";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global", "auth-guard", "individual"],
+  middleware: ["auth", "individual"],
+  meta: { requiresAuth: true },
 });
+
+useHead({
+  title: 'استكشف الوظائف',
+})
 
 const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
@@ -14,25 +20,96 @@ const toggleFilterAria = () => {
 };
 
 const applyDialog = ref(false);
+const selectedJobId = ref(null);
 const loading = ref(false);
 const error = ref(null);
 const items = ref([]);
 
-onMounted(async () => {
+const filterOptions = ref({
+  workTypes: [],
+  locations: [],
+  genders: [],
+  entities: [],
+})
+
+const filters = ref({
+  type: '',
+  location: '',
+  gender: '',
+  entityId: '',
+})
+
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
+
+async function fetchFilterOptions() {
+  try {
+    const { data, error } = await useApi().get('/jobs/filter-options')
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    if (data) {
+      filterOptions.value = data
+    }
+  } catch (err) {
+    console.error('Failed to load filter options:', err)
+  }
+}
+
+async function fetchJobs() {
   loading.value = true;
   error.value = null;
   try {
-    const { data } = await useApi().get('/jobs');
+    const params = { page: page.value, limit: perPage.value }
+    if (filters.value.type) params.type = filters.value.type
+    if (filters.value.location) params.location = filters.value.location
+    if (filters.value.gender) params.gender = filters.value.gender
+    if (filters.value.entityId) params.entityId = filters.value.entityId
+
+    const { data, error } = await useApi().get('/jobs', params);
+    if (error) {
+      error.value = error;
+      useToast().show(error, "error");
+      return;
+    }
     items.value = data?.items || [];
+    total.value = data?.total || 0;
   } catch (err) {
     error.value = err?.message || 'حدث خطأ في تحميل الوظائف';
+    useToast().show("حدث خطأ في تحميل الوظائف", "error");
   } finally {
     loading.value = false;
   }
-});
+}
+
+function applyFilters() {
+  page.value = 1
+  fetchJobs()
+}
+
+function resetFilters() {
+  filters.value = { type: '', location: '', gender: '', entityId: '' }
+  page.value = 1
+  fetchJobs()
+}
+
+function handlePageChange(p) {
+  goToPage(p)
+  fetchJobs()
+}
+
+onMounted(() => {
+  fetchFilterOptions()
+  fetchJobs()
+})
 
 function retry() {
   window.location.reload();
+}
+
+function markJobApplied(jobId) {
+  const item = items.value.find(j => j.id === jobId)
+  if (item) item.isApplied = true
 }
 </script>
 <template>
@@ -49,6 +126,8 @@ function retry() {
           <button
             @click="toggleFilterAria"
             class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
+            :aria-expanded="filterAreaExpands"
+            aria-label="تصفية"
           >
             <ChevronUp />
           </button>
@@ -68,9 +147,9 @@ function retry() {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> تاريخ النشر </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.workTypes"
                   placeholder="تاريخ النشر"
-                 
+                  v-model="filters.type"
                   key="select-2"
                 />
               </div>
@@ -78,9 +157,9 @@ function retry() {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> نوع الوظيفة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.workTypes"
                   placeholder="اختر"
-                 
+                  v-model="filters.type"
                   key="select-1"
                 />
               </div>
@@ -89,9 +168,9 @@ function retry() {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> الموقع </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.locations"
                   placeholder="الموقع"
-                 
+                  v-model="filters.location"
                   key="select-4"
                 />
               </div>
@@ -100,9 +179,9 @@ function retry() {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> الشركة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.entities"
                   placeholder="الشركة"
-                 
+                  v-model="filters.entityId"
                   key="select-3"
                 />
               </div>
@@ -112,9 +191,9 @@ function retry() {
             <hr />
           </div>
           <div class="flex justify-between items-center">
-            <button class="btn-outline text-sm px-10">إعادة تعيين</button>
+            <button class="btn-outline text-sm px-10" @click="resetFilters">إعادة تعيين</button>
 
-            <button class="btn-primary text-sm px-10">تطبيق</button>
+            <button class="btn-primary text-sm px-10" @click="applyFilters">تطبيق</button>
           </div>
         </div>
       </ExpandArea>
@@ -135,21 +214,36 @@ function retry() {
         </div>
       </div>
       <div class="jobs-container py-8">
-        <LoadingSkeleton v-if="loading" :rows="4" :columns="3" height="280px" />
-        <ErrorState v-else-if="error" :message="error" @retry="retry" />
-        <EmptyState v-else-if="!items.length" title="لا توجد وظائف" description="لم يتم العثور على وظائف متاحة حالياً" />
+        <UiLoadingSkeleton v-if="loading" :count="12" :columns="3" height="280px" />
+        <UiErrorState v-else-if="error" :message="error" @retry="retry" />
+        <UiEmptyState v-else-if="!items.length" title="لا توجد وظائف" description="لم يتم العثور على وظائف متاحة حالياً" />
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <JobCard
             v-for="item in items"
             :key="item.id"
-            @open-apply-form="applyDialog = true"
+            :job="item"
+            @open-apply-form="(id) => { selectedJobId = id; applyDialog = true }"
           />
         </div>
+      </div>
+
+      <div class="pt-6" v-if="totalPages > 1">
+        <Pagination
+          :current-page="page"
+          :total-pages="totalPages"
+          :per-page="perPage"
+          @page-changed="handlePageChange"
+          @per-page-change="onPerPageChange"
+        />
       </div>
     </div>
 
     <!--  -->
-    <ApplyJobDialog v-model="applyDialog" />
+    <ApplyJobDialog
+      v-model="applyDialog"
+      :job-id="selectedJobId"
+      @applied="markJobApplied"
+    />
   </div>
 </template>
 

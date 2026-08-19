@@ -1,21 +1,34 @@
 <script setup>
 useHead({
+  title: 'إنشاء حساب جهة',
+  meta: [
+    { name: "description", content: "إنشاء حساب جهة في منصة تشريف. انشر وظائف موسمية وابحث عن الكفاءات المناسبة لخدمة ضيوف الرحمن." },
+  ],
   bodyAttrs: {
     class: "register-page",
   },
 });
 
 definePageMeta({
-  middleware: "guest",
+  middleware: "auth",
+  meta: { guest: true },
 });
 
 import { Field, Form, ErrorMessage, defineRule } from "vee-validate";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import TextInput from "~/components/elements/TextInput.vue";
 import PhoneInput from "~/components/PhoneInput.vue";
+import { required as veeRequired, min as veeMin, confirmed as veeConfirmed } from "@vee-validate/rules";
 
-const currentStep = ref(3);
-const formData = ref({});
+defineRule("required", veeRequired);
+defineRule("min", veeMin);
+defineRule("confirmed", veeConfirmed);
+
+const currentStep = ref(1);
+const formData = ref({
+  password: "",
+  confirmPassword: "",
+});
 const phoneValid = ref(false);
 //
 defineRule("phonevalidation", (value) => {
@@ -29,6 +42,9 @@ const schema = computed(() => {
     1: {
       companyLogo: "required",
       companyName: "required",
+      nationalId: "required|numeric",
+      password: "required|min:8",
+      confirmPassword: "required|confirmed:password",
       fieldName: "required",
       sector: "required",
       country: "required",
@@ -69,15 +85,52 @@ const handleFileInputChange = (event) => {
   }
 };
 const router = useRouter();
-const onSubmit = () => {
+const isSubmitting = ref(false);
+
+const { save: saveForm, restore: restoreForm, clear: clearForm } = useFormPersistence('entity-registration')
+const { enable: warnBeforeUnload, disable: disableUnloadWarning } = useBeforeUnload('لديك بيانات غير محفوظة في نموذج التسجيل')
+
+watch(currentStep, () => {
+  saveForm({ ...formData.value, currentStep: currentStep.value, phoneValid: phoneValid.value })
+})
+
+onMounted(() => {
+  const saved = restoreForm()
+  if (saved) {
+    formData.value = saved
+    if (saved.currentStep) currentStep.value = saved.currentStep
+    if (saved.phoneValid !== undefined) phoneValid.value = saved.phoneValid
+  }
+})
+
+warnBeforeUnload()
+
+const onSubmit = async () => {
   if (currentStep.value < 3) {
+    saveForm({ ...formData.value, currentStep: currentStep.value + 1, phoneValid: phoneValid.value })
     currentStep.value++;
   } else {
-    // Final submission
-    console.log("Form submitted", formData.value);
-
-    router.push("/register/success");
-    // Submit to API or show success message
+    isSubmitting.value = true
+    try {
+      const payload = new FormData()
+      Object.entries(formData.value).forEach(([key, val]) => {
+        if (val && key !== 'companyLogo') payload.append(key, val)
+      })
+      if (formData.value.companyLogo instanceof File) {
+        payload.append('companyLogo', formData.value.companyLogo)
+      }
+      const { error } = await useApi().post('/auth/register', payload)
+      if (error) {
+        useToast().show(error, "error")
+        return
+      }
+      useToast().show("تم إنشاء الحساب بنجاح", "success")
+      clearForm()
+      disableUnloadWarning()
+      router.push("/register/success")
+    } finally {
+      isSubmitting.value = false
+    }
   }
 };
 
@@ -198,6 +251,45 @@ const handleSubmit = () => {
                 v-model="formData.companyName"
                 :error="errors.companyName"
                 required
+              />
+            </div>
+            <div class="flex-1">
+              <TextInput
+                name="nationalId"
+                id="nationalId"
+                label="رقم السجل التجاري"
+                placeholder="رقم السجل التجاري"
+                v-model="formData.nationalId"
+                :error="errors.nationalId"
+                required
+              />
+            </div>
+          </div>
+          <div class="w-full flex gap-4 md:gap-6 mb-6">
+            <div class="flex-1">
+              <TextInput
+                name="password"
+                id="password"
+                type="password"
+                label="كلمة المرور"
+                placeholder="أدخل كلمة مرور قوية (8 أحرف على الأقل)"
+                v-model="formData.password"
+                :error="errors.password"
+                required
+                rules="required|min:8"
+              />
+            </div>
+            <div class="flex-1">
+              <TextInput
+                name="confirmPassword"
+                id="confirmPassword"
+                type="password"
+                label="تأكيد كلمة المرور"
+                placeholder="أعد إدخال كلمة المرور"
+                v-model="formData.confirmPassword"
+                :error="errors.confirmPassword"
+                required
+                rules="required|confirmed:password"
               />
             </div>
           </div>
@@ -433,8 +525,8 @@ const handleSubmit = () => {
           <div v-else></div>
           <!-- Spacer -->
 
-          <button type="submit" class="btn-primary text-sm py-3 px-10">
-            {{ currentStep === 3 ? "إنشاء حساب" : "التالي" }}
+          <button type="submit" class="btn-primary text-sm py-3 px-10" :disabled="isSubmitting">
+            {{ isSubmitting ? 'جاري إنشاء الحساب...' : currentStep === 3 ? 'إنشاء حساب' : 'التالي' }}
           </button>
         </div>
       </Form>

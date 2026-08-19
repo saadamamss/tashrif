@@ -7,6 +7,14 @@ export interface Individual {
   gender?: string
   nationality?: string
   nationalId?: string
+  birthDate?: string
+  city?: string
+  zone?: string
+  district?: string
+  street?: string
+  zipcode?: string
+  jobTitle?: string
+  profileCompletionPct?: number
   cvFile?: string
   idFile?: string
   stats?: IndividualStats
@@ -29,4 +37,13 @@ export interface IndividualStats {
   pendingApps: number
   interviews: number
   contracts: number
+}
+
+export interface Qualification {
+  id: number
+  type: string
+  specialization?: string
+  institution?: string
+  graduationYear?: number
+  grade?: string
 }

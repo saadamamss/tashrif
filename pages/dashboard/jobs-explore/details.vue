@@ -7,28 +7,51 @@ import JobCard from "~/components/JobCard.vue";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global", "auth-guard", "individual"],
+  middleware: ["auth", "individual"],
+  meta: { requiresAuth: true },
 });
-const breadcrumbs = [
+
+useHead({
+  title: 'تفاصيل الوظيفة',
+})
+
+const breadcrumbs = computed(() => [
   {
     label: "استكشف الوظائف",
     to: "/dashboard/jobs-explore",
     active: true,
   },
-
   {
-    label: "مشرف حجاج",
+    label: job?.title || 'الوظيفة',
     active: false,
   },
-];
+]);
 
 const applyDialog = ref(false);
 const loading = ref(false);
+const error = ref(null);
+const job = ref(null);
+const route = useRoute();
+
+function onApplied() {
+  if (job.value) job.value.isApplied = true;
+}
 
 onMounted(async () => {
   loading.value = true;
+  error.value = null;
+  const jobId = route.query.id || route.params.id || 1
   try {
-    await useApi().get('/jobs/1');
+    const { data, error } = await useApi().get(`/jobs/${jobId}`);
+    if (error) {
+      error.value = error;
+      useToast().show(error, "error");
+      return;
+    }
+    if (data) job.value = data;
+  } catch (e) {
+    error.value = e?.message || 'حدث خطأ أثناء تحميل بيانات الوظيفة';
+    useToast().show("حدث خطأ أثناء تحميل بيانات الوظيفة", "error");
   } finally {
     loading.value = false;
   }
@@ -37,7 +60,9 @@ onMounted(async () => {
 <template>
   <div class="px-4 lg:px-0">
     <Breadcrumbs :items="breadcrumbs" />
-    <LoadingSkeleton v-if="loading" :rows="1" height="400px" rounded="2xl" />
+    <UiLoadingSkeleton v-if="loading" :count="1" height="400px" rounded="2xl" />
+    <UiErrorState v-else-if="error" :message="error" @retry="onMounted" />
+    <UiEmptyState v-else-if="!job" title="الوظيفة غير موجودة" description="لم نتمكن من العثور على الوظيفة المطلوبة" />
     <template v-else>
     <!--  -->
     <div class="grid grid-cols-7 gap-6 items-start py-4 mb-4">
@@ -45,26 +70,18 @@ onMounted(async () => {
         <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 md:p-8 mb-8">
           <div class="flex flex-col gap-6">
             <h1 class="job-title text-lg lg:text-xl font-bold text-dark">
-              مشرف حجاج
+              {{ job?.title }}
             </h1>
             <p class="job-desc text-sm text-dark/70 leading-[2]">
-              تبحث شركة الإسناد الموسمي لخدمات الحجاج عن أفراد مؤهلين للانضمام
-              إلى فريقها كمشرفين ميدانيين خلال موسم الحج. ستكون مسؤولاً عن تنظيم
-              وإرشاد مجموعة من الحجاج أثناء تنقلهم بين المشاعر المقدسة، وضمان
-              التزامهم بالتعليمات والخطط التشغيلية.
+              {{ job?.description }}
             </p>
 
             <div class="flex items-center gap-2">
-              <span
-                class="company-logo border rounded-md overflow-hidden py-1 px-2"
-              >
-                <img
-                  src="/images/partner-3.svg"
-                  class="w-10 h-6 object-cover"
-                />
+              <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
+                <img :src="job?.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
               </span>
               <span class="company-name text-sm text-dark">
-                شركة نسك لخدمات الحجاج
+                {{ job?.entityName }}
               </span>
             </div>
           </div>
@@ -82,26 +99,12 @@ onMounted(async () => {
           <!-- Named slots for each tab content -->
           <template #benefits>
             <div class="p-5 bg-white rounded-2xl border-2">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
+              <h3 class="text-base font-semibold text-primary pb-5 border-b mb-4">
                 مميزات خاصة
               </h3>
-              <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  الإشراف اليومي على مجموعة محددة من الحجاج.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التأكد من التزام الحجاج بخطط التنقل وجدول الحركة بين المشاعر.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التنسيق المستمر مع فرق النقل والدعم اللوجستي.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التعامل مع الحالات الطارئة ورفع التقارير إلى المسؤول المباشر.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  ضمان سلامة وراحة الحجاج خلال تنقلهم وإقامتهم.
+              <ul v-if="job?.benefits?.length" class="ps-2 mt-2 list-disc list-inside">
+                <li v-for="benefit in job.benefits" :key="benefit" class="text-sm text-muted mb-4">
+                  {{ benefit }}
                 </li>
               </ul>
             </div>
@@ -109,29 +112,12 @@ onMounted(async () => {
 
           <template #conditions>
             <div class="p-5 bg-white rounded-2xl border-2">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
+              <h3 class="text-base font-semibold text-primary pb-5 border-b mb-4">
                 شروط القبول
               </h3>
-              <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  أن يكون المتقدم سعودي الجنسية.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  العمر بين 22 و45 سنة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  القدرة على العمل الميداني المكثف لساعات طويلة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  يفضّل من لديه خبرة سابقة في العمل الموسمي أو الإشراف الميداني.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  الالتزام بالأخلاقيات المهنية والسلوكيات المناسبة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  الأولوية لسكان منطقة مكة المكرمة لتسهيل التنقل السريع.
+              <ul v-if="job?.conditions?.length" class="ps-2 mt-2 list-disc list-inside">
+                <li v-for="condition in job.conditions" :key="condition" class="text-sm text-muted mb-4">
+                  {{ condition }}
                 </li>
               </ul>
             </div>
@@ -139,20 +125,12 @@ onMounted(async () => {
 
           <template #tasks>
             <div class="p-5 bg-white rounded-2xl border-2">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
-                المزايا والمكافأة
+              <h3 class="text-base font-semibold text-primary pb-5 border-b mb-4">
+                المهام والمسؤوليات
               </h3>
-              <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  مكافأة مقطوعة قدرها 3000 ريال سعودي.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  شهادة خبرة بعد انتهاء المهمة بنجاح.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  تشمل بدل السكن والتنقل.
+              <ul v-if="job?.responsibilities?.length" class="ps-2 mt-2 list-disc list-inside">
+                <li v-for="resp in job.responsibilities" :key="resp" class="text-sm text-muted mb-4">
+                  {{ resp }}
                 </li>
               </ul>
             </div>
@@ -172,43 +150,47 @@ onMounted(async () => {
                 <Location width="20" height="20" />
               </span>
               <span class="text-xs text-icon-muted">
-                مكة المكرمة – المشاعر المقدسة (منى – مزدلفة – عرفات).
+                {{ job?.location }}
               </span>
           </div>
           <div class="flex gap-2 items-center">
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
-              <span class="text-icon-muted text-xs"> دوام كامل – 8 ساعات </span>
+              <span class="text-icon-muted text-xs"> {{ job?.hours }} </span>
           </div>
           <div class="flex gap-2 items-center">
               <span>
                 <CalenderIcon width="21" height="20" />
               </span>
               <span class="text-icon-muted text-xs">
-                10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
+                {{ job?.duration }}
               </span>
-            <span class="text-icon-muted text-xs">
-              10 أيام (من 1 ذو الحجة حتى 10 ذو الحجة)
-            </span>
           </div>
           <div class="flex gap-2 items-center">
             <span>
               <MoneyIcon />
             </span>
-            <span class="text-xs text-icon-muted"> مرتب 3000 ريال سعودي </span>
+            <span class="text-xs text-icon-muted"> {{ job?.salary }} </span>
           </div>
           <div class="flex gap-2 items-center">
               <span>
                 <PersonIcon width="20" height="20" color="#696C68" />
               </span>
               <span class="text-xs text-icon-muted">
-                الذكور فقط لهذه الوظيفة.
+                {{ job?.gender === 'male' ? 'الذكور فقط' : job?.gender === 'female' ? 'الإناث فقط' : 'رجال ونساء' }}
               </span>
           </div>
         </div>
         <div class="mt-4">
+          <div
+            v-if="job.isApplied"
+            class="mx-auto text-center text-sm w-full max-w-[300px] px-4 py-2 rounded-full bg-[#E7F6EC] text-[#1D9A4E] font-medium"
+          >
+            تم التقديم على هذه الوظيفة
+          </div>
           <button
+            v-else
             class="btn-primary mx-auto text-sm w-full max-w-[300px]"
             @click="applyDialog = true"
           >
@@ -219,7 +201,7 @@ onMounted(async () => {
     </div>
 
     <!--  -->
-    <ApplyJobDialog v-model="applyDialog" />
+    <ApplyJobDialog v-model="applyDialog" :job-id="job?.id" @applied="onApplied" />
   </template>
   </div>
 </template>

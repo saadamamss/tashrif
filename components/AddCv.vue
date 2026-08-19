@@ -72,8 +72,9 @@ import FileInput from "./elements/FileInput.vue";
 const form = ref(null);
 const model = defineModel();
 const cvFile = ref();
+const emit = defineEmits(["saved"]);
 defineRule("validateContractFile", (value) => {
-  if (!value || !(value instanceof File)) return "قم برفع ملف العقد أولا !";
+  if (!value || !(value instanceof File)) return "قم برفع السيرة الذاتية أولا!";
 
   return true;
 });
@@ -83,17 +84,28 @@ const handleFileChange = (event) => {
 };
 const isSubmitting = ref(false);
 const submitApplication = async () => {
-  try {
-    isSubmitting.value = true;
-    await new Promise((resolve) =>
-      setTimeout(() => {
-        resolve(true);
-      }, 1000)
-    );
+  if (!cvFile.value) return;
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
 
-    form.value.reset();
-  } catch (error) {
-    alert("done!");
+  const formData = new FormData();
+  formData.append("file", cvFile.value);
+
+  try {
+    const { error } = await useApi().post("/cvs", formData);
+
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+
+    useToast().show("تم إضافة السيرة الذاتية بنجاح", "success");
+    form.value.resetForm();
+    cvFile.value = null;
+    model.value = false;
+    emit("saved");
+  } catch {
+    useToast().show("حدث خطأ أثناء إضافة السيرة الذاتية", "error");
   } finally {
     isSubmitting.value = false;
   }

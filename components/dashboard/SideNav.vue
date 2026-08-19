@@ -1,7 +1,8 @@
 <template>
-  <div
+  <nav
     class="side-nav w-[260px] fixed pt-[80px] sm:pt-[90px] md:pt-[110px] z-[80]"
     :class="{ open: props.openSideNav }"
+    aria-label="التنقل الجانبي"
   >
     <div class="content bg-white shadow rounded-xl border">
       <div class="list p-6">
@@ -16,6 +17,7 @@
                 'bg-[#ecb42a]':
                   $route.name == 'dashboard' && item.name == 'dashboard-index',
               }"
+              :aria-current="$route.name.startsWith(item.name) ? 'page' : undefined"
             >
               <component :is="item.icon"></component>
               <span class="text-sm">{{ item.label }} </span>
@@ -24,10 +26,9 @@
         </ul>
       </div>
     </div>
-  </div>
+  </nav>
 </template>
 <script setup>
-import { useAuthStore } from "~/stores/authStore";
 import File from "~/components/icons/file.vue";
 import Home from "~/components/icons/home.vue";
 import JobRequest from "~/components/icons/job-request.vue";
@@ -35,11 +36,11 @@ import Jobs from "~/components/icons/jobs.vue";
 import Person from "~/components/icons/person.vue";
 import Shake from "~/components/icons/shake.vue";
 
-const authStore = useAuthStore();
+const { userType } = useAuth();
 /** @type {{ openSideNav: boolean }} */
 const props = defineProps(["openSideNav"]);
 const additionalItems = computed(() => {
-  if (authStore.userType === "individual") {
+  if (userType.value === "individual") {
     return [
       {
         label: "استكشاف الوظائف",

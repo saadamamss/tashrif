@@ -11,6 +11,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
 
+  const profile = individualProfiles.find(p => p.userId === session.userId)
+
   const myApps = applications.filter(a => a.userId === session.userId)
   const stats = {
     totalApplications: myApps.length,
@@ -28,6 +30,16 @@ export default defineEventHandler(async (event) => {
     gender: user.gender,
     nationality: user.nationality,
     nationalId: user.nationalId,
+    ...profile ? {
+      birthDate: profile.birthDate,
+      city: profile.city,
+      zone: profile.zone,
+      district: profile.district,
+      street: profile.street,
+      zipcode: profile.zipcode,
+      jobTitle: profile.jobTitle,
+      profileCompletionPct: profile.profileCompletionPct,
+    } : {},
     stats,
   }
 })

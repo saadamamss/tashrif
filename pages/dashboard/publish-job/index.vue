@@ -7,8 +7,13 @@ import SuccessPublishing from "~/components/SuccessPublishing.vue";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global", "auth-guard", "entity"],
+  middleware: ["auth", "entity"],
+  meta: { requiresAuth: true },
 });
+
+useHead({
+  title: 'نشر وظيفة جديدة',
+})
 
 const breadcrumbs = [
   {
@@ -38,9 +43,37 @@ const formData = ref({
   conditions: "",
 });
 
-const submitForm = () => {
-  console.log(formData.value);
-  succesDialog.value = true;
+const { save: saveForm, restore: restoreForm, clear: clearForm } = useFormPersistence('publish-job')
+const { enable: warnBeforeUnload, disable: disableUnloadWarning } = useBeforeUnload('لديك بيانات غير محفوظة في نموذج النشر')
+
+watch(formData, () => saveForm(formData.value), { deep: true })
+
+onMounted(() => {
+  const saved = restoreForm()
+  if (saved) formData.value = saved
+})
+
+warnBeforeUnload()
+
+const isSubmitting = ref(false);
+
+const submitForm = async () => {
+  isSubmitting.value = true
+  try {
+    const { error } = await useApi().post('/jobs/publish', formData.value)
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    useToast().show("تم نشر الوظيفة بنجاح", "success")
+    clearForm()
+    disableUnloadWarning()
+    succesDialog.value = true;
+  } catch {
+    useToast().show("حدث خطأ أثناء نشر الوظيفة", "error")
+  } finally {
+    isSubmitting.value = false
+  }
 };
 </script>
 

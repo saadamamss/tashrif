@@ -21,6 +21,8 @@ export interface Job {
   publishDate: string
   endDate: string
   createdAt: string
+  isApplied?: boolean
+  applicantCount?: number
 }
 
 export interface JobFormData {

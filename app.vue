@@ -11,6 +11,23 @@ useHead({
   </div>
 </template>
 <style lang="scss">
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 8px 16px;
+  background: theme('colors.primary.DEFAULT');
+  color: #fff;
+  border-radius: 0 0 8px 8px;
+  font-size: 14px;
+  text-decoration: none;
+  &:focus {
+    top: 0;
+  }
+}
+
 .layout-enter-active,
 .layout-leave-active {
   transition: opacity 300ms ease, filter 300ms ease;

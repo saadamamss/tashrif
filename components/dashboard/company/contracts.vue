@@ -6,13 +6,29 @@ import ExpandArea from "~/components/ExpandArea.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
 
+const statusOptions = ['الكل', 'قادمة', 'منتهية', 'ملغية']
 const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
 };
-
-//
+const loading = ref(false);
+const contracts = ref([]);
 const signContractOpen = ref(false);
+const signContractTarget = ref(null);
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const { data, error } = await useApi().get('/contracts')
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    if (data?.items) contracts.value = data.items
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -64,9 +80,9 @@ const signContractOpen = ref(false);
               <div class="w-full">
                 <label class="text-sm mb-2 block"> تاريخ الإرسال </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="statusOptions"
                   placeholder="تاريخ الإرسال"
-                 
+                  
                   key="select-2"
                 />
               </div>
@@ -88,7 +104,7 @@ const signContractOpen = ref(false);
     <div>
       <div class="flex flex-col sm:flex-row justify-between items-start gap-6">
         <div>
-          <h1 class="text-base font-semibold mb-2">عرض 84 عقد عمل</h1>
+          <h1 class="text-base font-semibold mb-2">عرض {{ contracts.length }} عقد عمل</h1>
           <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
         </div>
         <div class="self-end">
@@ -103,16 +119,17 @@ const signContractOpen = ref(false);
       <div class="jobs-container py-8">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <CompanyContractCard
-            v-for="i in 12"
-            :key="i"
-            @showContract="signContractOpen = true"
+            v-for="contract in contracts"
+            :key="contract.id"
+            :contract="contract"
+            @showContract="(c) => { signContractTarget = c; signContractOpen = true }"
           />
         </div>
       </div>
     </div>
 
     <!--  -->
-    <SignContract v-model="signContractOpen" readonly />
+    <SignContract v-model="signContractOpen" readonly :contract="signContractTarget" />
   </div>
 </template>
 

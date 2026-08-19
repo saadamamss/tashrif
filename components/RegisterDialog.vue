@@ -10,7 +10,7 @@
             يرجى تحديد نوع الحساب الذي يناسبك للاستفادة من خدمات المنصة:
           </p>
         </div>
-        <button @click="closeModal">x</button>
+        <button @click="closeModal" aria-label="إغلاق">x</button>
       </div>
       <div class="modal-body pt-6">
         <div class="flex flex-col sm:flex-row gap-8">

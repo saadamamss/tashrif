@@ -29,6 +29,10 @@
 </template>
 <script setup>
 useHead({
+  title: 'تم إنشاء الحساب',
+  meta: [
+    { name: "robots", content: "noindex, nofollow" },
+  ],
   bodyAttrs: {
     class: "register-page",
   },

@@ -3,156 +3,42 @@ import ArrowTabs from "~/components/elements/ArrowTabs.vue";
 import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
-import Avatar1 from "~/assets/images/avatar-1.png";
-import Avatar2 from "~/assets/images/avatar-2.png";
+
 import JobShortlist from "~/components/JobShortlist.vue";
 import JobInterviews from "~/components/JobInterviews.vue";
 import ApplicantCard from "~/components/ApplicantCard.vue";
 import FilterDrawer from "~/components/FilterDrawer.vue";
+import SendInterview from "~/components/SendInterview.vue";
+import SendContract from "~/components/SendContract.vue";
 
-const loading = ref(false);
 const error = ref(null);
+const applicantsLoading = ref(false);
+const route = useRoute();
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global", "auth-guard", "entity"],
+  middleware: ["auth", "entity"],
+  meta: { requiresAuth: true },
 });
 
-const breadcrumbs = [
+useHead({
+  title: 'المتقدمون للوظيفة',
+})
+
+const breadcrumbs = computed(() => [
   {
     label: "وظائفى المنشورة",
     to: "/dashboard/published-jobs",
     active: true,
   },
-
   {
-    label: "مشرف حجاج",
+    label: jobDetails.value?.title || 'الوظيفة',
     active: false,
   },
-];
+]);
 
-const applicants = [
-  {
-    id: 1,
-    name: "محمد أحمد آل سعود",
-    jobTitle: "مهندس برمجيات",
-    qualification: "بكالوريوس في علوم الحاسب",
-    applyDate: "2023-10-15",
-    gender: "ذكر",
-    avatar: Avatar1,
-    city: "الرياض",
-  },
-  {
-    id: 2,
-    name: "سارة عبدالله الغامدي",
-    jobTitle: "طبيبة أسنان",
-    qualification: "دكتوراه في طب الأسنان",
-    applyDate: "2023-11-02",
-    gender: "أنثى",
-    avatar: Avatar2,
-    city: "جدة",
-  },
-  {
-    id: 3,
-    name: "خالد إبراهيم الحارثي",
-    jobTitle: "محاسب قانوني",
-    qualification: "ماجستير في المحاسبة",
-    applyDate: "2023-09-28",
-    gender: "ذكر",
-    avatar: Avatar1,
-    city: "الدمام",
-  },
-  {
-    id: 4,
-    name: "نورة سعد القحطاني",
-    jobTitle: "معلمة لغة عربية",
-    qualification: "بكالوريوس في اللغة العربية",
-    applyDate: "2023-12-05",
-    gender: "أنثى",
-    avatar: Avatar2,
-    city: "مكة المكرمة",
-  },
-  {
-    id: 5,
-    name: "فيصل ناصر العتيبي",
-    jobTitle: "مدير مشاريع",
-    qualification: "ماجستير في إدارة الأعمال",
-    applyDate: "2023-08-17",
-    gender: "ذكر",
-    avatar: Avatar1,
-    city: "الخبر",
-  },
-  {
-    id: 6,
-    name: "لطيفة عمر الزهراني",
-    jobTitle: "ممرضة مسجلة",
-    qualification: "دبلوم تمريض",
-    applyDate: "2023-07-22",
-    gender: "أنثى",
-    avatar: Avatar2,
-    city: "الطائف",
-  },
-  {
-    id: 7,
-    name: "عبدالرحمن خالد السبيعي",
-    jobTitle: "مهندس مدني",
-    qualification: "بكالوريوس في الهندسة المدنية",
-    applyDate: "2023-11-30",
-    gender: "ذكر",
-    avatar: Avatar1,
-    city: "بريدة",
-  },
-  {
-    id: 8,
-    name: "أمل حسين الحربي",
-    jobTitle: "أخصائية موارد بشرية",
-    qualification: "بكالوريوس في إدارة الموارد البشرية",
-    applyDate: "2023-10-08",
-    gender: "أنثى",
-    avatar: Avatar2,
-    city: "تبوك",
-  },
-  {
-    id: 9,
-    name: "تركي فهد الشمري",
-    jobTitle: "مطور ويب",
-    qualification: "بكالوريوس في تقنية المعلومات",
-    applyDate: "2023-09-14",
-    gender: "ذكر",
-    avatar: Avatar1,
-    city: "حائل",
-  },
-  {
-    id: 10,
-    name: "هناء علي القرشي",
-    jobTitle: "صيدلانية",
-    qualification: "دكتوراه في الصيدلة",
-    applyDate: "2023-12-18",
-    gender: "أنثى",
-    avatar: Avatar2,
-    city: "نجران",
-  },
-  {
-    id: 11,
-    name: "بدر سلمان الغامدي",
-    jobTitle: "مدير تسويق",
-    qualification: "ماجستير في التسويق الرقمي",
-    applyDate: "2023-07-05",
-    gender: "ذكر",
-    avatar: Avatar1,
-    city: "الجبيل",
-  },
-  {
-    id: 12,
-    name: "شهد محمد الثبيتي",
-    jobTitle: "محامية",
-    qualification: "بكالوريوس في القانون",
-    applyDate: "2023-08-29",
-    gender: "أنثى",
-    avatar: Avatar2,
-    city: "أبها",
-  },
-];
+const applicants = ref([])
+const jobDetails = ref(null)
 const selectedApplicants = ref([]);
 const filter = ref({
   search: "",
@@ -163,44 +49,165 @@ const handleDisplayMethod = (method) => {
   displayMethod.value = method;
 };
 
-const shorList = ref(applicants.slice(0, 2));
-const interviewList = ref(applicants.slice(0, 2));
-const applicantsRecievedContract = ref(applicants.slice(0, 2));
-const applicantsAcceptContract = ref(applicants.slice(0, 2));
-const applicantsRefuseContract = ref(applicants.slice(0, 2));
+const activeTab = ref('new')
 
-//
-const setIntoShortList = () => {
-  selectedApplicants.value.forEach((item) => {
-    const isFound = shorList.value.find((i) => i.id == item.id);
-    if (isFound) return;
-    shorList.value.push(item);
-  });
-  selectedApplicants.value = [];
+const filteredApplicants = computed(() => {
+  const statusMap = {
+    new: 'new',
+    shortlist: 'shortlisted',
+    interviews: 'interview',
+    contract: 'contract_sent',
+    accepted: 'accepted',
+    refused: 'refused',
+  }
+  const status = statusMap[activeTab.value]
+  return status ? applicants.value.filter(a => a.status === status) : applicants.value
+})
+
+const tabs = computed(() => [
+  { id: 'new', title: 'جديد', number: applicants.value.filter(a => a.status === 'new' || !a.status).length.toString() },
+  { id: 'shortlist', title: 'المرشحين', number: applicants.value.filter(a => a.status === 'shortlisted').length.toString() },
+  { id: 'interviews', title: 'المقابلات', number: applicants.value.filter(a => a.status === 'interview').length.toString() },
+  { id: 'contract', title: 'العقد', number: applicants.value.filter(a => a.status === 'contract_sent').length.toString() },
+  { id: 'accepted', title: 'وافق', number: applicants.value.filter(a => a.status === 'accepted').length.toString() },
+  { id: 'refused', title: 'رفض', number: applicants.value.filter(a => a.status === 'refused').length.toString() },
+])
+
+const interviewDialogVisible = ref(false);
+const interviewTargetApplicants = ref([]);
+const contractDialogVisible = ref(false);
+const contractTargetApplicants = ref([]);
+
+const loadApplicants = async () => {
+  applicantsLoading.value = true;
+  error.value = null;
+  const jobId = route.query.id || route.params.id || 1;
+  try {
+    const [jobRes, appsRes] = await Promise.all([
+      useApi().get(`/jobs/${jobId}`),
+      useApi().get(`/jobs/${jobId}/applications`)
+    ]);
+    if (jobRes.error) useToast().show(jobRes.error, "error");
+    if (appsRes.error) useToast().show(appsRes.error, "error");
+    if (jobRes.data) jobDetails.value = jobRes.data;
+    if (appsRes.data) {
+      applicants.value = appsRes.data.items || appsRes.data;
+    }
+  } catch (e) {
+    error.value = e;
+    useToast().show("حدث خطأ أثناء تحميل البيانات", "error");
+  }
+  finally { applicantsLoading.value = false; }
 };
 
+const moveToShortlist = async (app) => {
+  try {
+    const { error } = await useApi().put(`/applications/${app.id}/status`, { status: 'shortlisted' });
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+    useToast().show("تمت إضافة المتقدم إلى المرشحين", "success");
+    await loadApplicants();
+    selectedApplicants.value = selectedApplicants.value.filter(a => a.id !== app.id);
+  } catch {
+    useToast().show("حدث خطأ أثناء التحديث", "error");
+  }
+};
+
+const batchMoveToShortlist = async () => {
+  let ok = 0;
+  for (const app of selectedApplicants.value) {
+    try {
+      const { error } = await useApi().put(`/applications/${app.id}/status`, { status: 'shortlisted' });
+      if (!error) ok++;
+    } catch {}
+  }
+  if (ok > 0) useToast().show(`تم ترشيح ${ok} متقدم بنجاح`, "success");
+  else useToast().show("لم يتم ترشيح أي متقدم", "error");
+  selectedApplicants.value = [];
+  await loadApplicants();
+};
+
+const deleteApplicant = async (app) => {
+  try {
+    const { error } = await useApi().delete(`/applications/${app.id}`);
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+    useToast().show("تم حذف الطلب", "success");
+    await loadApplicants();
+  } catch {
+    useToast().show("حدث خطأ أثناء الحذف", "error");
+  }
+};
+
+const openInterview = (app) => {
+  interviewTargetApplicants.value = Array.isArray(app) ? app : [app];
+  interviewDialogVisible.value = true;
+};
+
+const submitInterview = async (payload) => {
+  let ok = 0;
+  for (const app of interviewTargetApplicants.value) {
+    try {
+      const { error } = await useApi().post('/interviews/schedule', {
+        applicationId: app.id,
+        method: payload.get ? payload.get('method') : payload.method,
+        date: payload.get ? payload.get('date') : payload.date,
+        time: payload.get ? payload.get('time') : payload.time,
+        location: payload.get ? payload.get('location') : payload.location,
+        link: payload.get ? payload.get('link') : payload.link,
+        notes: payload.get ? payload.get('notes') : payload.notes,
+      });
+      if (!error) ok++;
+      else useToast().show(error, "error");
+    } catch {}
+  }
+  if (ok > 0) useToast().show(`تم جدولة ${ok} مقابلة بنجاح`, "success");
+  interviewDialogVisible.value = false;
+  await loadApplicants();
+};
+
+const openContract = (apps) => {
+  contractTargetApplicants.value = apps;
+  contractDialogVisible.value = true;
+};
+
+const submitContract = async (payload) => {
+  const ids = payload?.applicantIds?.length
+    ? payload.applicantIds
+    : contractTargetApplicants.value.map((a) => a.id);
+  let ok = 0;
+  for (const id of ids) {
+    try {
+      const formData = new FormData();
+      formData.append("applicationId", String(id));
+      if (payload?.file) formData.append("contractFile", payload.file);
+      if (payload?.notes) formData.append("notes", payload.notes);
+      if (payload?.endDate) formData.append("endDate", payload.endDate);
+      const { error } = await useApi().post("/contracts/send", formData);
+      if (!error) ok++;
+      else useToast().show(error, "error");
+    } catch {}
+  }
+  if (ok > 0) useToast().show(`تم إرسال ${ok} عقد بنجاح`, "success");
+  else useToast().show("لم يتم إرسال أي عقد", "error");
+  contractDialogVisible.value = false;
+  await loadApplicants();
+};
+
+const openFilterDrawer = () => {};
 const filterDrawer = ref(false);
 
-const applicantsLoading = ref(false);
-
-onMounted(async () => {
-  applicantsLoading.value = true;
-  try {
-    await useApi().get('/jobs/1/applications');
-  } finally {
-    applicantsLoading.value = false;
-  }
-});
-const openFilterDrawer = () => {
-  filterDrawer.value = true;
-};
+onMounted(loadApplicants);
 </script>
 <template>
   <div class="px-4 lg:px-0">
     <Breadcrumbs :items="breadcrumbs" />
 
     <div class="mt-3">
-      <!--  -->
       <CustomTabs
         :tabs="[
           { id: 'about', title: 'عن الوظيفة' },
@@ -210,126 +217,64 @@ const openFilterDrawer = () => {
       >
         <template #about>
           <div>
-            <!--  -->
             <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4">
               <div class="flex flex-col gap-6">
-                <h1
-                  class="job-title text-lg lg:text-xl font-bold text-dark"
-                >
-                  مشرف حجاج
+                <h1 class="job-title text-lg lg:text-xl font-bold text-dark">
+                  {{ jobDetails?.title }}
                 </h1>
                 <p class="job-desc text-sm text-dark/70 leading-[2]">
-                  تبحث شركة الإسناد الموسمي لخدمات الحجاج عن أفراد مؤهلين
-                  للانضمام إلى فريقها كمشرفين ميدانيين خلال موسم الحج. ستكون
-                  مسؤولاً عن تنظيم وإرشاد مجموعة من الحجاج أثناء تنقلهم بين
-                  المشاعر المقدسة، وضمان التزامهم بالتعليمات والخطط التشغيلية.
+                  {{ jobDetails?.description }}
                 </p>
-
                 <div class="flex items-center gap-2">
-                  <span
-                    class="company-logo border rounded-md overflow-hidden py-1 px-2"
-                  >
-                    <img
-                      src="/images/partner-3.svg"
-                      class="w-10 h-6 object-cover"
-                    />
+                  <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
+                    <img :src="jobDetails?.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
                   </span>
                   <span class="company-name text-sm text-dark">
-                    شركة نسك لخدمات الحجاج
+                    {{ jobDetails?.entityName }}
                   </span>
                 </div>
               </div>
             </div>
-            <!--  -->
-            <div class="p-5 bg-white rounded-2xl border-1 mb-4">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
+            <div v-if="jobDetails?.benefits?.length" class="p-5 bg-white rounded-2xl border-1 mb-4">
+              <h3 class="text-base font-semibold text-primary pb-5 border-b mb-4">
                 مميزات خاصة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  الإشراف اليومي على مجموعة محددة من الحجاج.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التأكد من التزام الحجاج بخطط التنقل وجدول الحركة بين المشاعر.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التنسيق المستمر مع فرق النقل والدعم اللوجستي.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  التعامل مع الحالات الطارئة ورفع التقارير إلى المسؤول المباشر.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  ضمان سلامة وراحة الحجاج خلال تنقلهم وإقامتهم.
+                <li v-for="benefit in jobDetails.benefits" :key="benefit" class="text-sm text-muted mb-4">
+                  {{ benefit }}
                 </li>
               </ul>
             </div>
-            <!--  -->
-            <div class="p-5 bg-white rounded-2xl border-1 mb-4">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
+            <div v-if="jobDetails?.conditions?.length" class="p-5 bg-white rounded-2xl border-1 mb-4">
+              <h3 class="text-base font-semibold text-primary pb-5 border-b mb-4">
                 شروط القبول
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  أن يكون المتقدم سعودي الجنسية.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  العمر بين 22 و45 سنة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  القدرة على العمل الميداني المكثف لساعات طويلة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  يفضّل من لديه خبرة سابقة في العمل الموسمي أو الإشراف الميداني.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  الالتزام بالأخلاقيات المهنية والسلوكيات المناسبة.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  الأولوية لسكان منطقة مكة المكرمة لتسهيل التنقل السريع.
+                <li v-for="condition in jobDetails.conditions" :key="condition" class="text-sm text-muted mb-4">
+                  {{ condition }}
                 </li>
               </ul>
             </div>
-            <!--  -->
-            <div class="p-5 bg-white rounded-2xl border-1 mb-4">
-              <h3
-                class="text-base font-semibold text-primary pb-5 border-b mb-4"
-              >
+            <div v-if="jobDetails?.responsibilities?.length" class="p-5 bg-white rounded-2xl border-1 mb-4">
+              <h3 class="text-base font-semibold text-primary pb-5 border-b mb-4">
                 المزايا والمكافأة
               </h3>
               <ul class="ps-2 mt-2 list-disc list-inside">
-                <li class="text-sm text-muted mb-4">
-                  مكافأة مقطوعة قدرها 3000 ريال سعودي.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  شهادة خبرة بعد انتهاء المهمة بنجاح.
-                </li>
-                <li class="text-sm text-muted mb-4">
-                  تشمل بدل السكن والتنقل.
+                <li v-for="resp in jobDetails.responsibilities" :key="resp" class="text-sm text-muted mb-4">
+                  {{ resp }}
                 </li>
               </ul>
             </div>
-            <!--  -->
           </div>
         </template>
-        <!--  -->
         <template #applicants>
-          <LoadingSkeleton v-if="applicantsLoading" :rows="3" :columns="2" height="160px" />
+          <UiErrorState v-if="error" :message="error?.message || 'حدث خطأ' " @retry="loadApplicants" />
+          <UiLoadingSkeleton v-else-if="applicantsLoading" :count="6" :columns="2" height="160px" />
           <template v-else>
           <div :class="displayMethod">
             <ArrowTabs
-              :tabs="[
-                { id: 'new', title: 'جديد', number: '12' },
-                { id: 'shortlist', title: 'المرشحين', number: '3' },
-                { id: 'interviews', title: 'المقابلات', number: '3' },
-                { id: 'contract', title: 'القعد', number: '2' },
-                { id: 'accepted', title: 'وافق', number: '2' },
-                { id: 'refused', title: 'رفض', number: '0' },
-              ]"
-              initial-tab="new"
+              :tabs="tabs"
+              v-model="activeTab"
             >
               <template #filter>
                 <div class="filters">
@@ -341,7 +286,6 @@ const openFilterDrawer = () => {
                         class="w-full ps-10 h-[48px] border bg-bg-light py-2 text-sm rounded-xl focus:outline-none focus:border-primary transition"
                         type="text"
                         v-model="filter.search"
-                        @change="handleSearch"
                       />
                       <span
                         class="flex items-center justify-center bg-white shadow-sm block h-[28px] w-[28px] rounded-lg absolute right-[10px]"
@@ -351,22 +295,6 @@ const openFilterDrawer = () => {
                     </div>
 
                     <div class="flex flex-wrap gap-2 items-center">
-                      <button
-                        class="p-2 rounded-xl border bg-[#fff] hover:border-primary transition"
-                      >
-                        <InboxIcon />
-                      </button>
-                      <button
-                        class="p-2 rounded-xl border bg-[#fff] hover:border-primary transition"
-                      >
-                        <OutboxIcon />
-                      </button>
-                      <button
-                        class="p-2 rounded-xl border bg-[#fff] hover:border-primary transition"
-                        @click="openFilterDrawer()"
-                      >
-                        <FilterIcon />
-                      </button>
                       <div>
                         <CustomSelect
                           :items="['الأحدث', 'الأقدم']"
@@ -376,22 +304,14 @@ const openFilterDrawer = () => {
                       </div>
                       <button
                         class="hidden sm:block p-2 rounded-xl border bg-bg-subtle hover:border-primary transition"
-                        :class="
-                          displayMethod == 'card'
-                            ? 'text-primary'
-                            : 'text-muted'
-                        "
+                        :class="displayMethod == 'card' ? 'text-primary' : 'text-muted'"
                         @click="handleDisplayMethod('card')"
                       >
                         <GridIcon />
                       </button>
                       <button
                         class="hidden sm:block p-2 rounded-xl border bg-bg-subtle hover:border-primary transition"
-                        :class="
-                          displayMethod == 'list'
-                            ? 'text-primary'
-                            : 'text-muted'
-                        "
+                        :class="displayMethod == 'list' ? 'text-primary' : 'text-muted'"
                         @click="handleDisplayMethod('list')"
                       >
                         <ListIcon />
@@ -402,18 +322,16 @@ const openFilterDrawer = () => {
               </template>
 
               <template #new>
-                <div v-if="selectedApplicants.length">
+                <UiEmptyState v-if="!filteredApplicants.length && !applicantsLoading" title="لا يوجد متقدمون جدد" description="لم يتقدم أحد لهذه الوظيفة بعد" />
+                <div v-else-if="selectedApplicants.length">
                   <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-6 mb-4">
                     <h2 class="text-sm lg:text-lg font-medium text-muted">
                       تم تحديد {{ selectedApplicants.length }} متقدمين
                     </h2>
                     <div class="self-end flex gap-2">
-                      <button class="btn-outline text-sm">
-                        فحص عن طريق ATS
-                      </button>
                       <button
                         class="btn-primary text-sm"
-                        @click="setIntoShortList"
+                        @click="batchMoveToShortlist"
                       >
                         نقل إلى قائمة مختصرة
                       </button>
@@ -422,69 +340,97 @@ const openFilterDrawer = () => {
                 </div>
                 <div class="grid applicant-grid gap-4">
                   <ApplicantCard
-                    v-for="(applicant, i) in applicants"
-                    :key="i"
+                    v-for="applicant in filteredApplicants"
+                    :key="applicant.id"
                     :applicant="applicant"
                     :action="true"
                     :select="true"
+                    :job-title="jobDetails?.title"
                     badge-text="جديد"
                     badge-style="bg-primary/10 text-primary"
                     card-style=" bg-[#fff]"
                     v-model="selectedApplicants"
+                    @shortlist="moveToShortlist(applicant)"
+                    @interview="openInterview(applicant)"
+                    @delete="deleteApplicant(applicant)"
                   />
                 </div>
               </template>
               <template #shortlist>
-                <JobShortlist
-                  :shor-list="shorList"
+                <UiEmptyState v-if="!filteredApplicants.length" title="لا يوجد مرشحين" description="لم يتم ترشيح أي متقدم بعد" />
+                <JobShortlist v-else
+                  :shor-list="applicants.filter(a => a.status === 'shortlisted')"
+                  :job-title="jobDetails?.title"
                   :display-method="displayMethod"
+                  @shortlist="moveToShortlist"
+                  @interview="openInterview"
+                  @delete="deleteApplicant"
+                  @schedule-interview="openInterview"
                 />
               </template>
               <template #interviews>
-                <JobInterviews
-                  :interview-list="interviewList"
+                <UiEmptyState v-if="!filteredApplicants.length" title="لا توجد مقابلات" description="لم يتم جدولة أي مقابلات بعد" />
+                <JobInterviews v-else
+                  :interview-list="applicants.filter(a => a.status === 'interview')"
+                  :job-title="jobDetails?.title"
                   :display-method="displayMethod"
+                  @shortlist="moveToShortlist"
+                  @interview="openInterview"
+                  @delete="deleteApplicant"
+                  @send-contract="openContract"
                 />
               </template>
               <template #contract>
-                <div class="grid applicant-grid gap-4">
+                <UiEmptyState v-if="!applicants.filter(a => a.status === 'contract_sent').length" title="لم يتم إرسال عقود" description="لم يتم إرسال أي عقد بعد" />
+                <div v-else class="grid applicant-grid gap-4">
                   <ApplicantCard
-                    v-for="(applicant, i) in applicantsRecievedContract"
-                    :key="i"
+                    v-for="applicant in applicants.filter(a => a.status === 'contract_sent')"
+                    :key="applicant.id"
                     :applicant="applicant"
                     :action="true"
+                    :job-title="jobDetails?.title"
                     badge-text="تم إرسال العقد"
                     badge-style="bg-badge-green/10 text-badge-green"
                     card-style=" bg-[#fff]"
-                    v-model="selectedApplicants"
+                    @shortlist="moveToShortlist(applicant)"
+                    @interview="openInterview(applicant)"
+                    @delete="deleteApplicant(applicant)"
                   />
                 </div>
               </template>
               <template #accepted>
-                <div class="grid applicant-grid gap-4">
+                <UiEmptyState v-if="!applicants.filter(a => a.status === 'accepted').length" title="لم يقبل أحد" description="لم يقبل أي مرشح العقد بعد" />
+                <div v-else class="grid applicant-grid gap-4">
                   <ApplicantCard
-                    v-for="(applicant, i) in applicantsAcceptContract"
-                    :key="i"
+                    v-for="applicant in applicants.filter(a => a.status === 'accepted')"
+                    :key="applicant.id"
                     :applicant="applicant"
                     :action="true"
+                    :job-title="jobDetails?.title"
                     badge-text="تم قبول العقد"
                     badge-style="bg-success/10 text-success"
                     card-style=" bg-[#fff]"
-                    v-model="selectedApplicants"
+                    @shortlist="moveToShortlist(applicant)"
+                    @interview="openInterview(applicant)"
+                    @delete="deleteApplicant(applicant)"
                   />
                 </div>
               </template>
               <template #refused>
-                <div class="grid applicant-grid gap-4">
+                <UiEmptyState v-if="!applicants.filter(a => a.status === 'refused').length" title="لا يوجد رافضين" description="لم يرفض أي مرشح العقد" />
+                <div v-else class="grid applicant-grid gap-4">
                   <ApplicantCard
-                    v-for="(applicant, i) in applicantsRefuseContract"
-                    :key="i"
+                    v-for="applicant in applicants.filter(a => a.status === 'refused')"
+                    :key="applicant.id"
                     :applicant="applicant"
                     :action="true"
+                    :job-title="jobDetails?.title"
                     badge-text="تم رفض العقد"
                     badge-style="bg-danger/10 text-danger"
                     card-style=" bg-[#fff]"
-                    v-model="selectedApplicants"
+                    @shortlist="moveToShortlist(applicant)"
+                    @interview="openInterview(applicant)"
+                    @delete="deleteApplicant(applicant)"
                   />
                 </div>
               </template>
@@ -495,7 +441,18 @@ const openFilterDrawer = () => {
       </CustomTabs>
     </div>
 
-    <!--  -->
+    <SendInterview
+      v-model="interviewDialogVisible"
+      :applicants="interviewTargetApplicants"
+      :job-title="jobDetails?.title"
+      @submit-interview="submitInterview"
+    />
+    <SendContract
+      v-model="contractDialogVisible"
+      :applicants="contractTargetApplicants"
+      :job-title="jobDetails?.title"
+      @submit-contract="submitContract"
+    />
     <FilterDrawer v-model="filterDrawer" />
   </div>
 </template>
@@ -506,7 +463,7 @@ const openFilterDrawer = () => {
 
 .select-style {
   background-color: rgb(255, 255, 255);
-  border: 1px solid #f5f5f5;
+  border: 1px solid theme('colors.bg-light');
   box-shadow: 0px 1px 2px rgba(18, 18, 23, 0.05);
   border-radius: 16px;
   min-width: 140px;

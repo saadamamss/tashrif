@@ -13,16 +13,22 @@
         />
         <div class="flex-1 flex items-center gap-2">
           <span
-            class="applicant-avatar min-w-12 w-12 lg:w-14 min-h-12 h-12 lg:h-14 rounded-full relative overflow-hidden"
+            class="applicant-avatar min-w-12 w-12 lg:w-14 min-h-12 h-12 lg:h-14 rounded-full relative overflow-hidden bg-bg-light"
           >
-            <img :src="applicant.avatar" class="w-full h-full object-cover" />
+            <img v-if="applicant.avatar" :src="applicant.avatar" class="w-full h-full object-cover" />
+            <span
+              v-else
+              class="flex items-center justify-center w-full h-full text-primary font-bold text-xl"
+            >
+              {{ (applicant.userName || applicant.name || "").charAt(0) }}
+            </span>
           </span>
           <div class="name">
             <span class="text-sm block font-medium text-dark mb-1">
-              {{ applicant.name }}
+              {{ applicant.userName || applicant.name }}
             </span>
-            <span class="block text-xs text-muted">
-              {{ applicant.jobTitle }}
+            <span v-if="jobTitle" class="block text-xs text-muted">
+              {{ jobTitle }}
             </span>
           </div>
         </div>
@@ -61,27 +67,24 @@
               <template #list>
                 <ul class="px-0">
                   <li>
-                    <a
-                      href="#"
-                      @click.prevent=""
-                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block"
-                      >إضافة للمرشحين</a
+                    <button
+                      @click="emit('shortlist')"
+                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block w-full text-start"
+                      >إضافة للمرشحين</button
                     >
                   </li>
                   <li>
-                    <a
-                      href="#"
-                      @click.prevent=""
-                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block"
-                      >إجراء مقابلة</a
+                    <button
+                      @click="emit('interview')"
+                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block w-full text-start"
+                      >إجراء مقابلة</button
                     >
                   </li>
                   <li>
-                    <a
-                      href="#"
-                      @click.prevent=""
-                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block"
-                      >حذف</a
+                    <button
+                      @click="emit('delete')"
+                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block w-full text-start text-danger"
+                      >حذف</button
                     >
                   </li>
                 </ul>
@@ -112,7 +115,7 @@
             <span class="text-muted"> تم التقديم </span>
           </div>
           <div class="font-bold ps-7">
-            {{ applicant.applyDate }}
+            {{ formatDate(applicant.createdAt) }}
           </div>
         </div>
 
@@ -123,7 +126,7 @@
             </span>
             <span class="text-muted">الجنس</span>
           </div>
-          <div class="font-bold ps-7">{{ applicant.gender }}</div>
+          <div class="font-bold ps-7">{{ genderLabel }}</div>
         </div>
         <div class="text-xs">
           <div class="flex gap-2 items-center mb-2">
@@ -132,28 +135,39 @@
             </span>
             <span class="text-muted">المدينة</span>
           </div>
-          <div class="font-bold ps-7">{{ applicant.city }}</div>
+          <div class="font-bold ps-7">{{ applicant.userCity || applicant.city }}</div>
         </div>
       </div>
     </div>
   </div>
 </template>
 <script setup>
+import { computed } from "vue";
 import DropDown from "./elements/DropDown.vue";
 import Calender from "./icons/calender.vue";
 import City from "./icons/city.vue";
 import Gender from "./icons/gender.vue";
 import ListDots from "./icons/list-dots.vue";
 import PersonIcon from "./icons/person.vue";
+import { formatDate } from "~/services/help";
 const model = defineModel();
+const emit = defineEmits(['shortlist', 'interview', 'delete']);
 
-/** @type {{ applicant: import('~/types/application').Application, badgeText: string, badgeStyle: string, cardStyle: string, select: boolean, action: boolean }} */
+/** @type {{ applicant: import('~/types/application').Application, jobTitle?: string, badgeText: string, badgeStyle: string, cardStyle: string, select: boolean, action: boolean }} */
 const props = defineProps([
   "applicant",
+  "jobTitle",
   "badgeText",
   "badgeStyle",
   "cardStyle",
   "select",
   "action",
 ]);
+
+const genderLabel = computed(() => {
+  const value = (props.applicant?.userGender || props.applicant?.gender || "").toLowerCase()
+  if (value === "male" || value === "ذكر") return "ذكر"
+  if (value === "female" || value === "أنثى" || value === "انثى") return "أنثى"
+  return props.applicant?.userGender || props.applicant?.gender || ""
+})
 </script>

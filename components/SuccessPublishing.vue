@@ -9,11 +9,10 @@
         </div>
         <div class="text-center mx-auto max-w-lg">
           <h2 class="text-base md:text-lg font-semibold mb-3">
-            تم نشر الوظيفة بنجاح!
+            {{ jobTitle ? `تم نشر وظيفة "${jobTitle}" بنجاح` : 'تم نشر الوظيفة بنجاح!' }}
           </h2>
           <p class="text-sm text-muted leading-[1.7]">
-            تم نشر وظيفة "مشرف حجاج" بنجاح، وستظهر الآن للباحثين عن العمل ضمن
-            الوظائف المتاحة على المنصة.
+            {{ jobTitle ? `تم نشر وظيفة "${jobTitle}" بنجاح، وستظهر الآن للباحثين عن العمل ضمن الوظائف المتاحة على المنصة.` : 'تم نشر الوظيفة بنجاح، وستظهر الآن للباحثين عن العمل ضمن الوظائف المتاحة على المنصة.' }}
           </p>
         </div>
       </div>
@@ -30,6 +29,10 @@
 </template>
 <script setup>
 import Dialog from "./Dialog.vue";
+
+const props = defineProps({
+  jobTitle: { type: String, default: '' },
+})
 
 const router = useRouter();
 const model = defineModel();

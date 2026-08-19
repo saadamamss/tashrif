@@ -3,6 +3,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   let result = jobs.filter(j => j.status === 'active')
 
+  if (query.status) result = result.filter(j => j.status === query.status)
   if (query.type) result = result.filter(j => j.type === query.type)
   if (query.location) result = result.filter(j => j.location.includes(query.location as string))
   if (query.gender) result = result.filter(j => j.gender === query.gender || j.gender === 'رجال ونساء')
@@ -19,5 +20,19 @@ export default defineEventHandler(async (event) => {
   const start = (page - 1) * limit
   const items = result.slice(start, start + limit)
 
-  return { items, total, page, totalPages }
+  const session = getUserFromToken(event)
+  const appliedJobIds = new Set(
+    (session ? applications.filter(a => a.userId === session.userId) : [])
+      .map(a => a.jobId),
+  )
+
+  const applicantCounts = new Map<number, number>()
+  for (const a of applications) {
+    applicantCounts.set(a.jobId, (applicantCounts.get(a.jobId) || 0) + 1)
+  }
+
+  return {
+    items: items.map(j => ({ ...j, isApplied: !!session && appliedJobIds.has(j.id), applicantCount: applicantCounts.get(j.id) || 0 })),
+    total, page, totalPages,
+  }
 })

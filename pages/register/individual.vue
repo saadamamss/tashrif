@@ -1,12 +1,17 @@
 <script setup>
 useHead({
+  title: 'إنشاء حساب فرد',
+  meta: [
+    { name: "description", content: "إنشاء حساب فرد جديد في منصة تشريف للتوظيف الموسمي. قدم على الوظائف الموسمية في الحج والعمرة." },
+  ],
   bodyAttrs: {
     class: "register-page",
   },
 });
 
 definePageMeta({
-  middleware:"guest"
+  middleware:["auth"],
+  meta: { guest: true },
 })
 
 import Dialog from "~/components/Dialog.vue";
@@ -15,7 +20,7 @@ import FileInput from "~/components/elements/FileInput.vue";
 import TextInput from "~/components/elements/TextInput.vue";
 import OTPDialog from "~/components/OtpDialog.vue";
 import { Field, Form, ErrorMessage, defineRule } from "vee-validate";
-import { required, email, min, numeric } from "@vee-validate/rules";
+import { required, email, min, numeric, confirmed } from "@vee-validate/rules";
 import PhoneInput from "~/components/PhoneInput.vue";
 
 // Define validation rules
@@ -23,6 +28,7 @@ defineRule("required", required);
 defineRule("email", email);
 defineRule("min", min);
 defineRule("numeric", numeric);
+defineRule("confirmed", confirmed);
 
 const route = useRoute();
 const showOTPDialog = ref(false);
@@ -35,6 +41,8 @@ const formData = ref({
   firstName: "",
   lastName: "",
   nationalId: "",
+  password: "",
+  confirmPassword: "",
   phone: "",
   email: "",
   gender: "",
@@ -59,17 +67,26 @@ const handleCountryChange = (country) => {
   console.log("Country changed:", country);
 };
 const router = useRouter();
-const onSubmit = (values) => {
-  console.log("Form submitted", {
-    ...values,
-    cvFile: formData.value.cvFile,
-    idFile: formData.value.idFile,
-  });
-
-  router.push("/register/success");
-
-  // Handle form submission here
-  // showOTPDialog.value = true; // Uncomment to show OTP dialog after submission
+const isSubmitting = ref(false);
+const onSubmit = async (values) => {
+  isSubmitting.value = true;
+  try {
+    const payload = new FormData()
+    Object.entries(values).forEach(([key, val]) => {
+      if (val) payload.append(key, val)
+    })
+    if (formData.value.cvFile) payload.append('cvFile', formData.value.cvFile)
+    if (formData.value.idFile) payload.append('idFile', formData.value.idFile)
+    const { error } = await useApi().post('/auth/register', payload)
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    useToast().show("تم إنشاء الحساب بنجاح", "success")
+    router.push("/register/success")
+  } finally {
+    isSubmitting.value = false
+  }
 };
 </script>
 
@@ -130,6 +147,34 @@ const onSubmit = (values) => {
                 v-model="formData.nationalId"
                 :error="errors.nationalId"
               />
+            </div>
+            <div class="w-full flex gap-4 md:gap-6 mb-6">
+              <div class="flex-1">
+                <TextInput
+                  name="password"
+                  id="password"
+                  type="password"
+                  required
+                  rules="required|min:8"
+                  label="كلمة المرور"
+                  placeholder="أدخل كلمة مرور قوية (8 أحرف على الأقل)"
+                  v-model="formData.password"
+                  :error="errors.password"
+                />
+              </div>
+              <div class="flex-1">
+                <TextInput
+                  name="confirmPassword"
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  rules="required|confirmed:password"
+                  label="تأكيد كلمة المرور"
+                  placeholder="أعد إدخال كلمة المرور"
+                  v-model="formData.confirmPassword"
+                  :error="errors.confirmPassword"
+                />
+              </div>
             </div>
             <div class="w-full flex-col sm:flex-row flex gap-4 md:gap-6 mb-6">
               <div class="flex-1">
@@ -253,8 +298,8 @@ const onSubmit = (values) => {
             </div>
 
             <div class="mt-10 flex justify-end">
-              <button type="submit" class="btn-primary text-sm py-3 px-10">
-                إنشاء حساب
+              <button type="submit" class="btn-primary text-sm py-3 px-10" :disabled="isSubmitting">
+                {{ isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب' }}
               </button>
             </div>
           </div>
