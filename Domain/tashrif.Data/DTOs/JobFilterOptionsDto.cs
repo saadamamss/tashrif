@@ -1,0 +1,11 @@
+namespace tashrif.Data.DTOs;
+
+using System.Text.Json.Serialization;
+
+public class JobFilterOptionsDto
+{
+    [JsonPropertyName("workTypes")]
+    public List<string> Types { get; set; } = new();
+    public List<string> Locations { get; set; } = new();
+    public List<string> Genders { get; set; } = new();
+}

@@ -1,0 +1,77 @@
+{
+  "Version": 1,
+  "Hash": "XcADNcYJgHGZOPZOH3eDzKlHcCnnrj3/f0mbCZmwCCc=",
+  "Source": "tashrif.API",
+  "BasePath": "_content/tashrif.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "tashrif.API/wwwroot",
+      "Source": "tashrif.API",
+      "ContentRoot": "/home/saad/Documents/tashrif/backend/Application/tashrif.API/wwwroot/",
+      "BasePath": "_content/tashrif.API",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "/home/saad/Documents/tashrif/backend/Application/tashrif.API/wwwroot/uploads/contracts/85edecff-4500-430b-ac14-46c9686e4bad_Saad_Ashraf_CV.pdf",
+      "SourceId": "tashrif.API",
+      "SourceType": "Discovered",
+      "ContentRoot": "/home/saad/Documents/tashrif/backend/Application/tashrif.API/wwwroot/",
+      "BasePath": "_content/tashrif.API",
+      "RelativePath": "uploads/contracts/85edecff-4500-430b-ac14-46c9686e4bad_Saad_Ashraf_CV.pdf",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/uploads/contracts/85edecff-4500-430b-ac14-46c9686e4bad_Saad_Ashraf_CV.pdf"
+    },
+    {
+      "Identity": "/home/saad/Documents/tashrif/backend/Application/tashrif.API/wwwroot/uploads/cvs/56fcc4a2-c0f0-473e-a351-a257da7cdeca_Document 3.pdf",
+      "SourceId": "tashrif.API",
+      "SourceType": "Discovered",
+      "ContentRoot": "/home/saad/Documents/tashrif/backend/Application/tashrif.API/wwwroot/",
+      "BasePath": "_content/tashrif.API",
+      "RelativePath": "uploads/cvs/56fcc4a2-c0f0-473e-a351-a257da7cdeca_Document 3.pdf",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/uploads/cvs/56fcc4a2-c0f0-473e-a351-a257da7cdeca_Document 3.pdf"
+    },
+    {
+      "Identity": "/home/saad/Documents/tashrif/backend/Application/tashrif.API/wwwroot/uploads/cvs/c3c6a7d7-7618-43dd-a5cd-6b2b31b7fe56_Saad_Ashraf_DotNET_CV (2).pdf",
+      "SourceId": "tashrif.API",
+      "SourceType": "Discovered",
+      "ContentRoot": "/home/saad/Documents/tashrif/backend/Application/tashrif.API/wwwroot/",
+      "BasePath": "_content/tashrif.API",
+      "RelativePath": "uploads/cvs/c3c6a7d7-7618-43dd-a5cd-6b2b31b7fe56_Saad_Ashraf_DotNET_CV (2).pdf",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/uploads/cvs/c3c6a7d7-7618-43dd-a5cd-6b2b31b7fe56_Saad_Ashraf_DotNET_CV (2).pdf"
+    }
+  ]
+}
