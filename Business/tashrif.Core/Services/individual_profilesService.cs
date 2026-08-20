@@ -53,7 +53,6 @@ public class individual_profilesService(IUnitOfWork unitOfWork) : Iindividual_pr
         if (dto.JobTitle != null) profile.job_title = dto.JobTitle;
         if (dto.BirthDate != null)
             profile.birth_date = DateTime.SpecifyKind(dto.BirthDate.Value, DateTimeKind.Utc);
-        profile.profile_completion_pct = CalculateCompletion(profile);
         profile.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Individual_profilesRepository.Update(profile);
@@ -67,6 +66,8 @@ public class individual_profilesService(IUnitOfWork unitOfWork) : Iindividual_pr
         if (dto.Gender != null) user.gender = dto.Gender;
         if (dto.Nationality != null) user.nationality = dto.Nationality;
         user.UpdatedAt = DateTime.UtcNow;
+
+        profile.profile_completion_pct = IndividualCompletionCalculator.Calculate(user, profile);
 
         _unitOfWork.UsersRepository.Update(user);
         await _unitOfWork.SaveChangesAsync();
@@ -92,16 +93,5 @@ public class individual_profilesService(IUnitOfWork unitOfWork) : Iindividual_pr
             Interviews = interviewCount,
             Contracts = contractCount,
         };
-    }
-
-    private static short CalculateCompletion(individual_profiles profile)
-    {
-        var fields = new[]
-        {
-            profile.city, profile.zone, profile.district, profile.street, profile.zipcode,
-            profile.job_title, profile.cv_file, profile.id_file,
-        };
-        var filled = fields.Count(f => !string.IsNullOrWhiteSpace(f));
-        return (short)Math.Round(filled * 100.0 / fields.Length);
     }
 }

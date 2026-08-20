@@ -84,7 +84,7 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
-        profile.profile_completion_pct = CalculateIndividualCompletion(user, profile);
+        profile.profile_completion_pct = IndividualCompletionCalculator.Calculate(user, profile);
         await _individualProfileRepo.AddAsync(profile);
         await _uow.SaveChangesAsync();
 
@@ -301,18 +301,6 @@ public class AuthService : IAuthService
         {
             return null;
         }
-    }
-
-    private static short CalculateIndividualCompletion(users user, individual_profiles profile)
-    {
-        var fields = new[]
-        {
-            user.phone, user.gender, user.nationality,
-            profile.city, profile.zone, profile.district, profile.street, profile.zipcode,
-            profile.job_title, profile.cv_file, profile.id_file,
-        };
-        var filled = fields.Count(f => !string.IsNullOrWhiteSpace(f));
-        return (short)Math.Round(filled * 100.0 / fields.Length);
     }
 
     private static short CalculateEntityCompletion(entity_profiles profile)

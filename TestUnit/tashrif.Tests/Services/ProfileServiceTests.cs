@@ -197,7 +197,7 @@ public class ProfileServiceTests
         result.City.Should().Be("Riyadh");
         result.Zipcode.Should().Be("12345");
         result.JobTitle.Should().Be("Developer");
-        result.ProfileCompletionPct.Should().Be(38);
+        result.ProfileCompletionPct.Should().Be(55);
     }
 
     [Fact]
