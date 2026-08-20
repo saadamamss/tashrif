@@ -5,6 +5,7 @@ public class ContractsServiceTests
     private readonly Mock<IUnitOfWork> _uowMock;
     private readonly Mock<IcontractsRepository> _contractsRepoMock;
     private readonly Mock<IapplicationsRepository> _appsRepoMock;
+    private readonly Mock<IjobsRepository> _jobsRepoMock;
     private readonly Mock<IinterviewsRepository> _interviewsRepoMock;
     private readonly Mock<IFileStorageService> _fileStorageMock;
     private readonly contractsService _sut;
@@ -13,16 +14,20 @@ public class ContractsServiceTests
     {
         _contractsRepoMock = new Mock<IcontractsRepository>();
         _appsRepoMock = new Mock<IapplicationsRepository>();
+        _jobsRepoMock = new Mock<IjobsRepository>();
         _interviewsRepoMock = new Mock<IinterviewsRepository>();
         _fileStorageMock = new Mock<IFileStorageService>();
         _uowMock = new Mock<IUnitOfWork>();
 
         _uowMock.SetupGet(u => u.ContractsRepository).Returns(_contractsRepoMock.Object);
         _uowMock.SetupGet(u => u.ApplicationsRepository).Returns(_appsRepoMock.Object);
+        _uowMock.SetupGet(u => u.JobsRepository).Returns(_jobsRepoMock.Object);
         _uowMock.SetupGet(u => u.InterviewsRepository).Returns(_interviewsRepoMock.Object);
 
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
         _interviewsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new List<interviews>().AsQueryable().BuildMock());
 
@@ -35,6 +40,8 @@ public class ContractsServiceTests
         var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
         _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
         _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
@@ -60,6 +67,52 @@ public class ContractsServiceTests
             .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
 
         var dto = new SendContractDto { ApplicationId = 999 };
+
+        var act = () => _sut.SendAsync(dto, 1);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task Send_JobOwnedByAnotherEntity_ThrowsUnauthorizedAccessException()
+    {
+        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 5 } }.AsQueryable().BuildMock());
+
+        var dto = new SendContractDto { ApplicationId = 1 };
+
+        var act = () => _sut.SendAsync(dto, 9);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task Send_ApplicationAlreadyContractSent_ThrowsBadHttpRequestException()
+    {
+        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "contract_sent" };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+
+        var dto = new SendContractDto { ApplicationId = 1 };
+
+        var act = () => _sut.SendAsync(dto, 1);
+
+        await act.Should().ThrowAsync<Microsoft.AspNetCore.Http.BadHttpRequestException>();
+    }
+
+    [Fact]
+    public async Task Send_NonExistingJob_ThrowsKeyNotFoundException()
+    {
+        var app = new applications { Id = 1, job_id = 999, user_id = 1, status = "new" };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
+
+        var dto = new SendContractDto { ApplicationId = 1 };
 
         var act = () => _sut.SendAsync(dto, 1);
 
@@ -102,6 +155,8 @@ public class ContractsServiceTests
         };
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
         _interviewsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { interview }.AsQueryable().BuildMock());
         _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
@@ -126,6 +181,8 @@ public class ContractsServiceTests
         var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
         _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
         _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
@@ -160,6 +217,8 @@ public class ContractsServiceTests
         var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
         _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
         _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
@@ -228,6 +287,24 @@ public class ContractsServiceTests
         result.Status.Should().Be("signed");
         updatedApp.Should().NotBeNull();
         updatedApp!.status.Should().Be("accepted");
+    }
+
+    [Fact]
+    public async Task Sign_AlreadySigned_ThrowsBadHttpRequestException()
+    {
+        var contract = new contracts
+        {
+            Id = 1,
+            user_id = 1,
+            status = "signed",
+            signed_at = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _contractsRepoMock.Setup(r => r.GetByIdAsync(It.Is<object>(o => Convert.ToInt64(o) == 1))).ReturnsAsync(contract);
+
+        var act = () => _sut.SignAsync(1, 1);
+
+        await act.Should().ThrowAsync<Microsoft.AspNetCore.Http.BadHttpRequestException>();
     }
 
     [Fact]

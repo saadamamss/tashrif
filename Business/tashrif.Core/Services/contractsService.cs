@@ -69,6 +69,16 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
         var app = await appQuery.FirstOrDefaultAsync(a => a.Id == dto.ApplicationId && !a.IsDeleted)
             ?? throw new KeyNotFoundException("الطلب غير موجود");
 
+        if (app.status == "contract_sent")
+            throw new BadHttpRequestException("تم إرسال عقد لهذا الطلب مسبقاً", 400);
+
+        var jobQuery = await _unitOfWork.JobsRepository.GetQueryable();
+        var job = await jobQuery.FirstOrDefaultAsync(j => j.Id == app.job_id && !j.IsDeleted)
+            ?? throw new KeyNotFoundException("الوظيفة غير موجودة");
+
+        if (job.entity_id != entityId)
+            throw new UnauthorizedAccessException("لا تملك صلاحية الوصول");
+
         string? fileUrl = null;
         if (dto.ContractFile != null)
             fileUrl = await _fileStorage.SaveFileAsync(dto.ContractFile, "contracts");
@@ -134,6 +144,9 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
 
         if (contract.user_id != userId)
             throw new UnauthorizedAccessException("غير مصرح لك بتوقيع هذا العقد");
+
+        if (contract.status == "signed")
+            throw new BadHttpRequestException("العقد قد تم توقيعه مسبقاً", 400);
 
         if (contract.end_date.HasValue && DateTime.UtcNow > contract.end_date.Value)
             throw new BadHttpRequestException("انتهت صلاحية توقيع العقد", 400);
