@@ -6,8 +6,8 @@ A smart digital platform specialized in seasonal recruitment for Hajj and Umrah 
 
 ```bash
 cp .env.example .env
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Open http://localhost:3000
@@ -93,31 +93,31 @@ frontend/
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start dev server (http://localhost:3000) |
-| `npm run build` | Production build |
-| `npm run generate` | Static site generation |
-| `npm run preview` | Preview production build |
-| `npm test` | Run unit tests (Vitest, 38 tests) |
-| `npm run test:e2e` | Run E2E tests (Playwright, 12 tests) |
+| `pnpm run dev` | Start dev server (http://localhost:3000) |
+| `pnpm run build` | Production build |
+| `pnpm run generate` | Static site generation |
+| `pnpm run preview` | Preview production build |
+| `pnpm test` | Run unit tests (Vitest, 38 tests) |
+| `pnpm run test:e2e` | Run E2E tests (Playwright, 12 tests) |
 | `npx nuxi typecheck` | TypeScript check |
 
 ## Testing
 
 ### Unit Tests (Vitest)
 ```bash
-npm test
+pnpm test
 # 9 test files, 38 tests, ~2s
 ```
 Covers: useAuth, useApi, middleware guards, LoginDialog, JobCard, ApplyJobDialog.
 
 ### E2E Tests (Playwright)
 ```bash
-npm run test:e2e
+pnpm run test:e2e
 # 3 test files, 12 tests
 ```
 Covers: login flow (individual + entity), registration navigation, job browsing.
 
-Playwright config auto-starts `npm run dev` — no manual server setup needed.
+Playwright config auto-starts `pnpm run dev` — no manual server setup needed.
 
 ## Features
 

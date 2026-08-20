@@ -37,7 +37,7 @@ Dashboard pages use `defineAsyncComponent` to load the correct component based o
 ## 2. CODE CONVENTIONS
 
 ### File Naming
-- Components: **kebab-case** → `job-card.vue`, `filter-drawer.vue`, `apply-job-dialog.vue`
+- Components: **PascalCase** → `JobCard.vue`, `FilterDrawer.vue`, `ApplyJobDialog.vue`
 - Pages: follow Nuxt file-based routing conventions
 - Composables: **camelCase** with `use` prefix → `useAuth.ts`, `useLoginModal.js`
 - SCSS partials: **underscore prefix** → `_variables.scss`, `_mixins.scss`
@@ -484,7 +484,7 @@ const apiBase = config.public.apiBase // client-safe
 ```js
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import JobCard from '~/components/job-card.vue'
+import JobCard from '~/components/JobCard.vue'
 
 describe('JobCard', () => {
   it('renders job title', () => {
@@ -501,7 +501,7 @@ describe('JobCard', () => {
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useAuth } from '~/composables/useAuth'
 
-// Stub useAuth globals (see __tests__/stores -> composables/useAuth.test.ts)
+// Stub useAuth globals (see __tests__/composables/useAuth.test.ts)
 describe('useAuth', () => {
   it('starts unauthenticated', () => {
     const auth = useAuth()
@@ -575,7 +575,7 @@ refactor/filter-section-component
 4. Handle loading/error/empty states in the consuming component
 
 ### Creating a Reusable Component
-1. Use kebab-case filename in `components/`
+1. Use PascalCase filename in `components/` (matches existing `JobCard.vue` etc.)
 2. Define props with types and defaults
 3. Define emits explicitly
 4. Keep template under 150 lines
