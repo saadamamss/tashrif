@@ -64,12 +64,14 @@ public class JobsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
+    [Authorize(Policy = "Entity")]
     [HttpGet("{id}/applications")]
     public async Task<ActionResult<PaginationResultDto<ApplicationResponseDto>>> GetApplications(
         long id,
         [FromQuery] PaginationDto pagination)
     {
-        var result = await _jobsService.GetApplicationsAsync(id, pagination);
+        var entityId = long.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var result = await _jobsService.GetApplicationsAsync(id, entityId, pagination);
         return Ok(result);
     }
 

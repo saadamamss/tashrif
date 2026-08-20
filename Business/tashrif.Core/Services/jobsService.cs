@@ -343,8 +343,15 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
         return await GetJobByIdAsync(job.Id);
     }
 
-    public async Task<PaginationResultDto<ApplicationResponseDto>> GetApplicationsAsync(long jobId, PaginationDto pagination)
+    public async Task<PaginationResultDto<ApplicationResponseDto>> GetApplicationsAsync(long jobId, long entityUserId, PaginationDto pagination)
     {
+        var jobQuery = await _unitOfWork.JobsRepository.GetQueryable();
+        var job = await jobQuery.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted)
+            ?? throw new KeyNotFoundException("الوظيفة غير موجودة");
+
+        if (job.entity_id != entityUserId)
+            throw new UnauthorizedAccessException("لا تملك صلاحية الوصول");
+
         var query = await _unitOfWork.ApplicationsRepository.GetQueryable();
         query = query.Where(a => a.job_id == jobId && !a.IsDeleted)
             .Include(a => a.user_Entity);

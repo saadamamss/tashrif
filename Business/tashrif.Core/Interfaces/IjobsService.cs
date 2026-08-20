@@ -9,5 +9,5 @@ public interface IjobsService
     Task<JobResponseDto> GetJobByIdAsync(long id, long? userId = null);
     Task<JobFilterOptionsDto> GetFilterOptionsAsync();
     Task<JobResponseDto> PublishAsync(CreateJobDto dto, long entityId);
-    Task<PaginationResultDto<ApplicationResponseDto>> GetApplicationsAsync(long jobId, PaginationDto pagination);
+    Task<PaginationResultDto<ApplicationResponseDto>> GetApplicationsAsync(long jobId, long entityUserId, PaginationDto pagination);
 }

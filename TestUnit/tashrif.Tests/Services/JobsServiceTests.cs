@@ -277,4 +277,53 @@ public class JobsServiceTests
         result.Items.Should().HaveCount(1);
         result.Items[0].Id.Should().Be(1);
     }
+
+    [Fact]
+    public async Task GetApplications_NonExistingJob_ThrowsKeyNotFoundException()
+    {
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
+
+        var act = () => _sut.GetApplicationsAsync(999, 1, new PaginationDto { Page = 1, Limit = 10 });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task GetApplications_JobOwnedByAnotherEntity_ThrowsUnauthorizedAccessException()
+    {
+        var jobs = new List<jobs>
+        {
+            new() { Id = 1, entity_id = 5, status = "active", title = "Job 1", CreatedAt = DateTime.UtcNow },
+        }.AsQueryable().BuildMock();
+        _jobsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(jobs);
+
+        var act = () => _sut.GetApplicationsAsync(1, 9, new PaginationDto { Page = 1, Limit = 10 });
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task GetApplications_OwnedJob_ReturnsApplications()
+    {
+        var jobs = new List<jobs>
+        {
+            new() { Id = 1, entity_id = 5, status = "active", title = "Job 1", CreatedAt = DateTime.UtcNow },
+        }.AsQueryable().BuildMock();
+        _jobsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(jobs);
+
+        var apps = new List<applications>
+        {
+            new() { Id = 1, job_id = 1, user_id = 10, status = "new", user_Entity = new users { name = "Applicant 1", gender = "ذكر" }, CreatedAt = DateTime.UtcNow },
+            new() { Id = 2, job_id = 1, user_id = 11, status = "shortlisted", user_Entity = new users { name = "Applicant 2", gender = "أنثى" }, CreatedAt = DateTime.UtcNow },
+        }.AsQueryable().BuildMock();
+        _appsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(apps);
+
+        var result = await _sut.GetApplicationsAsync(1, 5, new PaginationDto { Page = 1, Limit = 10 });
+
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(2);
+        result.Total.Should().Be(2);
+        result.Items.Should().OnlyContain(a => a.JobId == 1);
+    }
 }
