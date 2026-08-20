@@ -245,14 +245,36 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
         var types = await active.Select(j => j.work_type).Distinct().ToListAsync();
         var locations = await active.Select(j => j.location).Distinct().ToListAsync();
         var genders = await active.Select(j => j.gender).Distinct().ToListAsync();
+        var entities = await active
+            .Select(j => new { j.entity_id, j.entity_Entity.name })
+            .Distinct()
+            .ToListAsync();
+        var statuses = await query.Where(j => !j.IsDeleted).Select(j => j.status).Distinct().ToListAsync();
+
+        var statusOptions = new List<FilterOptionDto> { new() { Value = string.Empty, Label = "الكل" } };
+        statusOptions.AddRange(statuses
+            .Where(s => !string.IsNullOrEmpty(s))
+            .Select(s => new FilterOptionDto { Value = s, Label = MapStatusLabel(s) }));
 
         return new JobFilterOptionsDto
         {
             Types = types.Where(t => !string.IsNullOrEmpty(t)).Distinct().ToList(),
             Locations = locations.Where(l => !string.IsNullOrEmpty(l)).Distinct().ToList(),
             Genders = genders.Where(g => !string.IsNullOrEmpty(g)).Distinct().ToList(),
+            Entities = entities
+                .Select(e => new FilterOptionDto { Value = e.entity_id, Label = e.name ?? string.Empty })
+                .ToList(),
+            Statuses = statusOptions,
         };
     }
+
+    private static string MapStatusLabel(string status) => status switch
+    {
+        "active" => "نشط",
+        "closed" => "مغلق",
+        "draft" => "مسودة",
+        _ => status,
+    };
 
     public async Task<JobResponseDto> PublishAsync(CreateJobDto dto, long entityUserId)
     {

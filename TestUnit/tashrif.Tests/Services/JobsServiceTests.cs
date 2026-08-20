@@ -199,9 +199,10 @@ public class JobsServiceTests
     {
         var jobs = new List<jobs>
         {
-            new() { Id = 1, status = "active", work_type = "دوام كامل", location = "مكة", gender = "ذكر", entity_Entity = new users() },
-            new() { Id = 2, status = "active", work_type = "دوام جزئي", location = "مكة", gender = "أنثى", entity_Entity = new users() },
-            new() { Id = 3, status = "active", work_type = "دوام كامل", location = "جدة", gender = "ذكر", entity_Entity = new users() },
+            new() { Id = 1, status = "active", work_type = "دوام كامل", location = "مكة", gender = "ذكر", entity_id = 10, entity_Entity = new users { name = "Entity A" } },
+            new() { Id = 2, status = "active", work_type = "دوام جزئي", location = "مكة", gender = "أنثى", entity_id = 10, entity_Entity = new users { name = "Entity A" } },
+            new() { Id = 3, status = "active", work_type = "دوام كامل", location = "جدة", gender = "ذكر", entity_id = 20, entity_Entity = new users { name = "Entity B" } },
+            new() { Id = 4, status = "closed", work_type = "دوام كامل", location = "جدة", gender = "ذكر", entity_id = 20, entity_Entity = new users { name = "Entity B" } },
         }.AsQueryable().BuildMock();
 
         _jobsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(jobs);
@@ -212,6 +213,12 @@ public class JobsServiceTests
         result.Types.Should().HaveCount(2);
         result.Locations.Should().HaveCount(2);
         result.Genders.Should().HaveCount(2);
+        result.Entities.Should().HaveCount(2);
+        result.Entities.Select(e => (long)e.Value!).Should().BeEquivalentTo(new[] { 10L, 20L });
+        result.Entities.Select(e => e.Label).Should().BeEquivalentTo(new[] { "Entity A", "Entity B" });
+        result.Statuses.Should().HaveCount(3);
+        result.Statuses.First().Value!.ToString().Should().BeEmpty();
+        result.Statuses.Select(s => s.Value!.ToString()).Should().Contain(new[] { "active", "closed" });
     }
 
     [Fact]
