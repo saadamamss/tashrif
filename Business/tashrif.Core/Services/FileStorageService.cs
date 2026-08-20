@@ -34,7 +34,7 @@ public class FileStorageService : IFileStorageService
         var uploadsDir = Path.Combine(_env.WebRootPath, "uploads", subfolder);
         Directory.CreateDirectory(uploadsDir);
 
-        var uniqueName = $"{Guid.NewGuid()}_{file.FileName}";
+        var uniqueName = $"{Guid.NewGuid()}{ext}";
         var filePath = Path.Combine(uploadsDir, uniqueName);
 
         using (var stream = new FileStream(filePath, FileMode.Create))
