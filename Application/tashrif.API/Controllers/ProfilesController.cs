@@ -20,6 +20,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpGet("api/individuals/profile")]
+    [Authorize(Policy = "Individual")]
     public async Task<ActionResult<IndividualProfileResponseDto>> GetIndividualProfile()
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -28,6 +29,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpPut("api/individuals/profile")]
+    [Authorize(Policy = "Individual")]
     public async Task<ActionResult<IndividualProfileResponseDto>> UpdateIndividualProfile(
         [FromBody] UpdateIndividualProfileDto dto)
     {
@@ -37,6 +39,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpGet("api/entities/profile")]
+    [Authorize(Policy = "Entity")]
     public async Task<ActionResult<EntityProfileResponseDto>> GetEntityProfile()
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -45,6 +48,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpPut("api/entities/profile")]
+    [Authorize(Policy = "Entity")]
     public async Task<ActionResult<EntityProfileResponseDto>> UpdateEntityProfile(
         [FromBody] UpdateEntityProfileDto dto)
     {

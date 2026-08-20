@@ -20,6 +20,7 @@ public class StatsController : ControllerBase
     }
 
     [HttpGet("api/stats/individual")]
+    [Authorize(Policy = "Individual")]
     public async Task<ActionResult<IndividualStatsDto>> GetIndividualStats()
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -28,6 +29,7 @@ public class StatsController : ControllerBase
     }
 
     [HttpGet("api/stats/entity")]
+    [Authorize(Policy = "Entity")]
     public async Task<ActionResult<EntityStatsDto>> GetEntityStats()
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
