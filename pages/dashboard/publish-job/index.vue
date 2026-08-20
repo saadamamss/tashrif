@@ -57,10 +57,29 @@ warnBeforeUnload()
 
 const isSubmitting = ref(false);
 
+const splitLines = (value) =>
+  (value || "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
 const submitForm = async () => {
   isSubmitting.value = true
   try {
-    const { error } = await useApi().post('/jobs/publish', formData.value)
+    const payload = {
+      title: formData.value.jobTitle,
+      description: formData.value.jobDesc,
+      location: formData.value.jobPlace,
+      type: formData.value.jobType,
+      target: formData.value.targets,
+      vacancies: Number(formData.value.vacancies) || 0,
+      qualification: formData.value.qualification,
+      salary: formData.value.salary,
+      benefits: splitLines(formData.value.benefits),
+      responsibilities: splitLines(formData.value.responsibilities),
+      conditions: splitLines(formData.value.conditions),
+    }
+    const { error } = await useApi().post('/jobs/publish', payload)
     if (error) {
       useToast().show(error, "error")
       return
@@ -133,7 +152,7 @@ const submitForm = async () => {
               >
                 <CustomSelect
                   placeholder="مكان العمل"
-                  :items="['1', '2']"
+                  :items="['مكة المكرمة', 'المدينة المنورة', 'جدة', 'الطائف', 'الرياض']"
                   required
                   v-model="formData.jobPlace"
                   :error="errors.jobPlace"
@@ -151,7 +170,11 @@ const submitForm = async () => {
               <Field name="job-type" id="job-type" v-model="formData.jobType">
                 <CustomSelect
                   placeholder="نوع العمل"
-                  :items="['1', '2']"
+                  :items="[
+                    { value: 'full-time', label: 'دوام كامل' },
+                    { value: 'part-time', label: 'دوام جزئي' },
+                    { value: 'seasonal', label: 'موسمي' },
+                  ]"
                   required
                   v-model="formData.jobType"
                   :error="errors.jobType"
@@ -166,7 +189,11 @@ const submitForm = async () => {
               <Field name="targets" id="targets" v-model="formData.targets">
                 <CustomSelect
                   placeholder="الفئة المستهدفة"
-                  :items="['1', '2']"
+                  :items="[
+                    { value: 'both', label: 'رجال ونساء' },
+                    { value: 'male', label: 'رجال' },
+                    { value: 'female', label: 'نساء' },
+                  ]"
                   required
                   v-model="formData.targets"
                   :error="errors.targets"
@@ -188,7 +215,7 @@ const submitForm = async () => {
               >
                 <CustomSelect
                   placeholder="المؤهل المطلوب"
-                  :items="['1', '2']"
+                  :items="['ثانوية عامة', 'دبلوم', 'بكالوريوس', 'ماجستير']"
                   required
                   v-model="formData.qualification"
                   :error="errors.qualification"
