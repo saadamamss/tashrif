@@ -16,7 +16,7 @@
 
         <div class="flex items-center gap-2">
           <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
-            <img :src="job.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
+            <img :src="entityLogo" class="w-10 h-6 object-cover" />
           </span>
           <span class="company-name text-sm text-dark">
             {{ job.entityName }}
@@ -65,8 +65,10 @@
   </div>
 </template>
 <script setup>
+import { buildImageUrl } from '~/services/help';
+
 /** @type {import('~/types/job').Job} */
-defineProps({
+const props = defineProps({
   job: {
     type: Object,
     default: () => ({}),
@@ -74,6 +76,9 @@ defineProps({
 })
 
 defineEmits(['openApplyForm'])
+
+const entityLogo = computed(() => buildImageUrl(props.job.entityLogo, '/images/partner-3.svg'));
+
 </script>
 <style lang="scss" scoped>
 .job-card {

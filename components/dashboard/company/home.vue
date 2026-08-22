@@ -1,12 +1,16 @@
 <script setup>
 import "swiper/css";
 import JobOfferCard from "~/components/JobOfferCard.vue";
+import { buildImageUrl } from "~/services/help";
 
 const loading = ref(false);
 const companyName = ref('')
 const companyField = ref('')
+const logoUrl = ref('')
 const stats = ref({ totalJobs: 0, activeJobs: 0, totalApplicants: 0 })
 const jobs = ref([])
+
+const logoSrc = computed(() => buildImageUrl(logoUrl.value, '/images/partner-3.svg'));
 
 onMounted(async () => {
   loading.value = true
@@ -14,11 +18,12 @@ onMounted(async () => {
     const [profileRes, statsRes, jobsRes] = await Promise.allSettled([
       useApi().get('/entities/profile'),
       useApi().get('/stats/entity'),
-      useApi().get('/jobs?limit=12'),
+      useApi().get('/jobs/mine?limit=12'),
     ])
     if (profileRes.status === 'fulfilled' && profileRes.value.data) {
       companyName.value = profileRes.value.data.name
       companyField.value = profileRes.value.data.companyField || ''
+      logoUrl.value = profileRes.value.data.logoUrl || ''
     }
     if (statsRes.status === 'fulfilled' && statsRes.value.data) stats.value = statsRes.value.data
     if (jobsRes.status === 'fulfilled' && jobsRes.value.data) jobs.value = jobsRes.value.data.items || jobsRes.value.data
@@ -54,8 +59,8 @@ onMounted(async () => {
                 class="border-4 border-bg-light mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
               >
                 <img
-                  src="/images/partner-3.svg"
-                  class="w-full h-full"
+                  :src="logoSrc"
+                  class="w-full h-full object-cover"
                   alt="user avatar"
                 />
               </div>

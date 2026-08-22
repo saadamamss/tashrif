@@ -1,3 +1,14 @@
+export function buildImageUrl(path: string | null | undefined, fallback?: string): string {
+  if (!path) return fallback || ''
+  if (/^https?:\/\//.test(path)) return path
+  try {
+    const config = useRuntimeConfig()
+    return new URL(config.public.apiBaseUrl).origin + path
+  } catch {
+    return path
+  }
+}
+
 export function toDateInputValue(value: string) {
   if (!value) return "";
   const d = new Date(value);

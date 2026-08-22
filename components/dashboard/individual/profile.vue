@@ -25,16 +25,19 @@ import EditIndividualProfile from "~/components/EditIndividualProfile.vue";
 import BriefcaseIcon from "~/components/icons/BriefcaseIcon.vue";
 import PersonIcon from "~/components/icons/person.vue";
 import FileIcon from "~/components/icons/file.vue";
+import { buildImageUrl } from "~/services/help";
 
 const loading = ref(false);
 const editProfile = ref(false);
-const userData = ref({ name: '', email: '', phone: '', gender: '', nationality: '', birthDate: '', city: '', zone: '', district: '', street: '', zipcode: '', jobTitle: '' })
+const userData = ref({ name: '', email: '', phone: '', gender: '', nationality: '', birthDate: '', city: '', zone: '', district: '', street: '', zipcode: '', jobTitle: '', avatarUrl: '' })
 const stats = ref({ totalApplications: 0, pendingApps: 0, interviews: 0, signedContracts: 0 })
 const profileCompletion = ref(0)
 const qualifications = ref([])
 const experiences = ref([])
 const bankAccounts = ref([])
 const cvs = ref([])
+
+const avatarSrc = computed(() => buildImageUrl(userData.value.avatarUrl, '/images/avatar.png'));
 
 const userInformation = computed(() => {
   return {
@@ -141,16 +144,7 @@ const confirmDeleteCvAction = async () => {
   }
 };
 
-const cvUrl = (filePath) => {
-  if (!filePath) return ""
-  if (/^https?:\/\//.test(filePath)) return filePath
-  try {
-    const config = useRuntimeConfig()
-    return new URL(config.public.apiBaseUrl).origin + filePath
-  } catch {
-    return filePath
-  }
-};
+const cvUrl = (filePath) => buildImageUrl(filePath);
 const qualificationToDelete = ref(null);
 const deletingQualification = ref(false);
 const confirmDeleteQualification = ref(false);
@@ -342,11 +336,11 @@ onMounted(async () => {
           >
             <div class="text-center sm:text-right">
               <div
-                class="border-4 mx-auto sm:mx-0 border-[#fff] rounded-full w-32 h-32 mb-4"
+                class="border-4 mx-auto sm:mx-0 border-[#fff] rounded-full w-32 h-32 mb-4 overflow-hidden"
               >
                 <img
-                  src="~/assets/images/avatar.png"
-                  class="w-full h-full"
+                  :src="avatarSrc"
+                  class="w-full h-full object-cover"
                   alt="user avatar"
                 />
               </div>

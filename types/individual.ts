@@ -14,6 +14,7 @@ export interface Individual {
   street?: string
   zipcode?: string
   jobTitle?: string
+  avatarUrl?: string
   profileCompletionPct?: number
   cvFile?: string
   idFile?: string

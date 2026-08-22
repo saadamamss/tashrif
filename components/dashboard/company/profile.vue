@@ -18,6 +18,7 @@ import BriefcaseIcon from "~/components/icons/BriefcaseIcon.vue";
 import PersonIcon from "~/components/icons/person.vue";
 import FileIcon from "~/components/icons/file.vue";
 import EditEntityProfile from "~/components/EditEntityProfile.vue";
+import { buildImageUrl } from "~/services/help";
 
 const loading = ref(false);
 const editProfile = ref(false);
@@ -25,6 +26,8 @@ const companyData = ref({ name: '', email: '', phone: '', companyField: '', sect
 const contactPerson = ref(null)
 const stats = ref({ totalJobs: 0, activeJobs: 0, totalApplicants: 0 })
 const profileCompletion = ref(0)
+
+const logoSrc = computed(() => buildImageUrl(companyData.value.logoUrl, '/images/partner-3.svg'));
 
 const userComunicationInformation = computed(() => {
   const cp = contactPerson.value || {}
@@ -156,8 +159,8 @@ onMounted(async () => {
                 class="border-4 border-bg-light mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
               >
                 <img
-                  src="/images/partner-3.svg"
-                  class="w-full h-full"
+                  :src="logoSrc"
+                  class="w-full h-full object-cover"
                   alt="user avatar"
                 />
               </div>

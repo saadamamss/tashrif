@@ -62,7 +62,8 @@
           >
             <template #trigger>
               <span>
-                <img src="~/assets/images/profile-image.svg" />
+                <img 
+                :src="avatarSrc" alt="صورة المستخدم" class="w-[48px] h-[48px] rounded-full object-cover" />
               </span>
             </template>
             <template #list>
@@ -97,8 +98,11 @@
 import { ref } from "vue";
 import Logo from "../icons/logo.vue";
 import DropDown from "../elements/DropDown.vue";
+import { buildImageUrl } from "~/services/help";
 
-const { logout } = useAuth();
+const { logout, user } = useAuth();
+
+const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, '/images/profile-image.svg'));
 </script>
 
 <style scoped lang="scss">

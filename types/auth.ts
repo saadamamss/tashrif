@@ -7,6 +7,7 @@ export interface User {
   nationalId?: string
   gender?: string
   nationality?: string
+  avatarUrl?: string
   createdAt?: string
 }
 

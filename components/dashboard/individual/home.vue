@@ -7,17 +7,20 @@ import JobRequestCard from "~/components/JobRequestCard.vue";
 import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
 import EditIndividualProfile from "~/components/EditIndividualProfile.vue";
 import ChevronLeftIcon from "~/components/icons/ChevronLeftIcon.vue";
+import { buildImageUrl } from "~/services/help";
 
 const applyJobDialog = ref(false);
 const editProfile = ref(false);
 const selectedJobId = ref(null);
 const loading = ref(false);
-const userData = ref({ name: '', jobTitle: '' })
+const userData = ref({ name: '', jobTitle: '', avatarUrl: '' })
 const stats = ref({ totalApplications: 0, pendingApps: 0, interviews: 0, signedContracts: 0 })
 const profileCompletion = ref(0)
 const applications = ref([])
 const jobs = ref([])
 const route = useRoute()
+
+const avatarSrc = computed(() => buildImageUrl(userData.value.avatarUrl, '/images/avatar.png'));
 
 const findJob = (jobId) => jobs.value.find(j => j.id === jobId)
 
@@ -85,8 +88,8 @@ onMounted(async () => {
                 class="border-4 border-bg-light mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
               >
                 <img
-                  src="~/assets/images/avatar.png"
-                  class="w-full h-full"
+                  :src="avatarSrc"
+                  class="w-full h-full object-cover"
                   alt="user avatar"
                 />
               </div>

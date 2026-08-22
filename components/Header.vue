@@ -70,7 +70,7 @@
             >
               <template #trigger>
                 <span>
-                  <img src="~/assets/images/profile-image.svg" alt="صورة المستخدم" />
+                  <img :src="avatarSrc" alt="صورة المستخدم" class="w-[48px] h-[48px] rounded-full object-cover" />
                 </span>
               </template>
               <template #list>
@@ -250,10 +250,13 @@
 import { ref } from "vue";
 import Logo from "./icons/logo.vue";
 import DropDown from "./elements/DropDown.vue";
+import { buildImageUrl } from "~/services/help";
 const { currentSection, goToSection: scrollToSection } = useScrollSpy();
 const router = useRouter();
 const isMobileMenuOpen = ref(false);
-const { isAuthenticated, logout} = useAuth();
+const { isAuthenticated, logout, user } = useAuth();
+
+const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, '/images/profile-image.svg'));
 
 //
 const toggleMobileMenu = () => {
