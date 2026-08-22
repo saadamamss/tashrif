@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using tashrif.Data.DTOs.Auth;
 using tashrif.Identity.Interfaces;
 
@@ -18,6 +19,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     public async Task<ActionResult<UserDto>> Login([FromBody] LoginDto dto)
     {
@@ -27,6 +29,7 @@ public class AuthController : ControllerBase
         return Ok(result.User);
     }
 
+    [EnableRateLimiting("register")]
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register()
     {

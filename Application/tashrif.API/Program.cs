@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,11 +32,47 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add rate limiting on auth endpoints (per IP)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, _) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(new { message = "تم تجاوز حد المحاولات. الرجاء المحاولة لاحقاً." });
+    };
+
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("register", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 3,
+                QueueLimit = 0,
+                Window = TimeSpan.FromHours(1)
+            }));
+});
+
 // Add JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("Missing required configuration: Jwt:Key");
-var jwtRefreshKey = builder.Configuration["Jwt:RefreshKey"]
-    ?? throw new InvalidOperationException("Missing required configuration: Jwt:RefreshKey");
+static string GetRequiredConfig(IConfiguration configuration, string key) =>
+    configuration[key] is { Length: > 0 } value
+        ? value
+        : throw new InvalidOperationException($"Missing required configuration: {key}");
+
+var jwtKey = GetRequiredConfig(builder.Configuration, "Jwt:Key");
+var jwtRefreshKey = GetRequiredConfig(builder.Configuration, "Jwt:RefreshKey");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "tashrif-api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "tashrif-client";
 
@@ -88,6 +125,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 app.UseMiddleware<tashrif.API.Middleware.ExceptionMiddleware>();
 app.UseMiddleware<tashrif.API.Middleware.CookieToHeaderMiddleware>();
 app.UseAuthentication();
