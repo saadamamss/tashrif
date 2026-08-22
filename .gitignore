@@ -31,3 +31,6 @@ Thumbs.db
 # Misc
 *.tmp
 *.log
+
+# Uploaded files (runtime data)
+Application/tashrif.API/wwwroot/uploads/
