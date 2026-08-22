@@ -225,14 +225,14 @@ public class AuthService : IAuthService
             Phone = user.phone,
             NationalId = user.national_id,
             Gender = user.gender,
-            Nationality = user.nationality
+            Nationality = user.nationality,
+            AvatarUrl = user.avatar_url
         };
     }
 
     private string GenerateJwtToken(users user)
     {
-        var jwtKey = _config["Jwt:Key"]
-            ?? throw new InvalidOperationException("Missing required configuration: Jwt:Key");
+        var jwtKey = GetRequiredConfig("Jwt:Key");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -257,8 +257,7 @@ public class AuthService : IAuthService
 
     private string GenerateRefreshToken(users user)
     {
-        var refreshKey = _config["Jwt:RefreshKey"]
-            ?? throw new InvalidOperationException("Missing required configuration: Jwt:RefreshKey");
+        var refreshKey = GetRequiredConfig("Jwt:RefreshKey");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(refreshKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -282,8 +281,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            var refreshKey = _config["Jwt:RefreshKey"]
-                ?? throw new InvalidOperationException("Missing required configuration: Jwt:RefreshKey");
+            var refreshKey = GetRequiredConfig("Jwt:RefreshKey");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(refreshKey));
             var handler = new JwtSecurityTokenHandler();
             return handler.ValidateToken(token, new TokenValidationParameters
@@ -302,6 +300,11 @@ public class AuthService : IAuthService
             return null;
         }
     }
+
+    private string GetRequiredConfig(string key) =>
+        _config[key] is { Length: > 0 } value
+            ? value
+            : throw new InvalidOperationException($"Missing required configuration: {key}");
 
     private static short CalculateEntityCompletion(entity_profiles profile)
     {

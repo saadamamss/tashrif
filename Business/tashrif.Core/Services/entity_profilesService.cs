@@ -92,6 +92,7 @@ public class entity_profilesService(IUnitOfWork unitOfWork) : Ientity_profilesSe
 
         if (dto.Name != null) user.name = dto.Name;
         if (dto.Phone != null) user.phone = dto.Phone;
+        if (dto.LogoUrl != null) user.avatar_url = dto.LogoUrl;
         user.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.UsersRepository.Update(user);

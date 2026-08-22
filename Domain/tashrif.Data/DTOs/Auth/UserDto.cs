@@ -10,4 +10,5 @@ public class UserDto
     public string? NationalId { get; set; }
     public string? Gender { get; set; }
     public string? Nationality { get; set; }
+    public string? AvatarUrl { get; set; }
 }

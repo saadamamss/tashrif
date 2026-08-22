@@ -32,6 +32,7 @@ public class individual_profilesService(IUnitOfWork unitOfWork) : Iindividual_pr
             Street = profile?.street,
             Zipcode = profile?.zipcode,
             JobTitle = profile?.job_title,
+            AvatarUrl = user.avatar_url,
             ProfileCompletionPct = profile?.profile_completion_pct ?? 0,
             CvFile = profile?.cv_file,
             IdFile = profile?.id_file,
@@ -65,6 +66,7 @@ public class individual_profilesService(IUnitOfWork unitOfWork) : Iindividual_pr
         if (dto.Phone != null) user.phone = dto.Phone;
         if (dto.Gender != null) user.gender = dto.Gender;
         if (dto.Nationality != null) user.nationality = dto.Nationality;
+        if (dto.AvatarUrl != null) user.avatar_url = dto.AvatarUrl;
         user.UpdatedAt = DateTime.UtcNow;
 
         profile.profile_completion_pct = IndividualCompletionCalculator.Calculate(user, profile);

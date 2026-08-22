@@ -17,6 +17,7 @@ public class IndividualProfileResponseDto
     public string? Street { get; set; }
     public string? Zipcode { get; set; }
     public string? JobTitle { get; set; }
+    public string? AvatarUrl { get; set; }
     public short ProfileCompletionPct { get; set; }
     public string? CvFile { get; set; }
     public string? IdFile { get; set; }

@@ -13,4 +13,5 @@ public class UpdateIndividualProfileDto
     public string? Street { get; set; }
     public string? Zipcode { get; set; }
     public string? JobTitle { get; set; }
+    public string? AvatarUrl { get; set; }
 }
