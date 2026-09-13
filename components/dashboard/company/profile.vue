@@ -270,8 +270,11 @@ onMounted(async () => {
 
     <!-- personal information  -->
     <div class="px-6 rounded-xl bg-white shadow-sm mt-4">
-      <div class="py-6 border-b-2">
+      <div class="py-6 border-b-2 flex justify-between items-center">
         <h1 class="text-base font-bold">البيانات الشخصية</h1>
+        <NuxtLink to="/dashboard/change-password" class="text-sm text-primary hover:underline">
+          تغيير كلمة المرور
+        </NuxtLink>
       </div>
       <div class="py-6">
         <div class="grid xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">

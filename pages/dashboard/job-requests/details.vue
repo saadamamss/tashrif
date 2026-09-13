@@ -23,6 +23,35 @@ const statusMeta = {
   contract_sent: { label: 'تم إرسال العقد', badge: 'contract_sent', title: 'تم إرسال العقد', msg: '🎉 تم قبولك! اطلع على العقد ووقّعه إلكترونياً لتأكيد انضمامك.' },
   accepted: { label: 'مقبول', badge: 'accepted', title: 'تم القبول', msg: '🎉 تهانينا! لقد تم قبولك نهائياً لهذه الوظيفة.' },
   refused: { label: 'مرفوض', badge: 'refused', title: 'لم يتم القبول', msg: 'نأسف لإعلامك بعدم قبول طلبك لهذه الوظيفة حالياً.' },
+  withdrawn: { label: 'مسحوب', badge: 'withdrawn', title: 'تم سحب الطلب', msg: 'لقد سحبت طلبك لهذه الوظيفة بنجاح.' },
+}
+
+const canWithdraw = computed(() => {
+  const s = application.value?.status
+  return s === 'new' || s === 'shortlisted' || s === 'interview'
+})
+
+const showWithdrawConfirm = ref(false)
+const withdrawLoading = ref(false)
+
+async function withdrawApplication() {
+  withdrawLoading.value = true
+  try {
+    const { data, error } = await useApi().put(`/applications/${application.value.id}/withdraw`)
+    if (error) {
+      useToast().show(error, 'error')
+      return
+    }
+    if (data) {
+      application.value = data
+      useToast().show('تم سحب الطلب بنجاح', 'success')
+      showWithdrawConfirm.value = false
+    }
+  } catch {
+    useToast().show('حدث خطأ أثناء سحب الطلب', 'error')
+  } finally {
+    withdrawLoading.value = false
+  }
 }
 
 const breadcrumbs = computed(() => [
@@ -189,6 +218,13 @@ function downloadContract() {
             <p class="text-xs text-muted">
               تم التقديم في تاريخ: {{ formatDate(application.createdAt) }}
             </p>
+            <button
+              v-if="canWithdraw"
+              @click="showWithdrawConfirm = true"
+              class="w-full text-center btn-outline text-sm text-red-600 border-red-300 hover:bg-red-50"
+            >
+              سحب الطلب
+            </button>
           </div>
         </div>
 
@@ -363,6 +399,38 @@ function downloadContract() {
     </template>
     <!--  -->
     <SignContract v-model="signContractOpen" />
+
+    <!-- Withdraw Confirmation Dialog -->
+    <Teleport to="body">
+      <div
+        v-if="showWithdrawConfirm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        @click.self="showWithdrawConfirm = false"
+      >
+        <div class="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-xl">
+          <h3 class="text-lg font-bold text-dark mb-2">تأكيد سحب الطلب</h3>
+          <p class="text-sm text-muted mb-6">
+            هل أنت متأكد من سحب طلبك لهذه الوظيفة؟ لا يمكن التراجع عن هذا الإجراء.
+          </p>
+          <div class="flex gap-3">
+            <button
+              @click="showWithdrawConfirm = false"
+              class="flex-1 btn-outline text-sm"
+              :disabled="withdrawLoading"
+            >
+              إلغاء
+            </button>
+            <button
+              @click="withdrawApplication"
+              class="flex-1 btn-primary text-sm bg-red-600 hover:bg-red-700"
+              :disabled="withdrawLoading"
+            >
+              {{ withdrawLoading ? 'جاري السحب...' : 'نعم، سحب الطلب' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
