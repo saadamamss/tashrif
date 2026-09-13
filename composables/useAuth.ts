@@ -11,6 +11,7 @@ export function useAuth() {
   const isIndividual = computed(() => user.value?.type === "individual");
   const isEntity = computed(() => user.value?.type === "entity");
   const isAdmin = computed(() => user.value?.type === "admin");
+  const mustChangePassword = computed(() => !!user.value?.mustChangePassword);
 
   function setUser(u: User | null) {
     user.value = u;
@@ -81,6 +82,21 @@ export function useAuth() {
     navigateTo("/");
   }
 
+  async function changePassword(currentPassword: string, newPassword: string) {
+    try {
+      const { data } = await api().put<User>("/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      setUser(data);
+      return { error: null };
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Failed to change password";
+      return { error: message };
+    }
+  }
+
   return {
     user: readonly(user),
     isLoading: readonly(isLoading),
@@ -91,11 +107,13 @@ export function useAuth() {
     isIndividual,
     isEntity,
     isAdmin,
+    mustChangePassword,
     setUser,
     clearUser,
     init,
     login,
     register,
     logout,
+    changePassword,
   };
 }

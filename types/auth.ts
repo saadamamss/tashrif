@@ -8,6 +8,7 @@ export interface User {
   gender?: string
   nationality?: string
   avatarUrl?: string
+  mustChangePassword?: boolean
   createdAt?: string
 }
 

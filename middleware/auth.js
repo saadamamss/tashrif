@@ -1,5 +1,5 @@
 export default defineNuxtRouteMiddleware((to) => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, mustChangePassword } = useAuth()
 
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const isGuest = to.meta.guest === true
@@ -10,5 +10,13 @@ export default defineNuxtRouteMiddleware((to) => {
 
   if (isGuest && isAuthenticated.value) {
     return navigateTo("/dashboard")
+  }
+
+  // Force password change before accessing dashboard
+  if (requiresAuth && isAuthenticated.value && mustChangePassword.value) {
+    // Allow the change-password page itself and logout
+    if (to.path !== "/dashboard/change-password" && to.path !== "/") {
+      return navigateTo("/dashboard/change-password")
+    }
   }
 })

@@ -7,6 +7,7 @@ vi.stubGlobal('useAuth', vi.fn(() => ({
   isAuthenticated: { value: mockIsAuthenticated },
   userType: { value: null },
   user: { value: null },
+  mustChangePassword: { value: false },
 })))
 
 beforeEach(() => {

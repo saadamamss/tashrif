@@ -13,6 +13,14 @@ function isAuthEndpoint(url: string = ""): boolean {
   return AUTH_ENDPOINTS.some((e) => url.includes(e));
 }
 
+function getCsrfToken(): string | null {
+  if (import.meta.server) return null;
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
+const CSRF_HEADER = "X-CSRF-Token";
+
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBaseUrl || "/api";
@@ -37,6 +45,13 @@ export default defineNuxtPlugin((nuxtApp) => {
     failedQueue = [];
   };
 
+  if (baseURL === "/api") {
+    console.warn(
+      "[Tashrif] Running against mock API (baseURL=/api). " +
+      "Set NUXT_PUBLIC_API_BASE_URL=http://localhost:5001/api in .env to use the real backend."
+    );
+  }
+
   const api = axios.create({
     baseURL,
     withCredentials: true,
@@ -48,6 +63,14 @@ export default defineNuxtPlugin((nuxtApp) => {
   api.interceptors.request.use((cfg) => {
     if (import.meta.server && ssrCookie && !cfg._retry) {
       cfg.headers.set("cookie", ssrCookie);
+    }
+    // Attach CSRF token on state-changing requests
+    const method = cfg.method?.toUpperCase();
+    if (method === "POST" || method === "PUT" || method === "DELETE" || method === "PATCH") {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        cfg.headers.set(CSRF_HEADER, csrfToken);
+      }
     }
     return cfg;
   });
