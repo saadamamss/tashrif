@@ -110,6 +110,9 @@ builder.Services.AddtashrifCoreDependencies();
 // Add Identity
 builder.Services.AddtashrifIdentityDependencies();
 
+// Add hosted services
+builder.Services.AddHostedService<JobExpiryService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline

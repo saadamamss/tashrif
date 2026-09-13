@@ -6,6 +6,7 @@ global using Microsoft.AspNetCore.Mvc;
 
 // Solution namespaces
 global using tashrif.Core;
+global using tashrif.Core.Services;
 global using tashrif.Data;
 global using tashrif.Data.Models;
 global using tashrif.Data.Interfaces;

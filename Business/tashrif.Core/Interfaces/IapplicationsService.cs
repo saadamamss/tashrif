@@ -8,5 +8,6 @@ public interface IapplicationsService
     Task<ApplicationResponseDto> GetByIdAsync(long id, long userId);
     Task<ApplicationResponseDto> ApplyAsync(ApplyJobDto dto, long userId);
     Task<ApplicationResponseDto> UpdateStatusAsync(long id, string status, long userId);
+    Task<ApplicationResponseDto> WithdrawAsync(long id, long userId);
     Task DeleteAsync(long id, long userId);
 }

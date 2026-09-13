@@ -88,6 +88,30 @@ public class ApplicationsController : ControllerBase
         }
     }
 
+    [Authorize(Policy = "Individual")]
+    [HttpPut("{id}/withdraw")]
+    public async Task<ActionResult<ApplicationResponseDto>> Withdraw(long id)
+    {
+        var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        try
+        {
+            var result = await _applicationsService.WithdrawAsync(id, userId);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { message = "الطلب غير موجود" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(long id)

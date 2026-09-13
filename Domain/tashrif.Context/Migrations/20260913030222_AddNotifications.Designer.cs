@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using tashrif.Context;
@@ -11,9 +12,11 @@ using tashrif.Context;
 namespace tashrif.Context.Migrations
 {
     [DbContext(typeof(tashrifDBContext))]
-    partial class tashrifDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260913030222_AddNotifications")]
+    partial class AddNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -840,48 +843,6 @@ namespace tashrif.Context.Migrations
                     b.ToTable("jobs");
                 });
 
-            modelBuilder.Entity("tashrif.Data.messages", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("application_id")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("body")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("is_read")
-                        .HasColumnType("boolean");
-
-                    b.Property<long>("sender_id")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("application_id");
-
-                    b.HasIndex("sender_id");
-
-                    b.ToTable("messages");
-                });
-
             modelBuilder.Entity("tashrif.Data.notifications", b =>
                 {
                     b.Property<long>("Id")
@@ -1246,25 +1207,6 @@ namespace tashrif.Context.Migrations
                         .IsRequired();
 
                     b.Navigation("entity_Entity");
-                });
-
-            modelBuilder.Entity("tashrif.Data.messages", b =>
-                {
-                    b.HasOne("tashrif.Data.applications", "application_entity")
-                        .WithMany()
-                        .HasForeignKey("application_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("tashrif.Data.users", "sender_entity")
-                        .WithMany()
-                        .HasForeignKey("sender_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("application_entity");
-
-                    b.Navigation("sender_entity");
                 });
 
             modelBuilder.Entity("tashrif.Data.qualifications", b =>

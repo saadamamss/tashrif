@@ -20,12 +20,16 @@ public static class tashrifRepositoryDependencies
         services.AddScoped<IqualificationsRepository, qualificationsRepository>();
         services.AddScoped<IusersRepository, usersRepository>();
         services.AddScoped<Iaudit_logsRepository, audit_logsRepository>();
+        services.AddScoped<InotificationsRepository, notificationsRepository>();
+        services.AddScoped<ImessagesRepository, messagesRepository>();
 
         services.AddScoped<IGenericRepository<users>, usersRepository>();
         services.AddScoped<IGenericRepository<individual_profiles>, individual_profilesRepository>();
         services.AddScoped<IGenericRepository<entity_profiles>, entity_profilesRepository>();
         services.AddScoped<IGenericRepository<contact_persons>, contact_personsRepository>();
         services.AddScoped<IGenericRepository<audit_logs>, audit_logsRepository>();
+        services.AddScoped<IGenericRepository<notifications>, notificationsRepository>();
+        services.AddScoped<IGenericRepository<messages>, messagesRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }

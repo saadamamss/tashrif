@@ -20,6 +20,8 @@ public class UnitOfWork : IUnitOfWork
     public IqualificationsRepository QualificationsRepository { get; }
     public IusersRepository UsersRepository { get; }
     public Iaudit_logsRepository Audit_logsRepository { get; }
+    public InotificationsRepository NotificationsRepository { get; }
+    public ImessagesRepository MessagesRepository { get; }
 
     #endregion
 
@@ -41,7 +43,9 @@ public class UnitOfWork : IUnitOfWork
         Ijob_responsibilitiesRepository job_responsibilitiesRepository,
         IqualificationsRepository qualificationsRepository,
         IusersRepository usersRepository,
-        Iaudit_logsRepository audit_logsRepository
+        Iaudit_logsRepository audit_logsRepository,
+        InotificationsRepository notificationsRepository,
+        ImessagesRepository messagesRepository
     )
     {
         _context = context;
@@ -61,6 +65,8 @@ public class UnitOfWork : IUnitOfWork
         QualificationsRepository = qualificationsRepository;
         UsersRepository = usersRepository;
         Audit_logsRepository = audit_logsRepository;
+        NotificationsRepository = notificationsRepository;
+        MessagesRepository = messagesRepository;
     }
 
     #endregion

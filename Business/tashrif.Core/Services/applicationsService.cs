@@ -136,7 +136,7 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
 
     public async Task<ApplicationResponseDto> UpdateStatusAsync(long id, string status, long userId)
     {
-        var validStatuses = new[] { "new", "shortlisted", "interview", "contract_sent", "accepted", "refused" };
+        var validStatuses = new[] { "new", "shortlisted", "interview", "contract_sent", "accepted", "refused", "withdrawn" };
         if (!validStatuses.Contains(status))
             throw new InvalidOperationException("حالة غير صالحة");
 
@@ -155,6 +155,46 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
             throw new UnauthorizedAccessException("لا تملك صلاحية تعديل هذا الطلب");
 
         app.status = status;
+        app.UpdatedAt = DateTime.UtcNow;
+        _unitOfWork.ApplicationsRepository.Update(app);
+        await _unitOfWork.SaveChangesAsync();
+
+        var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
+
+        return new ApplicationResponseDto
+        {
+            Id = app.Id,
+            JobId = app.job_id,
+            UserId = app.user_id,
+            UserName = app.user_Entity?.name ?? "",
+            UserGender = app.user_Entity?.gender,
+            UserCity = city,
+            Qualification = string.IsNullOrEmpty(app.qualification) ? qualification : app.qualification,
+            Status = app.status,
+            CreatedAt = app.CreatedAt,
+            Job = await BuildJobAsync(app.job_id),
+        };
+    }
+
+    public async Task<ApplicationResponseDto> WithdrawAsync(long id, long userId)
+    {
+        var query = await _unitOfWork.ApplicationsRepository.GetQueryable();
+        var app = await query
+            .Include(a => a.user_Entity)
+            .Include(a => a.job_Entity)
+            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted)
+            ?? throw new KeyNotFoundException("الطلب غير موجود");
+
+        // Only the application owner can withdraw
+        if (app.user_id != userId)
+            throw new UnauthorizedAccessException("لا تملك صلاحية سحب هذا الطلب");
+
+        // Cannot withdraw if already at contract stage or beyond
+        var withdrawableStatuses = new[] { "new", "shortlisted", "interview" };
+        if (!withdrawableStatuses.Contains(app.status))
+            throw new InvalidOperationException("لا يمكن سحب الطلب بعد مرحلة العقد");
+
+        app.status = "withdrawn";
         app.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.ApplicationsRepository.Update(app);
         await _unitOfWork.SaveChangesAsync();

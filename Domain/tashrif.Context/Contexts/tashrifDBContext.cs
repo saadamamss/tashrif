@@ -32,6 +32,8 @@ public class tashrifDBContext : DbContext
    public DbSet<qualifications> qualifications => Set<qualifications>();
    public DbSet<users> users => Set<users>();
    public DbSet<audit_logs> audit_logs => Set<audit_logs>();
+   public DbSet<notifications> notifications => Set<notifications>();
+   public DbSet<messages> messages => Set<messages>();
 
    #endregion
 

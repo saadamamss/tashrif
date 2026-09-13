@@ -273,6 +273,7 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
         "active" => "نشط",
         "closed" => "مغلق",
         "draft" => "مسودة",
+        "expired" => "منتهي الصلاحية",
         _ => status,
     };
 

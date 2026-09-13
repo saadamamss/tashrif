@@ -15,6 +15,9 @@ public interface IUnitOfWork
     Ijob_conditionsRepository Job_conditionsRepository { get; }
     Ijob_responsibilitiesRepository Job_responsibilitiesRepository { get; }
     IqualificationsRepository QualificationsRepository { get; }
-    IusersRepository UsersRepository { get; }
-    Task<int> SaveChangesAsync();
+     IusersRepository UsersRepository { get; }
+     Iaudit_logsRepository Audit_logsRepository { get; }
+     InotificationsRepository NotificationsRepository { get; }
+     ImessagesRepository MessagesRepository { get; }
+     Task<int> SaveChangesAsync();
 }

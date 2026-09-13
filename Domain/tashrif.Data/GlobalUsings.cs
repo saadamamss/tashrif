@@ -14,3 +14,4 @@ global using Microsoft.Extensions.DependencyInjection;
 global using tashrif.Data;
 global using tashrif.Data.Interfaces;
 global using tashrif.Data.Models;
+global using tashrif.Data.DTOs;
