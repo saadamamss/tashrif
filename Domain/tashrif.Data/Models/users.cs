@@ -19,6 +19,7 @@ public class users : ISharedColumns
     public string gender { get; set; }
     public string nationality { get; set; }
     public string avatar_url { get; set; }
+    public bool must_change_password { get; set; } = true;
     [Required]
     public DateTime CreatedAt { get; set; }
     [Required]

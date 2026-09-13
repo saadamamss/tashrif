@@ -120,6 +120,9 @@ public class AuthService : IAuthService
 
         var logoUrl = dto.CompanyLogo != null ? await _fileStorage.SaveFileAsync(dto.CompanyLogo, "logos") : null;
 
+        if (logoUrl != null)
+            user.avatar_url = logoUrl;
+
         var profile = new entity_profiles
         {
             user_id = user.Id,
@@ -204,6 +207,28 @@ public class AuthService : IAuthService
         return MapToUserDto(user);
     }
 
+    public async Task<UserDto> ChangePasswordAsync(long userId, ChangePasswordDto dto)
+    {
+        var user = await _userRepo.GetByIdAsync(userId);
+        if (user == null)
+            throw new BadHttpRequestException("المستخدم غير موجود", 404);
+
+        if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.password_hash))
+            throw new BadHttpRequestException("كلمة المرور الحالية غير صحيحة", 401);
+
+        if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
+            throw new BadHttpRequestException("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل", 400);
+
+        user.password_hash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        user.must_change_password = false;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        _userRepo.Update(user);
+        await _uow.SaveChangesAsync();
+
+        return MapToUserDto(user);
+    }
+
     private AuthResponseDto GenerateAuthResponse(users user)
     {
         return new AuthResponseDto
@@ -226,7 +251,8 @@ public class AuthService : IAuthService
             NationalId = user.national_id,
             Gender = user.gender,
             Nationality = user.nationality,
-            AvatarUrl = user.avatar_url
+            AvatarUrl = user.avatar_url,
+            MustChangePassword = user.must_change_password
         };
     }
 

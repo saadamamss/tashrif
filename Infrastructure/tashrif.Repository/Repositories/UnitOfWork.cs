@@ -19,6 +19,7 @@ public class UnitOfWork : IUnitOfWork
     public Ijob_responsibilitiesRepository Job_responsibilitiesRepository { get; }
     public IqualificationsRepository QualificationsRepository { get; }
     public IusersRepository UsersRepository { get; }
+    public Iaudit_logsRepository Audit_logsRepository { get; }
 
     #endregion
 
@@ -39,7 +40,8 @@ public class UnitOfWork : IUnitOfWork
         Ijob_conditionsRepository job_conditionsRepository,
         Ijob_responsibilitiesRepository job_responsibilitiesRepository,
         IqualificationsRepository qualificationsRepository,
-        IusersRepository usersRepository
+        IusersRepository usersRepository,
+        Iaudit_logsRepository audit_logsRepository
     )
     {
         _context = context;
@@ -58,6 +60,7 @@ public class UnitOfWork : IUnitOfWork
         Job_responsibilitiesRepository = job_responsibilitiesRepository;
         QualificationsRepository = qualificationsRepository;
         UsersRepository = usersRepository;
+        Audit_logsRepository = audit_logsRepository;
     }
 
     #endregion

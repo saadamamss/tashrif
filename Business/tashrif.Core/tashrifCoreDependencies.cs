@@ -16,6 +16,7 @@ public static class tashrifCoreDependencies
         services.AddScoped<IjobsService, jobsService>();
         services.AddScoped<IqualificationsService, qualificationsService>();
         services.AddScoped<IFileStorageService, FileStorageService>();
+        services.AddScoped<IAuditService, AuditService>();
         return services;
     }
 }

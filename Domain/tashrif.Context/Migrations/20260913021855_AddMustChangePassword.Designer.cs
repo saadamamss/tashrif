@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using tashrif.Context;
@@ -11,9 +12,11 @@ using tashrif.Context;
 namespace tashrif.Context.Migrations
 {
     [DbContext(typeof(tashrifDBContext))]
-    partial class tashrifDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260913021855_AddMustChangePassword")]
+    partial class AddMustChangePassword
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,57 +79,6 @@ namespace tashrif.Context.Migrations
                     b.HasIndex("user_id");
 
                     b.ToTable("applications");
-                });
-
-            modelBuilder.Entity("tashrif.Data.audit_logs", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("action")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("entity_id")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("entity_type")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ip_address")
-                        .HasColumnType("text");
-
-                    b.Property<string>("new_value")
-                        .HasColumnType("text");
-
-                    b.Property<string>("old_value")
-                        .HasColumnType("text");
-
-                    b.Property<string>("user_agent")
-                        .HasColumnType("text");
-
-                    b.Property<long>("user_id")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("audit_logs");
                 });
 
             modelBuilder.Entity("tashrif.Data.bank_accounts", b =>

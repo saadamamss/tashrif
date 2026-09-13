@@ -19,11 +19,13 @@ public static class tashrifRepositoryDependencies
         services.AddScoped<Ijob_responsibilitiesRepository, job_responsibilitiesRepository>();
         services.AddScoped<IqualificationsRepository, qualificationsRepository>();
         services.AddScoped<IusersRepository, usersRepository>();
+        services.AddScoped<Iaudit_logsRepository, audit_logsRepository>();
 
         services.AddScoped<IGenericRepository<users>, usersRepository>();
         services.AddScoped<IGenericRepository<individual_profiles>, individual_profilesRepository>();
         services.AddScoped<IGenericRepository<entity_profiles>, entity_profilesRepository>();
         services.AddScoped<IGenericRepository<contact_persons>, contact_personsRepository>();
+        services.AddScoped<IGenericRepository<audit_logs>, audit_logsRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }

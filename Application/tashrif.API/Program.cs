@@ -127,6 +127,7 @@ if (!app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
 app.UseMiddleware<tashrif.API.Middleware.ExceptionMiddleware>();
+app.UseMiddleware<tashrif.API.Middleware.CsrfMiddleware>();
 app.UseMiddleware<tashrif.API.Middleware.CookieToHeaderMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();

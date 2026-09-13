@@ -33,6 +33,9 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register()
     {
+        if (Request.ContentType == null || !Request.ContentType.Contains("multipart/form-data"))
+            throw new BadHttpRequestException("التسجيل يتطلب إرسال البيانات كـ multipart/form-data", 415);
+
         var hasCompanyName = Request.Form.ContainsKey("companyName");
 
         AuthResponseDto result;
@@ -113,6 +116,15 @@ public class AuthController : ControllerBase
         ClearAccessTokenCookie();
         ClearRefreshCookie();
         return Ok(new { message = "تم تسجيل الخروج بنجاح" });
+    }
+
+    [Authorize]
+    [HttpPut("change-password")]
+    public async Task<ActionResult<UserDto>> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        var userId = long.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var user = await _authService.ChangePasswordAsync(userId, dto);
+        return Ok(user);
     }
 
     private void SetAccessTokenCookie(string value)
