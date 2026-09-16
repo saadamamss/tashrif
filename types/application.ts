@@ -13,7 +13,7 @@ export interface Application {
   job?: Job
 }
 
-export type ApplicationStatus = 'new' | 'shortlisted' | 'interview' | 'contract_sent' | 'accepted' | 'refused'
+export type ApplicationStatus = 'new' | 'shortlisted' | 'interview' | 'contract_sent' | 'accepted' | 'refused' | 'withdrawn'
 
 export interface ApplicationFilter {
   status?: ApplicationStatus

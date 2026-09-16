@@ -170,7 +170,7 @@ onMounted(async () => {
                 :job="job"
                 class="border border-[#fff]/0 hover:border-primary transition"
                 role="button"
-                @click="$router.push('/dashboard/published-jobs/details')"
+                @click="$router.push(`/dashboard/published-jobs/details?id=${job.id}`)"
               />
             </div>
           </div>

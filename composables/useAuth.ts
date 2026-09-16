@@ -11,7 +11,6 @@ export function useAuth() {
   const isIndividual = computed(() => user.value?.type === "individual");
   const isEntity = computed(() => user.value?.type === "entity");
   const isAdmin = computed(() => user.value?.type === "admin");
-  const mustChangePassword = computed(() => !!user.value?.mustChangePassword);
 
   function setUser(u: User | null) {
     user.value = u;
@@ -107,7 +106,6 @@ export function useAuth() {
     isIndividual,
     isEntity,
     isAdmin,
-    mustChangePassword,
     setUser,
     clearUser,
     init,

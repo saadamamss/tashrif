@@ -39,11 +39,15 @@ export function useBeforeUnload(message: string) {
   }
 
   function enable() {
-    window.addEventListener('beforeunload', handler)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handler)
+    }
   }
 
   function disable() {
-    window.removeEventListener('beforeunload', handler)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('beforeunload', handler)
+    }
   }
 
   onBeforeUnmount(disable)

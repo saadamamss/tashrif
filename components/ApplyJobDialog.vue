@@ -14,6 +14,15 @@
       <Form @submit="submitApplication">
         <div class="p-6">
           <div class="mb-8">
+            <label class="text-sm block mb-2"> المؤهل </label>
+            <CustomSelect
+              v-model="formData.qualificationId"
+              :items="qualificationItems"
+              placeholder="اختر المؤهل"
+            />
+          </div>
+
+          <div class="mb-8">
             <label class="text-sm block mb-2"> نبذة عن خبراتك </label>
             <textarea
               v-model="formData.coverLetter"
@@ -44,6 +53,7 @@
 
 <script setup>
 import Dialog from "./Dialog.vue";
+import CustomSelect from "./elements/CustomSelect.vue";
 import { Form } from "vee-validate";
 const model = defineModel();
 
@@ -57,36 +67,53 @@ const props = defineProps({
 
 const formData = ref({
   coverLetter: "",
+  qualificationId: null,
 });
+
+const qualifications = ref([]);
+const qualificationItems = computed(() =>
+  qualifications.value.map((q) => ({ value: q.id, label: q.type }))
+);
 
 const isSubmitting = ref(false);
 
-const emit = defineEmits(['applied']);
+const emit = defineEmits(["applied"]);
+
+// Fetch qualifications when dialog opens
+watch(model, async (val) => {
+  if (val && qualifications.value.length === 0) {
+    const { data } = await useApi().get("/qualifications");
+    if (data?.items) qualifications.value = data.items;
+  }
+});
 
 const submitApplication = async () => {
-  isSubmitting.value = true
+  isSubmitting.value = true;
   try {
-    const { error } = await useApi().post('/applications/apply', {
+    const { error } = await useApi().post("/applications/apply", {
       jobId: Number(props.jobId),
+      qualificationId: Number(formData.value.qualificationId),
       experience: formData.value.coverLetter,
-    })
+    });
     if (error) {
-      useToast().show(error, "error")
-      return
+      useToast().show(error, "error");
+      return;
     }
-    useToast().show("تم إرسال طلب التقديم بنجاح", "success")
-    emit('applied', Number(props.jobId));
+    useToast().show("تم إرسال طلب التقديم بنجاح", "success");
+    emit("applied", Number(props.jobId));
     model.value = false;
     formData.value.coverLetter = "";
+    formData.value.qualificationId = null;
   } catch {
-    useToast().show("حدث خطأ غير متوقع", "error")
+    useToast().show("حدث خطأ غير متوقع", "error");
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 };
 
 const cancelApplication = () => {
   formData.value.coverLetter = "";
+  formData.value.qualificationId = null;
   model.value = false;
 };
 </script>

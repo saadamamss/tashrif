@@ -58,7 +58,7 @@ const props = defineProps({
 const job = computed(() => props.job?.id ? props.job : (props.application?.job || {}))
 
 const statusLabel = computed(() => {
-  const labels = { new: 'قيد المراجعة', shortlisted: 'مقبول مبدئي', interview: 'مقابلة', contract_sent: 'تم إرسال العقد', accepted: 'مقبول', refused: 'مرفوض' }
+  const labels = { new: 'قيد المراجعة', shortlisted: 'مقبول مبدئي', interview: 'مقابلة', contract_sent: 'تم إرسال العقد', accepted: 'مقبول', refused: 'مرفوض', withdrawn: 'مسحوب' }
   return labels[props.application.status] || 'قيد المراجعة'
 })
 const daysSince = computed(() => {

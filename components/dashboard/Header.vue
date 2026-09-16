@@ -42,12 +42,43 @@
             trigger-style="bg-bg-light rounded-full border-2 border-[#fff]/0 active:border-primary"
           >
             <template #trigger>
-              <span class="block w-12 h-12 flex items-center justify-center">
+              <span class="block w-12 h-12 flex items-center justify-center relative">
                 <BellIcon />
+                <span
+                  v-if="unreadCount > 0"
+                  class="absolute top-1 start-1 w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center"
+                >
+                  {{ unreadCount > 9 ? '+9' : unreadCount }}
+                </span>
               </span>
             </template>
             <template #list>
-              <ul>
+              <ul v-if="notifications.length > 0" class="min-w-[280px] max-h-[400px] overflow-y-auto">
+                <li
+                  v-for="n in notifications"
+                  :key="n.id"
+                  class="p-3 border-b last:border-b-0 hover:bg-bg-subtle cursor-pointer"
+                  :class="{ 'bg-bg-light': !n.isRead }"
+                  @click="markAsRead(n.id)"
+                >
+                  <p class="text-sm font-medium">{{ n.title }}</p>
+                  <p v-if="n.body" class="text-xs text-gray-500 mt-1">{{ n.body }}</p>
+                  <p class="text-[10px] text-gray-400 mt-1">{{ formatTime(n.createdAt) }}</p>
+                </li>
+                <li v-if="hasMore" class="p-2 text-center">
+                  <button
+                    :disabled="loadingMore"
+                    class="text-xs text-primary hover:underline disabled:opacity-50"
+                    @click.stop="loadMore"
+                  >
+                    {{ loadingMore ? 'جاري التحميل...' : 'عرض المزيد' }}
+                  </button>
+                </li>
+                <li v-else class="p-2 text-center">
+                  <p class="text-[10px] text-gray-400">لا يوجد المزيد</p>
+                </li>
+              </ul>
+              <ul v-else>
                 <li>
                   <div class="flex flex-col p-3">
                     <p class="text=base">لا يوجد تنبيهات</p>
@@ -101,8 +132,86 @@ import DropDown from "../elements/DropDown.vue";
 import { buildImageUrl } from "~/services/help";
 
 const { logout, user } = useAuth();
+const { notifications, unreadCount, loading, loadingMore, hasMore, fetchNotifications, loadMore, addNotification, markAsRead } = useNotifications();
+const { start, on, isConnected } = useSignalr();
 
 const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, '/images/profile-image.svg'));
+
+function formatTime(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return "الآن";
+  if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} دقيقة`;
+  if (diff < 86400000) return `منذ ${Math.floor(diff / 3600000)} ساعة`;
+  return d.toLocaleDateString("ar-SA");
+}
+
+onMounted(async () => {
+  // 1. Fetch existing notifications from DB
+  await fetchNotifications();
+
+  // 2. Connect to SignalR for live notifications
+  if (!isConnected.value) {
+    await start();
+  }
+
+  on("NewApplication", (data) => {
+    addNotification({
+      id: data.id || Date.now(),
+      userId: user.value?.id ?? 0,
+      title: `متقدم جديد على ${data.jobTitle}`,
+      body: `${data.applicantName} قام بالتقديم`,
+      type: "new_application",
+      referenceId: data.applicationId,
+      referenceType: "application",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  on("InterviewScheduled", (data) => {
+    addNotification({
+      id: data.id || Date.now(),
+      userId: user.value?.id ?? 0,
+      title: `مقابلة مجدولة`,
+      body: `مقابلة لوظيفة ${data.jobTitle} بتاريخ ${data.date}`,
+      type: "interview_scheduled",
+      referenceId: data.interviewId,
+      referenceType: "interview",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  on("ContractSent", (data) => {
+    addNotification({
+      id: data.id || Date.now(),
+      userId: user.value?.id ?? 0,
+      title: `عقد جديد`,
+      body: `تم إرسال عقد لوظيفة ${data.jobTitle} من ${data.entityName}`,
+      type: "contract_sent",
+      referenceId: data.contractId,
+      referenceType: "contract",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  on("ContractSigned", (data) => {
+    addNotification({
+      id: data.id || Date.now(),
+      userId: user.value?.id ?? 0,
+      title: `تم توقيع العقد`,
+      body: `${data.userName} وقّع العقد لوظيفة ${data.jobTitle}`,
+      type: "contract_signed",
+      referenceId: data.contractId,
+      referenceType: "contract",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+  });
+});
 </script>
 
 <style scoped lang="scss">

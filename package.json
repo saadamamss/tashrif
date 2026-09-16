@@ -12,9 +12,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@microsoft/signalr": "^10.0.11",
     "@vee-validate/rules": "^4.15.1",
     "axios": "^1.18.1",
-    "nuxt": "^3.17.7",
+    "nuxt": "3.17.7",
     "swiper": "^11.2.10",
     "typescript": "^5.9.3",
     "vee-validate": "^4.15.1",

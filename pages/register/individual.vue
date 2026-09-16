@@ -168,7 +168,7 @@ const onSubmit = async (values) => {
                   id="confirmPassword"
                   type="password"
                   required
-                  rules="required|confirmed:password"
+                  rules="required|confirmed:@password"
                   label="تأكيد كلمة المرور"
                   placeholder="أعد إدخال كلمة المرور"
                   v-model="formData.confirmPassword"

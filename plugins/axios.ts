@@ -13,17 +13,12 @@ function isAuthEndpoint(url: string = ""): boolean {
   return AUTH_ENDPOINTS.some((e) => url.includes(e));
 }
 
-function getCsrfToken(): string | null {
-  if (import.meta.server) return null;
-  const match = document.cookie.match(/csrf_token=([^;]+)/);
-  return match ? match[1] : null;
-}
-
 const CSRF_HEADER = "X-CSRF-Token";
 
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBaseUrl || "/api";
+  const csrf = useCsrf();
 
   const ssrCookie = import.meta.server
     ? useRequestHeaders(["cookie"]).cookie
@@ -67,7 +62,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     // Attach CSRF token on state-changing requests
     const method = cfg.method?.toUpperCase();
     if (method === "POST" || method === "PUT" || method === "DELETE" || method === "PATCH") {
-      const csrfToken = getCsrfToken();
+      const csrfToken = csrf.get();
       if (csrfToken) {
         cfg.headers.set(CSRF_HEADER, csrfToken);
       }
@@ -77,7 +72,14 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Response Interceptor
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // Capture CSRF token from response header (backend sends on login/auth/refresh)
+      const token = response.headers[CSRF_HEADER.toLowerCase()];
+      if (token) {
+        csrf.set(token);
+      }
+      return response;
+    },
     async (error) => {
       const originalRequest = error.config;
 
@@ -103,7 +105,15 @@ export default defineNuxtPlugin((nuxtApp) => {
         const response = await axios.post(`${baseURL}/auth/refresh`, null, {
           withCredentials: true,
           headers: import.meta.server && ssrCookie ? { cookie: ssrCookie } : {},
-        });        if (import.meta.server && ssrEvent) {
+        });
+
+        // Capture CSRF token from refresh response
+        const token = response.headers[CSRF_HEADER.toLowerCase()];
+        if (token) {
+          csrf.set(token);
+        }
+
+        if (import.meta.server && ssrEvent) {
           const rawSetCookie = response.headers["set-cookie"];
           if (rawSetCookie) {
             const cookies = Array.isArray(rawSetCookie)

@@ -46,7 +46,7 @@ const isHidden = computed(() => {
 <style scoped lang="scss">
 .main-content {
   width: 100%;
-  min-height: 100vh;
+  min-height: calc(100vh - 120px);
   margin-right: auto;
   max-width: calc(100% - 275px);
   transition: max-width 0.3s ease;

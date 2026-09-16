@@ -36,6 +36,9 @@ const formData = ref({
   jobPlace: "",
   jobType: "",
   targets: "",
+  hours: "",
+  duration: "",
+  endDate: "",
   salary: "",
   jobDesc: "",
   benefits: "",
@@ -72,6 +75,10 @@ const submitForm = async () => {
       location: formData.value.jobPlace,
       type: formData.value.jobType,
       target: formData.value.targets,
+      gender: formData.value.targets,
+      hours: formData.value.hours,
+      duration: formData.value.duration,
+      endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : null,
       vacancies: Number(formData.value.vacancies) || 0,
       qualification: formData.value.qualification,
       salary: formData.value.salary,
@@ -240,6 +247,59 @@ const submitForm = async () => {
                   ريال سعودى
                 </span>
               </TextInput>
+            </div>
+          </div>
+          <!--  -->
+          <div class="grid sm:grid-cols-3 gap-6 mb-6">
+            <div>
+              <label for="job-hours" class="text-sm mb-2 block">
+                ساعات العمل
+                <span class="text-red-400">*</span>
+              </label>
+              <Field name="job-hours" id="job-hours" v-model="formData.hours">
+                <CustomSelect
+                  placeholder="ساعات العمل"
+                  :items="[
+                    { value: '8', label: '8 ساعات' },
+                    { value: '10', label: '10 ساعات' },
+                    { value: '12', label: '12 ساعة' },
+                  ]"
+                  required
+                  v-model="formData.hours"
+                  :error="errors.hours"
+                />
+              </Field>
+            </div>
+            <div>
+              <label for="job-duration" class="text-sm mb-2 block">
+                المدة
+                <span class="text-red-400">*</span>
+              </label>
+              <Field name="job-duration" id="job-duration" v-model="formData.duration">
+                <CustomSelect
+                  placeholder="المدة"
+                  :items="[
+                    { value: 'month', label: 'شهر واحد' },
+                    { value: '2months', label: 'شهرين' },
+                    { value: '3months', label: '3 أشهر' },
+                    { value: '6months', label: '6 أشهر' },
+                    { value: 'year', label: 'سنة' },
+                  ]"
+                  required
+                  v-model="formData.duration"
+                  :error="errors.duration"
+                />
+              </Field>
+            </div>
+            <div>
+              <TextInput
+                name="end-date"
+                id="end-date"
+                label="تاريخ الانتهاء"
+                type="date"
+                v-model="formData.endDate"
+                :error="errors.endDate"
+              />
             </div>
           </div>
           <!--  -->

@@ -1,7 +1,7 @@
 <template>
   <div class="job-card border bg-white rounded-3xl overflow-hidden relative p-6 lg:p-8">
-    <div class="badge absolute top-0 rounded-r-3xl rounded-t-[0px] left-0 px-3 py-2 min-w-24 text-center bg-blue-100"
-      x-status="published">
+    <div class="badge absolute top-0 rounded-r-3xl rounded-t-[0px] left-0 px-3 py-2 min-w-24 text-center"
+      :class="badgeClass">
       <span class="text-xs"> {{ statusLabel }} </span>
     </div>
     <div class="border-b-2 border-[#E9F1F2] flex flex-col gap-4 pb-6">
@@ -47,7 +47,7 @@
           </span>
           <span class="text-muted">تاريخ الإنتهاء</span>
         </div>
-        <div class="font-bold ps-7">{{ job.endDate || '-' }}</div>
+        <div class="font-bold ps-7">{{ formatDate(job.endDate)}}</div>
       </div>
     </div>
   </div>
@@ -60,8 +60,12 @@ const props = defineProps({
   job: { type: Object, default: () => ({}) },
 })
 const statusLabel = computed(() => {
-  const labels = { active: 'نشرت', draft: 'مسودة', closed: 'منتهية' }
+  const labels = { active: 'نشرت', draft: 'مسودة', closed: 'منتهية', expired: 'منتهية الصلاحية' }
   return labels[props.job.status] || 'نشرت'
+})
+const badgeClass = computed(() => {
+  const colors = { active: 'bg-blue-100', draft: 'bg-gray-100', closed: 'bg-red-100', expired: 'bg-red-100' }
+  return colors[props.job.status] || 'bg-blue-100'
 })
 const lastUpdate = computed(() => {
   const date = props.job.updatedAt || props.job.createdAt

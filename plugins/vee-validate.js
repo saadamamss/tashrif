@@ -7,6 +7,9 @@ export default defineNuxtPlugin(() => {
   defineRule("email", email);
   defineRule("min", min);
   defineRule("numeric", numeric);
+  defineRule("confirmed", (value, [targetValue])=>{
+     return value === targetValue || 'كلمة السر غير متطابقة';
+  })
   
   // Configure default messages
   configure({
