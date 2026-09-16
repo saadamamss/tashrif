@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using tashrif.API.Hubs;
+using tashrif.API.Services;
+using tashrif.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +32,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowCredentials()
+              .WithExposedHeaders("X-CSRF-Token");
     });
 });
 
@@ -110,6 +115,23 @@ builder.Services.AddtashrifCoreDependencies();
 // Add Identity
 builder.Services.AddtashrifIdentityDependencies();
 
+// Add Email
+builder.Services.AddtashrifEmailDependencies();
+
+// Add SignalR
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.MaximumReceiveMessageSize = 32 * 1024;
+});
+
+// Add NotificationHubService
+builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
+
+// Add Background Task Queue
+builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+builder.Services.AddHostedService<QueuedHostedService>();
+
 // Add hosted services
 builder.Services.AddHostedService<JobExpiryService>();
 
@@ -135,5 +157,6 @@ app.UseMiddleware<tashrif.API.Middleware.CookieToHeaderMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications").RequireAuthorization();
 
 app.Run();

@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using tashrif.API.Services;
+using tashrif.Email.Interfaces;
+using tashrif.Email.Templates;
 
 namespace tashrif.API.Controllers;
 
@@ -10,10 +13,14 @@ namespace tashrif.API.Controllers;
 public class ContractsController : ControllerBase
 {
     private readonly IcontractsService _contractsService;
+    private readonly IEmailService _emailService;
+    private readonly IBackgroundTaskQueue _taskQueue;
 
-    public ContractsController(IcontractsService contractsService)
+    public ContractsController(IcontractsService contractsService, IEmailService emailService, IBackgroundTaskQueue taskQueue)
     {
         _contractsService = contractsService;
+        _emailService = emailService;
+        _taskQueue = taskQueue;
     }
 
     [HttpGet]
@@ -31,6 +38,34 @@ public class ContractsController : ControllerBase
     {
         var entityId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var result = await _contractsService.SendAsync(dto, entityId);
+
+        _taskQueue.Enqueue(async scope =>
+        {
+            var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+            var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+
+            if (result.UserEmail is not null)
+            {
+                await _emailService.SendAsync(result.UserEmail, "تم إرسال عقد عمل إليك لتوقيعه", EmailTemplates.ContractSent(result.UserName!, result.JobTitle!));
+            }
+
+            var notification = await notificationsService.CreateAsync(
+                result.UserId,
+                "عقد جديد",
+                $"تم إرسال عقد لوظيفة {result.JobTitle} من {result.EntityName}",
+                "contract_sent",
+                result.Id,
+                "contract");
+
+            await notificationHub.SendToUserAsync(result.UserId, "ContractSent", new
+            {
+                notification.Id,
+                ContractId = result.Id,
+                JobTitle = result.JobTitle,
+                EntityName = result.EntityName,
+            });
+        });
+
         return CreatedAtAction(null, result);
     }
 
@@ -39,6 +74,34 @@ public class ContractsController : ControllerBase
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var result = await _contractsService.SignAsync(id, userId);
+
+        _taskQueue.Enqueue(async scope =>
+        {
+            var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+            var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+
+            if (result.EntityEmail is not null)
+            {
+                await _emailService.SendAsync(result.EntityEmail,$"تم توقيع عقد العمل الخاص بـ {result.UserName}", EmailTemplates.ContractSigned(result.EntityName!, result.UserName!, result.JobTitle!));
+            }
+
+            var notification = await notificationsService.CreateAsync(
+                result.EntityId,
+                "تم توقيع العقد",
+                $"{result.UserName} وقّع العقد لوظيفة {result.JobTitle}",
+                "contract_signed",
+                result.Id,
+                "contract");
+
+            await notificationHub.SendToUserAsync(result.EntityId, "ContractSigned", new
+            {
+                notification.Id,
+                ContractId = result.Id,
+                JobTitle = result.JobTitle,
+                UserName = result.UserName,
+            });
+        });
+
         return Ok(result);
     }
 }

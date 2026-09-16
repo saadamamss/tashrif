@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using tashrif.API.Services;
+using tashrif.Email.Interfaces;
+using tashrif.Email.Templates;
 
 namespace tashrif.API.Controllers;
 
@@ -10,10 +13,14 @@ namespace tashrif.API.Controllers;
 public class InterviewsController : ControllerBase
 {
     private readonly IinterviewsService _interviewsService;
+    private readonly IEmailService _emailService;
+    private readonly IBackgroundTaskQueue _taskQueue;
 
-    public InterviewsController(IinterviewsService interviewsService)
+    public InterviewsController(IinterviewsService interviewsService, IEmailService emailService, IBackgroundTaskQueue taskQueue)
     {
         _interviewsService = interviewsService;
+        _emailService = emailService;
+        _taskQueue = taskQueue;
     }
 
     [HttpGet]
@@ -31,6 +38,38 @@ public class InterviewsController : ControllerBase
     {
         var entityId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var result = await _interviewsService.ScheduleAsync(dto, entityId);
+
+        _taskQueue.Enqueue(async scope =>
+        {
+            var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+            var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+
+            if (result.UserEmail != null)
+            {
+                var applicantEmail = result.UserEmail;
+                var applicantName = result.UserName;
+                await _emailService.SendAsync(applicantEmail, "موعد مقابلة العمل", EmailTemplates.InterviewScheduled(applicantName, result.JobTitle!, result.Date.ToString(), result.Time, result.Location!));
+            }
+
+            var notification = await notificationsService.CreateAsync(
+                result.UserId,
+                "مقابلة مجدولة",
+                $"مقابلة لوظيفة {result.JobTitle} بتاريخ {result.Date}",
+                "interview_scheduled",
+                result.Id,
+                "interview");
+
+            await notificationHub.SendToUserAsync(result.UserId, "InterviewScheduled", new
+            {
+                notification.Id,
+                InterviewId = result.Id,
+                JobTitle = result.JobTitle,
+                Date = result.Date,
+                Time = result.Time,
+                Location = result.Location,
+            });
+        });
+
         return CreatedAtAction(null, result);
     }
 }

@@ -43,7 +43,7 @@ public class ApplicationsServiceTests
         _profilesRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new List<individual_profiles>().AsQueryable().BuildMock());
         _qualsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new List<qualifications>().AsQueryable().BuildMock());
+            .ReturnsAsync(new[] { new qualifications { Id = 1, type = "بكالوريوس", user_id = 1 } }.AsQueryable().BuildMock());
 
         _sut = new applicationsService(_uowMock.Object);
     }
@@ -63,7 +63,7 @@ public class ApplicationsServiceTests
         var dto = new ApplyJobDto
         {
             JobId = 1,
-            Qualification = "بكالوريوس",
+            QualificationId = 1,
             Experience = "3 سنوات"
         };
 

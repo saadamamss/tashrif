@@ -7,9 +7,8 @@ public class ApplyJobDto
     [Range(1, long.MaxValue, ErrorMessage = "معرف الوظيفة غير صحيح")]
     public long JobId { get; set; }
 
-    [Required(ErrorMessage = "المؤهل مطلوب")]
-    [MaxLength(500)]
-    public string Qualification { get; set; } = string.Empty;
+    [Range(1, long.MaxValue, ErrorMessage = "يجب اختيار المؤهل")]
+    public long QualificationId { get; set; }
 
     [Required(ErrorMessage = "الخبرة مطلوبة")]
     [MaxLength(500)]

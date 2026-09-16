@@ -14,44 +14,54 @@ public class CsrfMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Set CSRF cookie if not present (for GET requests that initialize the session)
-        if (!context.Request.Cookies.ContainsKey(CookieName))
+        string csrfToken;
+        if (context.Request.Cookies.TryGetValue(CookieName, out var existing) && !string.IsNullOrEmpty(existing))
         {
-            var token = GenerateToken();
-            context.Response.Cookies.Append(CookieName, token, new CookieOptions
-            {
-                HttpOnly = false, // Frontend needs to read this
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Path = "/",
-                MaxAge = TimeSpan.FromHours(1),
-            });
+            csrfToken = existing;
+        }
+        else
+        {
+            csrfToken = GenerateToken();
         }
 
-        // Validate CSRF on state-changing methods (POST, PUT, DELETE, PATCH)
+        // CSRF cookie — HttpOnly, fixed for the session
+        context.Response.Cookies.Append(CookieName, csrfToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/",
+        });
+
+        // Return token in header ONLY on auth endpoints (login, register, refresh, me)
+        var path = context.Request.Path.Value?.ToLower() ?? "";
+        if (path.StartsWith("/api/auth/"))
+        {
+            context.Response.Headers[HeaderName] = csrfToken;
+        }
+
+        // Validate CSRF on state-changing methods
         if (HttpMethods.IsPost(context.Request.Method) ||
             HttpMethods.IsPut(context.Request.Method) ||
             HttpMethods.IsDelete(context.Request.Method) ||
             HttpMethods.IsPatch(context.Request.Method))
         {
-            // Skip CSRF for auth endpoints (login/register/refresh) — they're anonymous
-            // and protected by rate limiting instead
-            var path = context.Request.Path.Value?.ToLower() ?? "";
-            if (!path.StartsWith("/api/auth/"))
+            if (!path.StartsWith("/api/auth/") && !path.StartsWith("/hubs/"))
             {
-                var cookieToken = context.Request.Cookies[CookieName];
                 var headerToken = context.Request.Headers[HeaderName].FirstOrDefault();
 
-                if (string.IsNullOrEmpty(cookieToken) || string.IsNullOrEmpty(headerToken) ||
+                // Browser sends cookies raw (RFC 6265) — no URL-encoding.
+                // Compare raw values directly.
+                if (string.IsNullOrEmpty(headerToken) ||
                     !CryptographicOperations.FixedTimeEquals(
-                        Encoding.UTF8.GetBytes(cookieToken),
+                        Encoding.UTF8.GetBytes(csrfToken),
                         Encoding.UTF8.GetBytes(headerToken)))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsJsonAsync(new
                     {
-                        message = " CSRF token غير صالح. الرجاء تحديث الصفحة والمحاولة مرة أخرى."
+                        message = "CSRF token غير صالح."
                     });
                     return;
                 }

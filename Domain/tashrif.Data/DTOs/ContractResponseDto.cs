@@ -11,9 +11,11 @@ public class ContractResponseDto
     public long? FileSize { get; set; }
     public string? FileName { get; set; }
     public string? UserName { get; set; }
+    public string? UserEmail { get; set; }
     public string? UserAvatar { get; set; }
     public string? JobTitle { get; set; }
     public string? EntityName { get; set; }
+    public string? EntityEmail { get; set; }
     public string? EntityLogo { get; set; }
     public string? Notes { get; set; }
     public DateTime? EndDate { get; set; }

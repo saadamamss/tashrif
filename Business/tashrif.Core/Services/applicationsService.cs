@@ -92,17 +92,24 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
     {
         var existingQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
         var existing = await existingQuery
-            .FirstOrDefaultAsync(a => a.job_id == dto.JobId && a.user_id == userId && !a.IsDeleted);
+            .FirstOrDefaultAsync(a => a.job_id == dto.JobId && a.user_id == userId && !a.IsDeleted && a.status != "withdrawn");
         if (existing != null)
             throw new InvalidOperationException("لقد تقدمت لهذه الوظيفة مسبقاً");
 
-        var (city, qualification) = await GetApplicantDetailsAsync(userId);
+        // Resolve qualification by ID
+        var qualsQuery = await _unitOfWork.QualificationsRepository.GetQueryable();
+        var qual = await qualsQuery
+            .FirstOrDefaultAsync(q => q.Id == dto.QualificationId && q.user_id == userId && !q.IsDeleted);
+        if (qual == null)
+            throw new InvalidOperationException("المؤهل المحدد غير موجود");
+
+        var (city, _) = await GetApplicantDetailsAsync(userId);
 
         var app = new applications
         {
             job_id = dto.JobId,
             user_id = userId,
-            qualification = string.IsNullOrEmpty(dto.Qualification) ? qualification : dto.Qualification,
+            qualification = qual.type,
             experience = dto.Experience ?? "",
             cover_letter = "",
             cv_id = null,
@@ -356,6 +363,7 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
             EntityId = j.entity_id,
             EntityName = j.entity_Entity?.name ?? "",
             EntityLogo = j.entity_Entity?.avatar_url,
+            EntityEmail = j.entity_Entity?.email ?? null,
             Title = j.title,
             Description = j.description,
             Location = j.location,

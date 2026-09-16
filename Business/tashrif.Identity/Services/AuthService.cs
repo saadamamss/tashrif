@@ -220,7 +220,6 @@ public class AuthService : IAuthService
             throw new BadHttpRequestException("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل", 400);
 
         user.password_hash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-        user.must_change_password = false;
         user.UpdatedAt = DateTime.UtcNow;
 
         _userRepo.Update(user);
@@ -251,8 +250,7 @@ public class AuthService : IAuthService
             NationalId = user.national_id,
             Gender = user.gender,
             Nationality = user.nationality,
-            AvatarUrl = user.avatar_url,
-            MustChangePassword = user.must_change_password
+            AvatarUrl = user.avatar_url
         };
     }
 

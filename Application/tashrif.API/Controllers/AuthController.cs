@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using tashrif.Data.DTOs.Auth;
+using tashrif.Email.Interfaces;
+using tashrif.Email.Templates;
 using tashrif.Identity.Interfaces;
 
 namespace tashrif.API.Controllers;
@@ -11,12 +13,14 @@ namespace tashrif.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IEmailService _emailService;
     private const string RefreshCookieName = "refresh_token";
     private const string AccessCookieName = "access_token";
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IEmailService emailService)
     {
         _authService = authService;
+        _emailService = emailService;
     }
 
     [EnableRateLimiting("login")]
@@ -63,6 +67,13 @@ public class AuthController : ControllerBase
                 Nationality = Request.Form["nationality"]!,
             };
             result = await _authService.RegisterEntityAsync(dto);
+
+            _ = Task.Run(async () =>
+            {
+                var email = dto.Email;
+                var name = dto.CompanyName;
+                await _emailService.SendAsync(email, "مرحباً بك في تشريف", EmailTemplates.Welcome(name));
+            });
         }
         else
         {
@@ -80,6 +91,13 @@ public class AuthController : ControllerBase
                 IdFile = Request.Form.Files.GetFile("idFile"),
             };
             result = await _authService.RegisterIndividualAsync(dto);
+
+            _ = Task.Run(async () =>
+            {
+                var email = dto.Email;
+                var name = $"{dto.FirstName} {dto.LastName}";
+                await _emailService.SendAsync(email, "مرحباً بك في تشريف", EmailTemplates.Welcome(name));
+            });
         }
 
         SetAccessTokenCookie(result.Token);

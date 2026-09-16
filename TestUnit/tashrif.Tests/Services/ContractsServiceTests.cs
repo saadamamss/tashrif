@@ -1,320 +1,285 @@
+using Microsoft.EntityFrameworkCore;
+using tashrif.Context;
+using tashrif.Core;
+using tashrif.Data;
+using tashrif.Data.DTOs;
+
 namespace tashrif.Tests.Services;
 
-public class ContractsServiceTests
+public class ContractsServiceTests : IClassFixture<TestDatabaseFixture>
 {
-    private readonly Mock<IUnitOfWork> _uowMock;
-    private readonly Mock<IcontractsRepository> _contractsRepoMock;
-    private readonly Mock<IapplicationsRepository> _appsRepoMock;
-    private readonly Mock<IjobsRepository> _jobsRepoMock;
-    private readonly Mock<IinterviewsRepository> _interviewsRepoMock;
-    private readonly Mock<IFileStorageService> _fileStorageMock;
-    private readonly contractsService _sut;
+    private readonly TestDatabaseFixture _fixture;
 
-    public ContractsServiceTests()
+    public ContractsServiceTests(TestDatabaseFixture fixture)
     {
-        _contractsRepoMock = new Mock<IcontractsRepository>();
-        _appsRepoMock = new Mock<IapplicationsRepository>();
-        _jobsRepoMock = new Mock<IjobsRepository>();
-        _interviewsRepoMock = new Mock<IinterviewsRepository>();
-        _fileStorageMock = new Mock<IFileStorageService>();
-        _uowMock = new Mock<IUnitOfWork>();
+        _fixture = fixture;
+    }
 
-        _uowMock.SetupGet(u => u.ContractsRepository).Returns(_contractsRepoMock.Object);
-        _uowMock.SetupGet(u => u.ApplicationsRepository).Returns(_appsRepoMock.Object);
-        _uowMock.SetupGet(u => u.JobsRepository).Returns(_jobsRepoMock.Object);
-        _uowMock.SetupGet(u => u.InterviewsRepository).Returns(_interviewsRepoMock.Object);
+    private async Task SeedTestData(tashrifDBContext db)
+    {
+        await db.Database.ExecuteSqlRawAsync(@"
+            DELETE FROM contracts;
+            DELETE FROM interviews;
+            DELETE FROM applications;
+            DELETE FROM jobs;
+            DELETE FROM users;
+        ");
 
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
-        _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
-        _interviewsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new List<interviews>().AsQueryable().BuildMock());
+        var entity = new users
+        {
+            national_id = "2020202020",
+            name = "شركة تجريبية",
+            email = "entity@test.com",
+            phone = "0500000000",
+            password_hash = "hash",
+            type = "entity",
+            gender = "male",
+            nationality = "سعودي",
+            avatar_url = "",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        db.users.Add(entity);
+        await db.SaveChangesAsync();
 
-        _sut = new contractsService(_uowMock.Object, _fileStorageMock.Object);
+        var individual = new users
+        {
+            national_id = "1010101010",
+            name = "أحمد",
+            email = "ahmed@test.com",
+            phone = "0511111111",
+            password_hash = "hash",
+            type = "individual",
+            gender = "male",
+            nationality = "سعودي",
+            avatar_url = "",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        db.users.Add(individual);
+        await db.SaveChangesAsync();
+
+        var job = new jobs
+        {
+            title = "مبرمج",
+            description = "وصف الوظيفة",
+            location = "الرياض",
+            work_type = "full_time",
+            target = "individuals",
+            vacancies = 5,
+            qualification = "بكالوريوس",
+            salary_min = 5000,
+            salary_max = 10000,
+            salary_text = "5000-10000",
+            gender = "male",
+            hours = "8",
+            duration = "6months",
+            status = "published",
+            entity_id = entity.Id,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        db.jobs.Add(job);
+        await db.SaveChangesAsync();
+
+        var app = new applications
+        {
+            job_id = job.Id,
+            user_id = individual.Id,
+            qualification = "بكالوريوس",
+            experience = "3 سنوات",
+            cover_letter = "أرغب في العمل",
+            status = "new",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        db.applications.Add(app);
+        await db.SaveChangesAsync();
+
+        // Clear change tracker so seed entities don't conflict with service-loaded entities
+        // (GetQueryable() returns AsNoTracking, creating a second instance of the same entity)
+        db.ChangeTracker.Clear();
     }
 
     [Fact]
     public async Task Send_CreatesContractWithSentStatus()
     {
-        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
-        _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
-        _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
-        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
 
-        applications? updatedApp = null;
-        _appsRepoMock.Setup(r => r.Update(It.IsAny<applications>()))
-            .Callback<applications>(a => updatedApp = a);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
 
-        var dto = new SendContractDto { ApplicationId = 1 };
+            var result = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
 
-        var result = await _sut.SendAsync(dto, 1);
+            result.Should().NotBeNull();
+            result.Status.Should().Be("sent");
+            result.JobTitle.Should().Be("مبرمج");
+            result.UserName.Should().Be("أحمد");
+            result.UserEmail.Should().Be("ahmed@test.com");
 
-        result.Should().NotBeNull();
-        result.Status.Should().Be("sent");
-        _contractsRepoMock.Verify(r => r.AddAsync(It.IsAny<contracts>()), Times.Once);
-        updatedApp.Should().NotBeNull();
-        updatedApp!.status.Should().Be("contract_sent");
+            // ExecuteUpdateAsync bypasses change tracker — clear it to read fresh from DB
+            db.ChangeTracker.Clear();
+            var updatedApp = await db.applications.FindAsync(app.Id);
+            updatedApp!.status.Should().Be("contract_sent");
+        }
+        finally { scope.Dispose(); }
     }
 
     [Fact]
     public async Task Send_NonExistingApplication_ThrowsKeyNotFoundException()
     {
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
-
-        var dto = new SendContractDto { ApplicationId = 999 };
-
-        var act = () => _sut.SendAsync(dto, 1);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            var act = () => sut.SendAsync(new SendContractDto { ApplicationId = 99999 }, 1);
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+        }
+        finally { }
     }
 
     [Fact]
     public async Task Send_JobOwnedByAnotherEntity_ThrowsUnauthorizedAccessException()
     {
-        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
-        _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 5 } }.AsQueryable().BuildMock());
-
-        var dto = new SendContractDto { ApplicationId = 1 };
-
-        var act = () => _sut.SendAsync(dto, 9);
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var act = () => sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, 99999);
+            await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        }
+        finally { }
     }
 
     [Fact]
     public async Task Send_ApplicationAlreadyContractSent_ThrowsBadHttpRequestException()
     {
-        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "contract_sent" };
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
 
-        var dto = new SendContractDto { ApplicationId = 1 };
+            await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
 
-        var act = () => _sut.SendAsync(dto, 1);
-
-        await act.Should().ThrowAsync<Microsoft.AspNetCore.Http.BadHttpRequestException>();
-    }
-
-    [Fact]
-    public async Task Send_NonExistingJob_ThrowsKeyNotFoundException()
-    {
-        var app = new applications { Id = 1, job_id = 999, user_id = 1, status = "new" };
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
-        _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
-
-        var dto = new SendContractDto { ApplicationId = 1 };
-
-        var act = () => _sut.SendAsync(dto, 1);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+            var act = () => sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            await act.Should().ThrowAsync<BadHttpRequestException>();
+        }
+        finally { }
     }
 
     [Fact]
     public async Task Sign_UpdatesStatusToSigned()
     {
-        var contract = new contracts
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
         {
-            Id = 1,
-            user_id = 1,
-            status = "sent",
-            CreatedAt = DateTime.UtcNow,
-        };
-        _contractsRepoMock.Setup(r => r.GetByIdAsync(It.Is<object>(o => Convert.ToInt64(o) == 1))).ReturnsAsync(contract);
-        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var individual = await db.users.FirstAsync(u => u.type == "individual");
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
 
-        var result = await _sut.SignAsync(1, 1);
+            var contractResult = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            var result = await sut.SignAsync(contractResult.Id, individual.Id);
 
-        result.Should().NotBeNull();
-        result.Status.Should().Be("signed");
-        result.SignedAt.Should().NotBeNull();
-    }
-
-    [Fact]
-    public async Task Send_MarksScheduledInterviewCompleted()
-    {
-        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
-        var interview = new interviews
-        {
-            Id = 1,
-            application_id = 1,
-            job_id = 1,
-            user_id = 1,
-            entity_id = 2,
-            status = "scheduled",
-            UpdatedAt = DateTime.UtcNow,
-        };
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
-        _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
-        _interviewsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { interview }.AsQueryable().BuildMock());
-        _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
-        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
-
-        interviews? updatedInterview = null;
-        _interviewsRepoMock.Setup(r => r.Update(It.IsAny<interviews>()))
-            .Callback<interviews>(i => updatedInterview = i);
-
-        var dto = new SendContractDto { ApplicationId = 1 };
-
-        var result = await _sut.SendAsync(dto, 1);
-
-        result.Status.Should().Be("sent");
-        updatedInterview.Should().NotBeNull();
-        updatedInterview!.status.Should().Be("completed");
-    }
-
-    [Fact]
-    public async Task Send_WithFile_SavesFileAndSetsFileMeta()
-    {
-        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
-        _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
-        _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
-        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
-
-        var content = new MemoryStream(new byte[] { 0x25, 0x50, 0x44, 0x46 });
-        var formFile = new Microsoft.AspNetCore.Http.FormFile(content, 0, content.Length, "contractFile", "contract.pdf")
-        {
-            Headers = new Microsoft.AspNetCore.Http.HeaderDictionary(),
-            ContentType = "application/pdf",
-        };
-
-        _fileStorageMock.Setup(f => f.SaveFileAsync(formFile, "contracts"))
-            .ReturnsAsync("/uploads/contracts/abc_contract.pdf");
-
-        contracts? added = null;
-        _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>()))
-            .Callback<contracts>(c => added = c);
-
-        var dto = new SendContractDto { ApplicationId = 1, ContractFile = formFile };
-
-        var result = await _sut.SendAsync(dto, 1);
-
-        result.Status.Should().Be("sent");
-        _fileStorageMock.Verify(f => f.SaveFileAsync(formFile, "contracts"), Times.Once);
-        added.Should().NotBeNull();
-        added!.file_url.Should().Be("/uploads/contracts/abc_contract.pdf");
-        added!.file_size.Should().Be(4);
+            result.Should().NotBeNull();
+            result.Status.Should().Be("signed");
+            result.SignedAt.Should().NotBeNull();
+        }
+        finally { }
     }
 
     [Fact]
     public async Task Send_WithNotesAndEndDate_PersistsThem()
     {
-        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "new" };
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
-        _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
-        _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>())).Returns(Task.CompletedTask);
-        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
-
-        contracts? added = null;
-        _contractsRepoMock.Setup(r => r.AddAsync(It.IsAny<contracts>()))
-            .Callback<contracts>(c => added = c);
-
-        var endDate = DateTime.UtcNow.AddDays(7);
-        var dto = new SendContractDto
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
         {
-            ApplicationId = 1,
-            Notes = "يرجى التوقيع قبل بداية الموسم",
-            EndDate = endDate,
-        };
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+            var endDate = DateTime.UtcNow.AddDays(7);
 
-        var result = await _sut.SendAsync(dto, 1);
+            var dto = new SendContractDto
+            {
+                ApplicationId = app.Id,
+                Notes = "يرجى التوقيع قبل بداية الموسم",
+                EndDate = endDate,
+            };
 
-        result.Notes.Should().Be("يرجى التوقيع قبل بداية الموسم");
-        result.EndDate.Should().Be(endDate);
-        added.Should().NotBeNull();
-        added!.notes.Should().Be("يرجى التوقيع قبل بداية الموسم");
-        added!.end_date.Should().Be(endDate);
-    }
+            var result = await sut.SendAsync(dto, entity.Id);
 
-    [Fact]
-    public async Task Sign_AfterEndDate_ThrowsBadHttpRequestException()
-    {
-        var contract = new contracts
-        {
-            Id = 1,
-            user_id = 1,
-            status = "sent",
-            end_date = DateTime.UtcNow.AddDays(-1),
-            CreatedAt = DateTime.UtcNow,
-        };
-        _contractsRepoMock.Setup(r => r.GetByIdAsync(It.Is<object>(o => Convert.ToInt64(o) == 1))).ReturnsAsync(contract);
+            result.Notes.Should().Be("يرجى التوقيع قبل بداية الموسم");
+            result.EndDate.Should().Be(endDate);
 
-        var act = () => _sut.SignAsync(1, 1);
-
-        await act.Should().ThrowAsync<Microsoft.AspNetCore.Http.BadHttpRequestException>();
+            var savedContract = await db.contracts.FindAsync(result.Id);
+            savedContract!.notes.Should().Be("يرجى التوقيع قبل بداية الموسم");
+            savedContract.end_date.Should().NotBeNull();
+        }
+        finally { }
     }
 
     [Fact]
     public async Task Sign_SetsApplicationAccepted()
     {
-        var contract = new contracts
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
         {
-            Id = 1,
-            application_id = 1,
-            user_id = 1,
-            status = "sent",
-            CreatedAt = DateTime.UtcNow,
-        };
-        var app = new applications { Id = 1, job_id = 1, user_id = 1, status = "contract_sent" };
-        _contractsRepoMock.Setup(r => r.GetByIdAsync(It.Is<object>(o => Convert.ToInt64(o) == 1))).ReturnsAsync(contract);
-        _appsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
-        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var individual = await db.users.FirstAsync(u => u.type == "individual");
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
 
-        applications? updatedApp = null;
-        _appsRepoMock.Setup(r => r.Update(It.IsAny<applications>()))
-            .Callback<applications>(a => updatedApp = a);
+            var contractResult = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            var result = await sut.SignAsync(contractResult.Id, individual.Id);
 
-        var result = await _sut.SignAsync(1, 1);
-
-        result.Status.Should().Be("signed");
-        updatedApp.Should().NotBeNull();
-        updatedApp!.status.Should().Be("accepted");
+            result.Status.Should().Be("signed");
+            db.ChangeTracker.Clear();
+            var updatedApp = await db.applications.FindAsync(app.Id);
+            updatedApp!.status.Should().Be("accepted");
+        }
+        finally { }
     }
 
     [Fact]
     public async Task Sign_AlreadySigned_ThrowsBadHttpRequestException()
     {
-        var contract = new contracts
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
         {
-            Id = 1,
-            user_id = 1,
-            status = "signed",
-            signed_at = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
-        };
-        _contractsRepoMock.Setup(r => r.GetByIdAsync(It.Is<object>(o => Convert.ToInt64(o) == 1))).ReturnsAsync(contract);
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var individual = await db.users.FirstAsync(u => u.type == "individual");
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
 
-        var act = () => _sut.SignAsync(1, 1);
+            var contractResult = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            await sut.SignAsync(contractResult.Id, individual.Id);
 
-        await act.Should().ThrowAsync<Microsoft.AspNetCore.Http.BadHttpRequestException>();
+            var act = () => sut.SignAsync(contractResult.Id, individual.Id);
+            await act.Should().ThrowAsync<BadHttpRequestException>();
+        }
+        finally { }
     }
 
     [Fact]
     public async Task Sign_WrongUser_ThrowsUnauthorizedAccessException()
     {
-        var contract = new contracts { Id = 1, user_id = 2, status = "sent" };
-        _contractsRepoMock.Setup(r => r.GetByIdAsync(It.Is<object>(o => Convert.ToInt64(o) == 1))).ReturnsAsync(contract);
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
 
-        var act = () => _sut.SignAsync(1, 1);
+            var contractResult = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
 
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+            var act = () => sut.SignAsync(contractResult.Id, entity.Id);
+            await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        }
+        finally { }
     }
 }

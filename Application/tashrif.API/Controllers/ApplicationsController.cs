@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using tashrif.API.Services;
+using tashrif.Email.Interfaces;
+using tashrif.Email.Templates;
 
 namespace tashrif.API.Controllers;
 
@@ -9,10 +12,14 @@ namespace tashrif.API.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly IapplicationsService _applicationsService;
+    private readonly IEmailService _emailService;
+    private readonly IBackgroundTaskQueue _taskQueue;
 
-    public ApplicationsController(IapplicationsService applicationsService)
+    public ApplicationsController(IapplicationsService applicationsService, IEmailService emailService, IBackgroundTaskQueue taskQueue)
     {
         _applicationsService = applicationsService;
+        _emailService = emailService;
+        _taskQueue = taskQueue;
     }
 
     [Authorize]
@@ -56,6 +63,40 @@ public class ApplicationsController : ControllerBase
         try
         {
             var result = await _applicationsService.ApplyAsync(dto, userId);
+
+            _taskQueue.Enqueue(async scope =>
+            {
+                var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+                var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+
+                if (result.Job?.EntityEmail != null)
+                {
+                    var entityEmail = result.Job.EntityEmail;
+                    var entityName = result.Job.EntityName;
+                    var applicantName = result.UserName ?? "متقدم";
+                    await _emailService.SendAsync(
+                        entityEmail,
+                        "متقدم جديد",
+                        EmailTemplates.NewApplicant(entityName, applicantName, result.Job.Title));
+                }
+
+                var notification = await notificationsService.CreateAsync(
+                    result.Job!.EntityId,
+                    "متقدم جديد",
+                    $"{result.UserName} قام بالتقديم على {result.Job!.Title}",
+                    "new_application",
+                    result.Id,
+                    "application");
+
+                await notificationHub.SendToUserAsync(result.Job!.EntityId, "NewApplication", new
+                {
+                    notification.Id,
+                    ApplicationId = result.Id,
+                    JobTitle = result.Job.Title,
+                    ApplicantName = result.UserName,
+                });
+            });
+
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
         catch (InvalidOperationException ex)

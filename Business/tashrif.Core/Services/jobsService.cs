@@ -91,7 +91,7 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
         {
             var appliedQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
             var appliedJobIds = (await appliedQuery
-                .Where(a => a.user_id == userId.Value && jobIds.Contains(a.job_id) && !a.IsDeleted)
+                .Where(a => a.user_id == userId.Value && jobIds.Contains(a.job_id) && !a.IsDeleted && a.status != "withdrawn")
                 .Select(a => a.job_id)
                 .Distinct()
                 .ToListAsync())
@@ -228,7 +228,7 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
         {
             var appliedQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
             dto.IsApplied = await appliedQuery
-                .AnyAsync(a => a.user_id == userId.Value && a.job_id == id && !a.IsDeleted);
+                .AnyAsync(a => a.user_id == userId.Value && a.job_id == id && !a.IsDeleted && a.status != "withdrawn");
         }
 
         var countQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();

@@ -105,29 +105,47 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
         await _unitOfWork.ContractsRepository.AddAsync(newContract);
         await _unitOfWork.SaveChangesAsync();
 
-        app.status = "contract_sent";
-        _unitOfWork.ApplicationsRepository.Update(app);
+        // Use ExecuteUpdateAsync to bypass change tracker — avoids duplicate tracking
+        // when AsNoTracking entities are re-queried after SaveChangesAsync auto-tracks them
+        var now = DateTime.UtcNow;
+        await appQuery.Where(a => a.Id == dto.ApplicationId).ExecuteUpdateAsync(
+            a => a.SetProperty(x => x.status, "contract_sent")
+                  .SetProperty(x => x.UpdatedAt, now));
 
         var interviewsQuery = await _unitOfWork.InterviewsRepository.GetQueryable();
         var pendingInterviews = await interviewsQuery
             .Where(i => i.application_id == dto.ApplicationId && !i.IsDeleted && i.status == "scheduled")
             .ToListAsync();
-        foreach (var interview in pendingInterviews)
+
+        if (pendingInterviews.Count > 0)
         {
-            interview.status = "completed";
-            interview.UpdatedAt = DateTime.UtcNow;
-            _unitOfWork.InterviewsRepository.Update(interview);
+            var pendingIds = pendingInterviews.Select(i => i.Id).ToList();
+            var interviewsQ2 = await _unitOfWork.InterviewsRepository.GetQueryable();
+            await interviewsQ2.Where(i => pendingIds.Contains(i.Id)).ExecuteUpdateAsync(
+                i => i.SetProperty(x => x.status, "completed")
+                      .SetProperty(x => x.UpdatedAt, now));
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        var userQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        var user = await userQuery.FirstOrDefaultAsync(u => u.Id == app.user_id);
+
+        var entityQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        var entity = await entityQuery.FirstOrDefaultAsync(u => u.Id == entityId);
 
         return new ContractResponseDto
         {
             Id = newContract.Id,
             ApplicationId = newContract.application_id,
             JobId = newContract.job_id,
+            JobTitle = job.title,
             UserId = newContract.user_id,
+            UserName = user?.name,
+            UserEmail = user?.email,
             EntityId = newContract.entity_id,
+            EntityName = entity?.name,
+            EntityEmail = entity?.email,
             FileUrl = newContract.file_url,
             FileSize = newContract.file_size,
             Notes = newContract.notes,
@@ -156,24 +174,35 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
         contract.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.ContractsRepository.Update(contract);
 
+        var now = DateTime.UtcNow;
         var appQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
-        var app = await appQuery.FirstOrDefaultAsync(a => a.Id == contract.application_id && !a.IsDeleted);
-        if (app != null)
-        {
-            app.status = "accepted";
-            app.UpdatedAt = DateTime.UtcNow;
-            _unitOfWork.ApplicationsRepository.Update(app);
-        }
+        await appQuery.Where(a => a.Id == contract.application_id && !a.IsDeleted).ExecuteUpdateAsync(
+            a => a.SetProperty(x => x.status, "accepted")
+                  .SetProperty(x => x.UpdatedAt, now));
 
         await _unitOfWork.SaveChangesAsync();
+
+        var jobQuery = await _unitOfWork.JobsRepository.GetQueryable();
+        var job = await jobQuery.FirstOrDefaultAsync(j => j.Id == contract.job_id);
+
+        var userQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        var user = await userQuery.FirstOrDefaultAsync(u => u.Id == contract.user_id);
+
+        var entityQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        var entity = await entityQuery.FirstOrDefaultAsync(u => u.Id == contract.entity_id);
 
         return new ContractResponseDto
         {
             Id = contract.Id,
             ApplicationId = contract.application_id,
             JobId = contract.job_id,
-            UserId = contract.user_id,
             EntityId = contract.entity_id,
+            UserId = contract.user_id,
+            JobTitle = job?.title,
+            UserName = user?.name,
+            UserEmail = user?.email,
+            EntityName = entity?.name,
+            EntityEmail = entity?.email,
             FileUrl = contract.file_url,
             Status = contract.status,
             SignedAt = contract.signed_at as DateTime?,

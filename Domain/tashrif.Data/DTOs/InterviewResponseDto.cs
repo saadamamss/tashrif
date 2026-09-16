@@ -8,9 +8,11 @@ public class InterviewResponseDto
     public long UserId { get; set; }
     public long EntityId { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string? UserEmail { get; set; } 
     public string UserAvatar { get; set; } = string.Empty;
     public string EntityName { get; set; } = string.Empty;
     public string EntityLogo { get; set; } = string.Empty;
+    public string? JobTitle {get; set;}
     public string Method { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string Time { get; set; } = string.Empty;

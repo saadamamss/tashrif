@@ -8,6 +8,7 @@ public class JobResponseDto
     public long EntityId { get; set; }
     public string EntityName { get; set; } = string.Empty;
     public string? EntityLogo { get; set; }
+    public string? EntityEmail { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;

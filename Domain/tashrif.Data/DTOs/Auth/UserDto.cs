@@ -11,5 +11,4 @@ public class UserDto
     public string? Gender { get; set; }
     public string? Nationality { get; set; }
     public string? AvatarUrl { get; set; }
-    public bool MustChangePassword { get; set; }
 }
