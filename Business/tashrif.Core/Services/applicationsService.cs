@@ -243,6 +243,82 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
         await _unitOfWork.SaveChangesAsync();
     }
 
+    public async Task<List<BulkActionResultDto>> BulkActionAsync(List<long> applicationIds, string action, long entityId)
+    {
+        if (applicationIds.Count == 0)
+            return new List<BulkActionResultDto>();
+
+        var targetStatus = action switch
+        {
+            "shortlist" => "shortlisted",
+            "refuse" => "refused",
+            "restore" => "new",
+            _ => throw new InvalidOperationException("إجراء غير صالح")
+        };
+
+        // Step 1: Load applications with job info for ownership check (AsNoTracking)
+        var query = await _unitOfWork.ApplicationsRepository.GetQueryable();
+        var apps = await query
+            .Include(a => a.job_Entity)
+            .Where(a => applicationIds.Contains(a.Id) && !a.IsDeleted)
+            .ToListAsync();
+
+        var foundIds = apps.Select(a => a.Id).ToHashSet();
+        var now = DateTime.UtcNow;
+        var results = new List<BulkActionResultDto>();
+        var idsToUpdate = new List<long>();
+
+        foreach (var id in applicationIds)
+        {
+            if (!foundIds.Contains(id))
+            {
+                results.Add(new BulkActionResultDto
+                {
+                    ApplicationId = id,
+                    Success = false,
+                    Error = "الطلب غير موجود"
+                });
+                continue;
+            }
+
+            var app = apps.First(a => a.Id == id);
+
+            if (app.job_Entity == null || app.job_Entity.entity_id != entityId)
+            {
+                results.Add(new BulkActionResultDto
+                {
+                    ApplicationId = id,
+                    Success = false,
+                    Error = "لا تملك صلاحية تعديل هذا الطلب"
+                });
+                continue;
+            }
+
+            idsToUpdate.Add(id);
+            results.Add(new BulkActionResultDto
+            {
+                ApplicationId = id,
+                Success = true,
+                OldStatus = app.status,
+                NewStatus = targetStatus
+            });
+        }
+
+        // Step 2: Batch update via ExecuteUpdateAsync — bypasses change tracker entirely
+        // (avoids duplicate tracking when multiple apps share the same job)
+        if (idsToUpdate.Count > 0)
+        {
+            var updateQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
+            await updateQuery
+                .Where(a => idsToUpdate.Contains(a.Id))
+                .ExecuteUpdateAsync(a => a
+                    .SetProperty(x => x.status, targetStatus)
+                    .SetProperty(x => x.UpdatedAt, now));
+        }
+
+        return results;
+    }
+
     private async Task PopulateJobsAsync(IEnumerable<ApplicationResponseDto> items)
     {
         var jobIds = items.Select(a => a.JobId).Where(id => id > 0).Distinct().ToList();

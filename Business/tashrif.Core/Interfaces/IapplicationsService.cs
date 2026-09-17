@@ -10,4 +10,5 @@ public interface IapplicationsService
     Task<ApplicationResponseDto> UpdateStatusAsync(long id, string status, long userId);
     Task<ApplicationResponseDto> WithdrawAsync(long id, long userId);
     Task DeleteAsync(long id, long userId);
+    Task<List<BulkActionResultDto>> BulkActionAsync(List<long> applicationIds, string action, long entityId);
 }

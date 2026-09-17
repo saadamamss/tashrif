@@ -171,4 +171,162 @@ public class ApplicationsServiceTests
 
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
     }
+
+    // ── BulkActionAsync tests ──────────────────────────────────────────
+
+    [Fact]
+    public async Task BulkAction_Shortlist_ValidApps_AllSucceed()
+    {
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "new",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+            new() { Id = 11, job_id = 1, user_id = 3, status = "new",
+                     user_Entity = new users { name = "B" }, job_Entity = new jobs { entity_id = 1 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var result = await _sut.BulkActionAsync(new List<long> { 10, 11 }, "shortlist", 1);
+
+        result.Should().HaveCount(2);
+        result.Should().OnlyContain(r => r.Success);
+        result.Should().OnlyContain(r => r.NewStatus == "shortlisted");
+        apps.Should().OnlyContain(a => a.status == "shortlisted");
+        // ExecuteUpdateAsync writes directly to DB — SaveChangesAsync is not called
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task BulkAction_Refuse_ValidApps_AllSucceed()
+    {
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "shortlisted",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var result = await _sut.BulkActionAsync(new List<long> { 10 }, "refuse", 1);
+
+        result.Should().HaveCount(1);
+        result.First().Success.Should().BeTrue();
+        result.First().NewStatus.Should().Be("refused");
+        result.First().OldStatus.Should().Be("shortlisted");
+    }
+
+    [Fact]
+    public async Task BulkAction_SomeNotFound_ReturnsPartialResults()
+    {
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "new",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        // IDs: 10 exists, 99 does not
+        var result = await _sut.BulkActionAsync(new List<long> { 10, 99 }, "shortlist", 1);
+
+        result.Should().HaveCount(2);
+        result.Should().ContainSingle(r => r.ApplicationId == 10 && r.Success);
+        result.Should().ContainSingle(r => r.ApplicationId == 99 && !r.Success && r.Error != null);
+    }
+
+    [Fact]
+    public async Task BulkAction_UnauthorizedEntity_ReturnsPartialResults()
+    {
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "new",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+            new() { Id = 11, job_id = 2, user_id = 3, status = "new",
+                     user_Entity = new users { name = "B" }, job_Entity = new jobs { entity_id = 2 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        // Entity 1 owns job 1, but not job 2
+        var result = await _sut.BulkActionAsync(new List<long> { 10, 11 }, "shortlist", 1);
+
+        result.Should().HaveCount(2);
+        result.Should().ContainSingle(r => r.ApplicationId == 10 && r.Success);
+        result.Should().ContainSingle(r => r.ApplicationId == 11 && !r.Success);
+    }
+
+    [Fact]
+    public async Task BulkAction_InvalidAction_ThrowsInvalidOperationException()
+    {
+        var act = () => _sut.BulkActionAsync(new List<long> { 1 }, "invalid_action", 1);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task BulkAction_EmptyIds_ReturnsEmptyList()
+    {
+        var result = await _sut.BulkActionAsync(new List<long>(), "shortlist", 1);
+
+        result.Should().BeEmpty();
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task BulkAction_AllNotFound_AllFail()
+    {
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+
+        var result = await _sut.BulkActionAsync(new List<long> { 99, 100 }, "shortlist", 1);
+
+        result.Should().HaveCount(2);
+        result.Should().OnlyContain(r => !r.Success);
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task BulkAction_AlreadyInTargetStatus_StillUpdates()
+    {
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "shortlisted",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var result = await _sut.BulkActionAsync(new List<long> { 10 }, "shortlist", 1);
+
+        result.Should().HaveCount(1);
+        result.First().Success.Should().BeTrue();
+        result.First().OldStatus.Should().Be("shortlisted");
+        result.First().NewStatus.Should().Be("shortlisted");
+    }
+
+    [Fact]
+    public async Task BulkAction_Restore_RefusedApplicantReturnsToNew()
+    {
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "refused",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var result = await _sut.BulkActionAsync(new List<long> { 10 }, "restore", 1);
+
+        result.Should().HaveCount(1);
+        result.First().Success.Should().BeTrue();
+        result.First().OldStatus.Should().Be("refused");
+        result.First().NewStatus.Should().Be("new");
+    }
 }

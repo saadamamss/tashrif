@@ -12,13 +12,11 @@ namespace tashrif.API.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly IapplicationsService _applicationsService;
-    private readonly IEmailService _emailService;
     private readonly IBackgroundTaskQueue _taskQueue;
 
-    public ApplicationsController(IapplicationsService applicationsService, IEmailService emailService, IBackgroundTaskQueue taskQueue)
+    public ApplicationsController(IapplicationsService applicationsService, IBackgroundTaskQueue taskQueue)
     {
         _applicationsService = applicationsService;
-        _emailService = emailService;
         _taskQueue = taskQueue;
     }
 
@@ -68,13 +66,14 @@ public class ApplicationsController : ControllerBase
             {
                 var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
                 var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
                 if (result.Job?.EntityEmail != null)
                 {
                     var entityEmail = result.Job.EntityEmail;
                     var entityName = result.Job.EntityName;
                     var applicantName = result.UserName ?? "متقدم";
-                    await _emailService.SendAsync(
+                    await emailService.SendAsync(
                         entityEmail,
                         "متقدم جديد",
                         EmailTemplates.NewApplicant(entityName, applicantName, result.Job.Title));
@@ -113,6 +112,47 @@ public class ApplicationsController : ControllerBase
         try
         {
             var result = await _applicationsService.UpdateStatusAsync(id, dto.Status, userId);
+
+            if (dto.Status is "shortlisted" or "refused")
+            {
+                _taskQueue.Enqueue(async scope =>
+                {
+                    var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+                    var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+                    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+                    var isShortlist = dto.Status == "shortlisted";
+                    var title = isShortlist ? "تم ترشحك" : "تم رفض طلبك";
+                    var body = isShortlist
+                        ? $"تم ترشحك لوظيفة {result.Job?.Title} في {result.Job?.EntityName}"
+                        : $"تم رفض طلبك لوظيفة {result.Job?.Title} في {result.Job?.EntityName}";
+                    var notifType = isShortlist ? "shortlisted" : "refused";
+
+                    var notification = await notificationsService.CreateAsync(
+                        result.UserId, title, body, notifType, result.Id, "application");
+
+                    await notificationHub.SendToUserAsync(result.UserId, "StatusChanged", new
+                    {
+                        notification.Id,
+                        ApplicationId = result.Id,
+                        Status = dto.Status,
+                        JobTitle = result.Job?.Title,
+                    });
+
+                    var usersQuery = await unitOfWork.UsersRepository.GetQueryable();
+                    var user = await usersQuery.FirstOrDefaultAsync(u => u.Id == result.UserId);
+                    if (user?.email != null && result.Job != null)
+                    {
+                        var emailTemplate = isShortlist
+                            ? EmailTemplates.Shortlisted(result.UserName, result.Job.Title, result.Job.EntityName)
+                            : EmailTemplates.ApplicationRefused(result.UserName, result.Job.Title, result.Job.EntityName);
+                        var emailSubject = isShortlist ? "تم ترشحك" : "تم رفض طلبك";
+                        await emailService.SendAsync(user.email, emailSubject, emailTemplate);
+                    }
+                });
+            }
+
             return Ok(result);
         }
         catch (KeyNotFoundException)
@@ -129,6 +169,89 @@ public class ApplicationsController : ControllerBase
         }
     }
 
+    [Authorize(Policy = "Entity")]
+    [HttpPost("bulk-action")]
+    public async Task<ActionResult<List<BulkActionResultDto>>> BulkAction([FromBody] BulkActionDto dto)
+    {
+        var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        try
+        {
+            var result = await _applicationsService.BulkActionAsync(dto.ApplicationIds, dto.Action, userId);
+
+            if (dto.Action is "shortlist" or "refuse" or "restore")
+            {
+                var succeededIds = result.Where(r => r.Success).Select(r => r.ApplicationId).ToList();
+                if (succeededIds.Count > 0)
+                {
+                    _taskQueue.Enqueue(async scope =>
+                    {
+                        var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+                        var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+                        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                        var usersQuery = await unitOfWork.UsersRepository.GetQueryable();
+
+                        var appsQuery = await unitOfWork.ApplicationsRepository.GetQueryable();
+                        var apps = await appsQuery
+                            .Include(a => a.user_Entity)
+                            .Include(a => a.job_Entity)
+                            .ThenInclude(j => j.entity_Entity)
+                            .Where(a => succeededIds.Contains(a.Id))
+                            .ToListAsync();
+
+                        foreach (var app in apps)
+                        {
+                            var (title, body, notifType, emailSubject, emailTemplate) = dto.Action switch
+                            {
+                                "shortlist" => (
+                                    "تم ترشحك",
+                                    $"تم ترشحك لوظيفة {app.job_Entity?.title} في {app.job_Entity?.entity_Entity?.name}",
+                                    "shortlisted",
+                                    "تم ترشحك",
+                                    EmailTemplates.Shortlisted(app.user_Entity?.name ?? "", app.job_Entity?.title ?? "", app.job_Entity?.entity_Entity?.name ?? "")),
+                                "restore" => (
+                                    "تمت إعادة تقييمك",
+                                    $"تمت إعادة تقييمك لوظيفة {app.job_Entity?.title} في {app.job_Entity?.entity_Entity?.name}",
+                                    "restored",
+                                    "تمت إعادة تقييمك",
+                                    EmailTemplates.ApplicationRestored(app.user_Entity?.name ?? "", app.job_Entity?.title ?? "", app.job_Entity?.entity_Entity?.name ?? "")),
+                                _ => (
+                                    "تم رفض طلبك",
+                                    $"تم رفض طلبك لوظيفة {app.job_Entity?.title} في {app.job_Entity?.entity_Entity?.name}",
+                                    "refused",
+                                    "تم رفض طلبك",
+                                    EmailTemplates.ApplicationRefused(app.user_Entity?.name ?? "", app.job_Entity?.title ?? "", app.job_Entity?.entity_Entity?.name ?? "")),
+                            };
+
+                            var notification = await notificationsService.CreateAsync(
+                                app.user_id, title, body, notifType, app.Id, "application");
+
+                            await notificationHub.SendToUserAsync(app.user_id, "StatusChanged", new
+                            {
+                                notification.Id,
+                                ApplicationId = app.Id,
+                                Status = dto.Action,
+                                JobTitle = app.job_Entity?.title,
+                            });
+
+                            var user = await usersQuery.FirstOrDefaultAsync(u => u.Id == app.user_id);
+                            if (user?.email != null)
+                            {
+                                await emailService.SendAsync(user.email, emailSubject, emailTemplate);
+                            }
+                        }
+                    });
+                }
+            }
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [Authorize(Policy = "Individual")]
     [HttpPut("{id}/withdraw")]
     public async Task<ActionResult<ApplicationResponseDto>> Withdraw(long id)
@@ -137,6 +260,41 @@ public class ApplicationsController : ControllerBase
         try
         {
             var result = await _applicationsService.WithdrawAsync(id, userId);
+
+            _taskQueue.Enqueue(async scope =>
+            {
+                var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+                var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+                if (result.Job != null)
+                {
+                    var notification = await notificationsService.CreateAsync(
+                        result.Job.EntityId,
+                        "تم سحب الطلب",
+                        $"{result.UserName} قام بسحب طلبه لوظيفة {result.Job.Title}",
+                        "withdrawn",
+                        result.Id,
+                        "application");
+
+                    await notificationHub.SendToUserAsync(result.Job.EntityId, "ApplicationWithdrawn", new
+                    {
+                        notification.Id,
+                        ApplicationId = result.Id,
+                        JobTitle = result.Job.Title,
+                        ApplicantName = result.UserName,
+                    });
+
+                    if (result.Job.EntityEmail != null)
+                    {
+                        await emailService.SendAsync(
+                            result.Job.EntityEmail,
+                            "تم سحب الطلب",
+                            EmailTemplates.ApplicationWithdrawn(result.Job.EntityName, result.UserName, result.Job.Title));
+                    }
+                }
+            });
+
             return Ok(result);
         }
         catch (KeyNotFoundException)

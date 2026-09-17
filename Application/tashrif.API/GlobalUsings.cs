@@ -3,6 +3,7 @@ global using System.Collections.Generic;
 
 // Microsoft namespaces
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.EntityFrameworkCore;
 
 // Solution namespaces
 global using tashrif.Core;
