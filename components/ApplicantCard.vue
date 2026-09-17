@@ -56,7 +56,7 @@
               {{ badgeText }}
             </span>
             <DropDown
-              v-if="action"
+              v-if="action && dropdownActions.length"
               trigger-style="p-2 bg-bg-light rounded-xl border border-[#fff]/0 active:border-primary"
             >
               <template #trigger>
@@ -66,26 +66,12 @@
               </template>
               <template #list>
                 <ul class="px-0">
-                  <li>
+                  <li v-for="item in dropdownActions" :key="item.event">
                     <button
-                      @click="emit('shortlist')"
+                      @click="emit(item.event)"
                       class="text-xs px-3 py-2 hover:bg-bg-subtle transition block w-full text-start"
-                      >إضافة للمرشحين</button
-                    >
-                  </li>
-                  <li>
-                    <button
-                      @click="emit('interview')"
-                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block w-full text-start"
-                      >إجراء مقابلة</button
-                    >
-                  </li>
-                  <li>
-                    <button
-                      @click="emit('delete')"
-                      class="text-xs px-3 py-2 hover:bg-bg-subtle transition block w-full text-start text-danger"
-                      >حذف</button
-                    >
+                      :class="{ 'text-danger': item.danger }"
+                    >{{ item.label }}</button>
                   </li>
                 </ul>
               </template>
@@ -151,9 +137,9 @@ import ListDots from "./icons/list-dots.vue";
 import PersonIcon from "./icons/person.vue";
 import { formatDate } from "~/services/help";
 const model = defineModel();
-const emit = defineEmits(['shortlist', 'interview', 'delete']);
+const emit = defineEmits(['shortlist', 'interview', 'send-contract', 'refuse', 'delete', 'restore']);
 
-/** @type {{ applicant: import('~/types/application').Application, jobTitle?: string, badgeText: string, badgeStyle: string, cardStyle: string, select: boolean, action: boolean }} */
+/** @type {{ applicant: import('~/types/application').Application, jobTitle?: string, badgeText: string, badgeStyle: string, cardStyle: string, select: boolean, action: boolean, status: string }} */
 const props = defineProps([
   "applicant",
   "jobTitle",
@@ -162,7 +148,36 @@ const props = defineProps([
   "cardStyle",
   "select",
   "action",
+  "status",
 ]);
+
+const dropdownActions = computed(() => {
+  switch (props.status) {
+    case 'new':
+      return [
+        { label: 'إضافة للمرشحين', event: 'shortlist' },
+        { label: 'إجراء مقابلة', event: 'interview' },
+        { label: 'رفض', event: 'refuse', danger: true },
+      ]
+    case 'shortlisted':
+      return [
+        { label: 'إجراء مقابلة', event: 'interview' },
+        { label: 'رفض', event: 'refuse', danger: true },
+      ]
+    case 'interview':
+      return [
+        { label: 'إرسال العقد', event: 'send-contract' },
+        { label: 'رفض', event: 'refuse', danger: true },
+      ]
+    case 'refused':
+      return [
+        { label: 'إعادة للمتقدمين', event: 'restore' },
+        { label: 'حذف', event: 'delete', danger: true },
+      ]
+    default:
+      return []
+  }
+});
 
 const genderLabel = computed(() => {
   const value = (props.applicant?.userGender || props.applicant?.gender || "").toLowerCase()

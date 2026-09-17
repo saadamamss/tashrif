@@ -178,8 +178,11 @@ onBeforeUnmount(() => {
   max-height: 300px;
   overflow-y: auto;
   width: max-content;
+  
 }
-
+.dropdown-menu::-webkit-scrollbar {
+  display: none;
+}
 .dropdown-item {
   padding: 8px 16px;
   font-size: 14px;

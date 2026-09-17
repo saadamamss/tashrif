@@ -53,7 +53,7 @@
               </span>
             </template>
             <template #list>
-              <ul v-if="notifications.length > 0" class="min-w-[280px] max-h-[400px] overflow-y-auto">
+              <ul v-if="notifications.length > 0" class="min-w-[280px] max-w-[360px]">
                 <li
                   v-for="n in notifications"
                   :key="n.id"
@@ -62,7 +62,7 @@
                   @click="markAsRead(n.id)"
                 >
                   <p class="text-sm font-medium">{{ n.title }}</p>
-                  <p v-if="n.body" class="text-xs text-gray-500 mt-1">{{ n.body }}</p>
+                  <p v-if="n.body" class="text-xs text-gray-500 mt-1 truncate">{{ n.body }}</p>
                   <p class="text-[10px] text-gray-400 mt-1">{{ formatTime(n.createdAt) }}</p>
                 </li>
                 <li v-if="hasMore" class="p-2 text-center">
@@ -193,6 +193,25 @@ onMounted(async () => {
       type: "contract_sent",
       referenceId: data.contractId,
       referenceType: "contract",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  on("StatusChanged", (data) => {
+    // Status from backend: "shortlisted"/"refused" (single) or "shortlist"/"refuse"/"restore" (bulk)
+    const isShortlist = data.status === "shortlisted" || data.status === "shortlist";
+    const isRestore = data.status === "restore";
+    const title = isRestore ? "تمت إعادة تقييمك" : isShortlist ? "تم ترشحك" : "تم رفض طلبك";
+    const type = isRestore ? "restored" : isShortlist ? "shortlisted" : "refused";
+    addNotification({
+      id: data.id || Date.now(),
+      userId: user.value?.id ?? 0,
+      title,
+      body: `${title} لوظيفة ${data.jobTitle}`,
+      type,
+      referenceId: data.applicationId,
+      referenceType: "application",
       isRead: false,
       createdAt: new Date().toISOString(),
     });

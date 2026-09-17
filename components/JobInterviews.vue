@@ -5,12 +5,20 @@
         <h2 class="text-sm lg:text-lg font-medium text-muted">
           تم تحديد {{ selectedApplicants.length }} متقدمين
         </h2>
-        <button
-          class="self-end btn-primary text-sm"
-          @click="emit('send-contract', [...selectedApplicants])"
-        >
-          إرسال العقد
-        </button>
+        <div class="flex gap-2">
+          <button
+            class="self-end btn-primary text-sm"
+            @click="emit('send-contract', [...selectedApplicants])"
+          >
+            إرسال العقد
+          </button>
+          <button
+            class="text-sm py-3 px-4 xs:px-6 rounded-full bg-danger text-white hover:bg-danger/85 transition"
+            @click="emit('bulk-refuse', [...selectedApplicants])"
+          >
+            رفض المحدد
+          </button>
+        </div>
       </div>
     </div>
     <div class="grid applicant-grid gap-4">
@@ -20,6 +28,7 @@
         :applicant="applicant"
         :action="true"
         :select="true"
+        :status="applicant.status"
         :job-title="jobTitle"
         badge-text="طلب مقابلة"
         badge-style="bg-badge-green/10 text-badge-green"
@@ -27,7 +36,8 @@
         v-model="selectedApplicants"
         @shortlist="emit('shortlist', applicant)"
         @interview="emit('interview', applicant)"
-        @delete="emit('delete', applicant)"
+        @send-contract="emit('send-contract', [applicant])"
+        @refuse="emit('bulk-refuse', [applicant])"
       />
     </div>
   </div>
@@ -37,5 +47,5 @@
 /** @type {{ interviewList: Array<import('~/types/application').Application>, jobTitle?: string, displayMethod: string }} */
 const props = defineProps(["interviewList", "jobTitle", "displayMethod"]);
 const selectedApplicants = ref([]);
-const emit = defineEmits(['send-contract', 'shortlist', 'delete', 'interview']);
+const emit = defineEmits(['send-contract', 'shortlist', 'interview', 'bulk-refuse']);
 </script>

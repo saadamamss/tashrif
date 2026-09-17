@@ -65,11 +65,11 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const activeTab = ref(props.initialTab || props.tabs[0]?.id);
+const activeTab = ref(props.modelValue || props.initialTab || props.tabs[0]?.id);
 
 watch(() => props.modelValue, (val) => {
   if (val) activeTab.value = val
-})
+}, { immediate: true })
 
 watch(activeTab, (val) => {
   emit('update:modelValue', val)

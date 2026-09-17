@@ -78,8 +78,8 @@ const interviewTargetApplicants = ref([]);
 const contractDialogVisible = ref(false);
 const contractTargetApplicants = ref([]);
 
-const loadApplicants = async () => {
-  applicantsLoading.value = true;
+const loadApplicants = async ({ initial = false } = {}) => {
+  if (initial) applicantsLoading.value = true;
   error.value = null;
   const jobId = route.query.id || route.params.id || 1;
   try {
@@ -97,7 +97,7 @@ const loadApplicants = async () => {
     error.value = e;
     useToast().show("حدث خطأ أثناء تحميل البيانات", "error");
   }
-  finally { applicantsLoading.value = false; }
+  finally { if (initial) applicantsLoading.value = false; }
 };
 
 const moveToShortlist = async (app) => {
@@ -115,17 +115,96 @@ const moveToShortlist = async (app) => {
   }
 };
 
-const batchMoveToShortlist = async () => {
-  let ok = 0;
-  for (const app of selectedApplicants.value) {
-    try {
-      const { error } = await useApi().put(`/applications/${app.id}/status`, { status: 'shortlisted' });
-      if (!error) ok++;
-    } catch {}
+const bulkAction = async (action) => {
+  if (!selectedApplicants.value.length) return;
+
+  const ids = selectedApplicants.value.map(a => a.id);
+  const { data, error } = await useApi().post('/applications/bulk-action', {
+    applicationIds: ids,
+    action,
+  });
+
+  if (error) {
+    useToast().show(error, "error");
+    return;
   }
-  if (ok > 0) useToast().show(`تم ترشيح ${ok} متقدم بنجاح`, "success");
-  else useToast().show("لم يتم ترشيح أي متقدم", "error");
+
+  const succeeded = data?.filter(r => r.success).length || 0;
+  const failed = data?.filter(r => !r.success).length || 0;
+
+  if (succeeded > 0) {
+    const label = action === 'shortlist' ? 'ترشيح' : 'رفض';
+    useToast().show(`تم ${label} ${succeeded} متقدم بنجاح`, "success");
+  }
+  if (failed > 0) {
+    useToast().show(`فشل ${failed} طلب`, "error");
+  }
+
   selectedApplicants.value = [];
+  await loadApplicants();
+};
+
+const showBulkRefuseConfirm = ref(false);
+const bulkRefuseTargets = ref([]);
+
+const confirmBulkRefuse = () => {
+  bulkRefuseTargets.value = [...selectedApplicants.value];
+  showBulkRefuseConfirm.value = true;
+};
+
+const confirmBulkRefuseFromChild = (apps) => {
+  bulkRefuseTargets.value = apps;
+  showBulkRefuseConfirm.value = true;
+};
+
+const executeBulkRefuse = async () => {
+  showBulkRefuseConfirm.value = false;
+  const targets = bulkRefuseTargets.value;
+  if (!targets.length) return;
+
+  const ids = targets.map(a => a.id);
+  const { data, error } = await useApi().post('/applications/bulk-action', {
+    applicationIds: ids,
+    action: 'refuse',
+  });
+
+  if (error) {
+    useToast().show(error, "error");
+    return;
+  }
+
+  const succeeded = data?.filter(r => r.success).length || 0;
+  const failed = data?.filter(r => !r.success).length || 0;
+
+  if (succeeded > 0) {
+    useToast().show(`تم رفض ${succeeded} متقدم بنجاح`, "success");
+  }
+  if (failed > 0) {
+    useToast().show(`فشل ${failed} طلب`, "error");
+  }
+
+  bulkRefuseTargets.value = [];
+  selectedApplicants.value = [];
+  await loadApplicants();
+};
+
+const bulkActionFor = async (app, action) => {
+  const { data, error } = await useApi().post('/applications/bulk-action', {
+    applicationIds: [app.id],
+    action,
+  });
+
+  if (error) {
+    useToast().show(error, "error");
+    return;
+  }
+
+  const succeeded = data?.filter(r => r.success).length || 0;
+  if (succeeded > 0) {
+    const labels = { refuse: 'تم رفض المتقدم', restore: 'تمت إعادة المتقدم للمتقدمين الجدد' };
+    useToast().show(labels[action] || 'تمت العملية بنجاح', "success");
+  }
+
   await loadApplicants();
 };
 
@@ -201,7 +280,7 @@ const submitContract = async (payload) => {
 const openFilterDrawer = () => {};
 const filterDrawer = ref(false);
 
-onMounted(loadApplicants);
+onMounted(() => loadApplicants({ initial: true }));
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -268,7 +347,7 @@ onMounted(loadApplicants);
           </div>
         </template>
         <template #applicants>
-          <UiErrorState v-if="error" :message="error?.message || 'حدث خطأ' " @retry="loadApplicants" />
+          <UiErrorState v-if="error" :message="error?.message || 'حدث خطأ' " @retry="() => loadApplicants({ initial: true })" />
           <UiLoadingSkeleton v-else-if="applicantsLoading" :count="6" :columns="2" height="160px" />
           <template v-else>
           <div :class="displayMethod">
@@ -331,9 +410,15 @@ onMounted(loadApplicants);
                     <div class="self-end flex gap-2">
                       <button
                         class="btn-primary text-sm"
-                        @click="batchMoveToShortlist"
+                        @click="bulkAction('shortlist')"
                       >
-                        نقل إلى قائمة مختصرة
+                        نقل إلى المرشحين
+                      </button>
+                      <button
+                        class="text-sm py-3 px-4 xs:px-6 rounded-full bg-danger text-white hover:bg-danger/85 transition"
+                        @click="confirmBulkRefuse"
+                      >
+                        رفض المحدد
                       </button>
                     </div>
                   </div>
@@ -345,6 +430,7 @@ onMounted(loadApplicants);
                     :applicant="applicant"
                     :action="true"
                     :select="true"
+                    :status="applicant.status || 'new'"
                     :job-title="jobDetails?.title"
                     badge-text="جديد"
                     badge-style="bg-primary/10 text-primary"
@@ -352,7 +438,7 @@ onMounted(loadApplicants);
                     v-model="selectedApplicants"
                     @shortlist="moveToShortlist(applicant)"
                     @interview="openInterview(applicant)"
-                    @delete="deleteApplicant(applicant)"
+                    @refuse="bulkActionFor(applicant, 'refuse')"
                   />
                 </div>
               </template>
@@ -364,8 +450,8 @@ onMounted(loadApplicants);
                   :display-method="displayMethod"
                   @shortlist="moveToShortlist"
                   @interview="openInterview"
-                  @delete="deleteApplicant"
                   @schedule-interview="openInterview"
+                  @bulk-refuse="confirmBulkRefuseFromChild"
                 />
               </template>
               <template #interviews>
@@ -376,8 +462,8 @@ onMounted(loadApplicants);
                   :display-method="displayMethod"
                   @shortlist="moveToShortlist"
                   @interview="openInterview"
-                  @delete="deleteApplicant"
                   @send-contract="openContract"
+                  @bulk-refuse="confirmBulkRefuseFromChild"
                 />
               </template>
               <template #contract>
@@ -388,13 +474,11 @@ onMounted(loadApplicants);
                     :key="applicant.id"
                     :applicant="applicant"
                     :action="true"
+                    :status="applicant.status"
                     :job-title="jobDetails?.title"
                     badge-text="تم إرسال العقد"
                     badge-style="bg-badge-green/10 text-badge-green"
                     card-style=" bg-[#fff]"
-                    @shortlist="moveToShortlist(applicant)"
-                    @interview="openInterview(applicant)"
-                    @delete="deleteApplicant(applicant)"
                   />
                 </div>
               </template>
@@ -406,13 +490,11 @@ onMounted(loadApplicants);
                     :key="applicant.id"
                     :applicant="applicant"
                     :action="true"
+                    :status="applicant.status"
                     :job-title="jobDetails?.title"
                     badge-text="تم قبول العقد"
                     badge-style="bg-success/10 text-success"
                     card-style=" bg-[#fff]"
-                    @shortlist="moveToShortlist(applicant)"
-                    @interview="openInterview(applicant)"
-                    @delete="deleteApplicant(applicant)"
                   />
                 </div>
               </template>
@@ -424,13 +506,13 @@ onMounted(loadApplicants);
                     :key="applicant.id"
                     :applicant="applicant"
                     :action="true"
+                    :status="applicant.status"
                     :job-title="jobDetails?.title"
                     badge-text="تم رفض العقد"
                     badge-style="bg-danger/10 text-danger"
                     card-style=" bg-[#fff]"
-                    @shortlist="moveToShortlist(applicant)"
-                    @interview="openInterview(applicant)"
                     @delete="deleteApplicant(applicant)"
+                    @restore="bulkActionFor(applicant, 'restore')"
                   />
                 </div>
               </template>
@@ -454,6 +536,14 @@ onMounted(loadApplicants);
       @submit-contract="submitContract"
     />
     <FilterDrawer v-model="filterDrawer" />
+    <ConfirmDialog
+      v-model="showBulkRefuseConfirm"
+      title="رفض المتقدمين"
+      :message="`هل أنت متأكد من رفض ${bulkRefuseTargets.length} متقدمين؟`"
+      confirm-text="رفض"
+      :danger="true"
+      @confirm="executeBulkRefuse"
+    />
   </div>
 </template>
 <style lang="scss" scoped>
