@@ -16,11 +16,16 @@ const { userType } = useAuth();
 const currentHomeComponent = computed(() => {
   if (!userType.value) return null;
 
-  return defineAsyncComponent(() =>
-    userType.value === "individual"
+  return defineAsyncComponent(() => {
+    // Admin has no individual/entity profile endpoints — show a read-only
+    // profile card instead of loading the entity profile (which 403s).
+    if (userType.value === "admin") {
+      return import("~/components/dashboard/admin/profile.vue");
+    }
+    return userType.value === "individual"
       ? import("~/components/dashboard/individual/profile.vue")
-      : import("~/components/dashboard/company/profile.vue")
-  );
+      : import("~/components/dashboard/company/profile.vue");
+  });
 });
 </script>
 

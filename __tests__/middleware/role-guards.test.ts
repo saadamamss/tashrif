@@ -78,10 +78,41 @@ describe('role guard middleware', () => {
       expect(result).toBeUndefined()
     })
 
-    it('redirects unknown user types', async () => {
+    it('allows admin users', async () => {
       mockUserType = 'admin'
 
       const middleware = (await import('../../middleware/user-type')).default
+      const result = await middleware({})
+
+      expect(mockNavigateTo).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+
+    it('redirects unknown user types', async () => {
+      mockUserType = 'unknown'
+
+      const middleware = (await import('../../middleware/user-type')).default
+      await middleware({})
+
+      expect(mockNavigateTo).toHaveBeenCalledWith('/dashboard')
+    })
+  })
+
+  describe('admin middleware', () => {
+    it('allows admin users', async () => {
+      mockUserType = 'admin'
+
+      const middleware = (await import('../../middleware/admin')).default
+      const result = await middleware({})
+
+      expect(mockNavigateTo).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+
+    it('redirects non-admin users', async () => {
+      mockUserType = 'individual'
+
+      const middleware = (await import('../../middleware/admin')).default
       await middleware({})
 
       expect(mockNavigateTo).toHaveBeenCalledWith('/dashboard')

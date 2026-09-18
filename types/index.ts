@@ -4,7 +4,7 @@ export interface User {
   name: string
   email: string
   phone: string
-  type: 'individual' | 'entity'
+  type: 'individual' | 'entity' | 'admin'
   gender?: string
   nationality?: string
   avatarUrl?: string

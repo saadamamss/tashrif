@@ -16,11 +16,14 @@ const { userType } = useAuth();
 const currentHomeComponent = computed(() => {
   if (!userType.value) return null;
 
-  return defineAsyncComponent(() =>
-    userType.value === "individual"
+  return defineAsyncComponent(() => {
+    if (userType.value === "admin") {
+      return import("~/components/dashboard/admin/home.vue");
+    }
+    return userType.value === "individual"
       ? import("~/components/dashboard/individual/home.vue")
-      : import("~/components/dashboard/company/home.vue")
-  );
+      : import("~/components/dashboard/company/home.vue");
+  });
 });
 </script>
 

@@ -35,10 +35,20 @@ import JobRequest from "~/components/icons/job-request.vue";
 import Jobs from "~/components/icons/jobs.vue";
 import Person from "~/components/icons/person.vue";
 import Shake from "~/components/icons/shake.vue";
+import Audit from "~/components/icons/audit.vue";
 
 const { userType } = useAuth();
 /** @type {{ openSideNav: boolean }} */
 const props = defineProps(["openSideNav"]);
+
+// Admin gets a fully role-dependent list — no individual/entity items (D8).
+const adminItems = [
+  { label: "الرئيسية", icon: Home, to: "/dashboard", name: "dashboard-index" },
+  { label: "المستخدمون", icon: Person, to: "/dashboard/admin/users", name: "dashboard-admin-users" },
+  { label: "سجل المراجعة", icon: Audit, to: "/dashboard/admin/audit-logs", name: "dashboard-admin-audit-logs" },
+  { label: "الوظائف", icon: Jobs, to: "/dashboard/admin/jobs", name: "dashboard-admin-jobs" },
+];
+
 const additionalItems = computed(() => {
   if (userType.value === "individual") {
     return [
@@ -66,33 +76,38 @@ const additionalItems = computed(() => {
     ];
   }
 });
-const listItems = computed(() => [
-  {
-    label: "الصفحة الرئيسية",
-    icon: Home,
-    to: "/dashboard",
-    name: "dashboard-index",
-  },
-  ...additionalItems.value,
-  {
-    label: "عقود العمل",
-    icon: File,
-    to: "/dashboard/employment-contracts",
-    name: "dashboard-employment-contracts",
-  },
-  {
-    label: "مقابلات العمل",
-    icon: Shake,
-    to: "/dashboard/interviews",
-    name: "dashboard-interviews",
-  },
-  {
-    label: "الملف الشخصى",
-    icon: Person,
-    to: "/dashboard/profile",
-    name: "dashboard-profile",
-  },
-]);
+
+const listItems = computed(() => {
+  if (userType.value === "admin") return adminItems;
+
+  return [
+    {
+      label: "الصفحة الرئيسية",
+      icon: Home,
+      to: "/dashboard",
+      name: "dashboard-index",
+    },
+    ...additionalItems.value,
+    {
+      label: "عقود العمل",
+      icon: File,
+      to: "/dashboard/employment-contracts",
+      name: "dashboard-employment-contracts",
+    },
+    {
+      label: "مقابلات العمل",
+      icon: Shake,
+      to: "/dashboard/interviews",
+      name: "dashboard-interviews",
+    },
+    {
+      label: "الملف الشخصى",
+      icon: Person,
+      to: "/dashboard/profile",
+      name: "dashboard-profile",
+    },
+  ];
+});
 </script>
 <style scoped lang="scss">
 .side-nav {
