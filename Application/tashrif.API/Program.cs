@@ -159,4 +159,37 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications").RequireAuthorization();
 
+// Dev-only admin seed (D2): idempotent, no secrets in migrations.
+// Wrapped in try/catch so startup doesn't fail if the DB isn't reachable/migrated yet.
+if (app.Environment.IsDevelopment())
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<tashrif.Context.tashrifDBContext>();
+        if (!db.users.Any(u => u.type == "admin" && !u.IsDeleted))
+        {
+            db.users.Add(new tashrif.Data.users
+            {
+                national_id = "0000000000",
+                password_hash = BCrypt.Net.BCrypt.HashPassword("admin"),
+                name = "مدير النظام",
+                email = "admin@tashrif.sa",
+                phone = "0500000000",
+                type = "admin",
+                gender = "male",
+                nationality = "SA",
+                avatar_url = "",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Admin seed skipped (database not reachable?)");
+    }
+}
+
 app.Run();
