@@ -1,147 +1,160 @@
 using Microsoft.EntityFrameworkCore;
+using tashrif.Data.Constants;
 using tashrif.Data.DTOs.Analytics;
 using tashrif.Data.Interfaces;
 
 namespace tashrif.Core;
 
-public class analyticsService(IUnitOfWork unitOfWork) : IanalyticsService
+public class analyticsService : IanalyticsService
 {
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IClock _clock;
 
-    private static readonly string[] AllStatuses =
-        ["new", "shortlisted", "interview", "contract_sent", "accepted", "refused", "withdrawn"];
+    public analyticsService(IUnitOfWork unitOfWork, IClock clock)
+    {
+        _unitOfWork = unitOfWork;
+        _clock = clock;
+    }
+
+    // Backward compat for existing tests that construct with only IUnitOfWork (spec 1 → 2 gap)
+    public analyticsService(IUnitOfWork unitOfWork) : this(unitOfWork, new SystemClock()) { }
 
     public async Task<EntityAnalyticsDto> GetEntityAnalyticsAsync(long entityId)
     {
-        var dto = new EntityAnalyticsDto();
-
-        // --- 1. Job counts (sequential — shared DbContext is not thread-safe) ---
-        var jobsQuery = await _unitOfWork.JobsRepository.GetQueryable();
-        var entityJobs = await jobsQuery
-            .Where(j => j.entity_id == entityId && !j.IsDeleted)
-            .ToListAsync();
-
-        dto.TotalJobs = entityJobs.Count;
-        dto.ActiveJobs = entityJobs.Count(j => j.status == "active");
-
+        var entityJobs = await GetEntityJobsAsync(entityId);
         var entityJobIds = entityJobs.Select(j => j.Id).ToHashSet();
+        var entityApplications = await GetEntityApplicationsAsync(entityJobIds);
 
-        // --- 2. Applications for this entity's jobs ---
+        var funnel = BuildFunnel(entityApplications);
+
+        var jobTitleMap = entityJobs.ToDictionary(j => j.Id, j => j.title);
+
+        return new EntityAnalyticsDto
+        {
+            TotalJobs = entityJobs.Count,
+            ActiveJobs = entityJobs.Count(j => j.status == "active"),
+            TotalApplications = entityApplications.Count,
+            ApplicationsByStatus = funnel,
+            ConversionRate = CalcConversion(entityApplications, funnel),
+            AverageTimeToHireDays = await CalcTimeToHireAsync(entityApplications),
+            TopJobs = BuildTopJobs(entityApplications, jobTitleMap),
+            ApplicationsOverTime = BuildTimeline(entityApplications, _clock.UtcNow.Date),
+            ApplicantDemographics = await BuildDemographicsAsync(entityApplications),
+        };
+    }
+
+    private async Task<List<jobs>> GetEntityJobsAsync(long entityId)
+    {
+        var jobsQuery = await _unitOfWork.JobsRepository.GetQueryable();
+        return await jobsQuery.Where(j => j.entity_id == entityId && !j.IsDeleted).ToListAsync();
+    }
+
+    private async Task<List<applications>> GetEntityApplicationsAsync(HashSet<long> entityJobIds)
+    {
+        if (entityJobIds.Count == 0) return [];
         var appsQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
-        var entityApplications = await appsQuery
-            .Where(a => entityJobIds.Contains(a.job_id) && !a.IsDeleted)
+        return await appsQuery.Where(a => entityJobIds.Contains(a.job_id) && !a.IsDeleted).ToListAsync();
+    }
+
+    private static Dictionary<string, int> BuildFunnel(List<applications> apps)
+    {
+        var funnel = ApplicationStatuses.All.ToDictionary(s => s, _ => 0);
+        foreach (var g in apps.GroupBy(a => a.status))
+            funnel[g.Key] = g.Count();
+        return funnel;
+    }
+
+    private static double CalcConversion(List<applications> apps, Dictionary<string, int> funnel)
+    {
+        if (apps.Count == 0) return 0;
+        var acceptedCount = funnel.GetValueOrDefault("accepted", 0);
+        return Math.Round((double)acceptedCount / apps.Count * 100, 1);
+    }
+
+    private async Task<double?> CalcTimeToHireAsync(List<applications> apps)
+    {
+        if (apps.Count == 0) return null;
+
+        var entityAppIds = apps.Select(a => a.Id).ToHashSet();
+        var historyQuery = await _unitOfWork.Application_status_historyRepository.GetQueryable();
+        var acceptedHistory = await historyQuery
+            .Where(h => h.new_status == "accepted" && !h.IsDeleted && entityAppIds.Contains(h.application_id))
             .ToListAsync();
 
-        dto.TotalApplications = entityApplications.Count;
+        if (acceptedHistory.Count == 0) return null;
 
-        // --- 3. Applications by status (all 7 statuses, zeros included) ---
-        dto.ApplicationsByStatus = AllStatuses.ToDictionary(s => s, _ => 0);
-        foreach (var g in entityApplications.GroupBy(a => a.status))
-            dto.ApplicationsByStatus[g.Key] = g.Count();
+        var appCreatedMap = apps.ToDictionary(a => a.Id, a => a.CreatedAt);
+        return Math.Round(
+            acceptedHistory.Select(h => (h.changed_at - appCreatedMap[h.application_id]).TotalDays).Average(),
+            1);
+    }
 
-        // --- 4. Conversion rate ---
-        var acceptedCount = dto.ApplicationsByStatus.GetValueOrDefault("accepted", 0);
-        dto.ConversionRate = dto.TotalApplications == 0
-            ? 0
-            : Math.Round((double)acceptedCount / dto.TotalApplications * 100, 1);
-
-        // --- 5. Average time-to-hire (D4: from application_status_history) ---
-        {
-            var entityAppIds = entityApplications.Select(a => a.Id).ToHashSet();
-            var historyQuery = await _unitOfWork.Application_status_historyRepository.GetQueryable();
-            var acceptedHistory = await historyQuery
-                .Where(h => h.new_status == "accepted" && !h.IsDeleted && entityAppIds.Contains(h.application_id))
-                .ToListAsync();
-
-            if (acceptedHistory.Count > 0)
-            {
-                var appCreatedMap = entityApplications.ToDictionary(a => a.Id, a => a.CreatedAt);
-                dto.AverageTimeToHireDays = Math.Round(
-                    acceptedHistory
-                        .Select(h => (h.changed_at - appCreatedMap[h.application_id]).TotalDays)
-                        .Average(),
-                    1);
-            }
-        }
-
-        // --- 6. Top 5 jobs by application count ---
-        if (entityApplications.Count > 0)
-        {
-            var topGroups = entityApplications
-                .GroupBy(a => a.job_id)
-                .OrderByDescending(g => g.Count())
-                .Take(5)
-                .ToList();
-
-            var jobTitleMap = entityJobs.ToDictionary(j => j.Id, j => j.title);
-
-            dto.TopJobs = topGroups.Select(g => new TopJobDto
+    private static List<TopJobDto> BuildTopJobs(List<applications> apps, Dictionary<long, string> jobTitleMap)
+    {
+        if (apps.Count == 0) return [];
+        return apps
+            .GroupBy(a => a.job_id)
+            .OrderByDescending(g => g.Count())
+            .Take(5)
+            .Select(g => new TopJobDto
             {
                 JobId = g.Key,
                 Title = jobTitleMap.GetValueOrDefault(g.Key, string.Empty),
                 ApplicationCount = g.Count(),
                 HiredCount = g.Count(a => a.status == "accepted"),
-            }).ToList();
-        }
+            })
+            .ToList();
+    }
 
-        // --- 7. Applications over time — continuous 30-day series, zero-filled ---
+    private static List<DailyCountDto> BuildTimeline(List<applications> apps, DateTime today)
+    {
+        var startDate = today.AddDays(-29);
+        var dailyCounts = apps
+            .Where(a => a.CreatedAt.Date >= startDate)
+            .GroupBy(a => a.CreatedAt.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        return Enumerable.Range(0, 30).Select(i =>
         {
-            var today = DateTime.UtcNow.Date;
-            var startDate = today.AddDays(-29);
-
-            // Count per UTC day for this entity's applications
-            var dailyCounts = entityApplications
-                .Where(a => a.CreatedAt.Date >= startDate)
-                .GroupBy(a => a.CreatedAt.Date)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            dto.ApplicationsOverTime = Enumerable.Range(0, 30).Select(i =>
+            var date = startDate.AddDays(i);
+            return new DailyCountDto
             {
-                var date = startDate.AddDays(i);
-                return new DailyCountDto
-                {
-                    Date = date.ToString("yyyy-MM-dd"),
-                    Count = dailyCounts.GetValueOrDefault(date, 0),
-                };
-            }).ToList();
-        }
+                Date = date.ToString("yyyy-MM-dd"),
+                Count = dailyCounts.GetValueOrDefault(date, 0),
+            };
+        }).ToList();
+    }
 
-        // --- 8. Applicant demographics (distinct applicants only) ---
-        if (entityApplications.Count > 0)
+    private async Task<DemographicsDto> BuildDemographicsAsync(List<applications> apps)
+    {
+        var dto = new DemographicsDto();
+        if (apps.Count == 0) return dto;
+
+        var distinctUserIds = apps.Select(a => a.user_id).Distinct().ToList();
+        var usersQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        var distinctUsers = await usersQuery
+            .Where(u => distinctUserIds.Contains(u.Id) && !u.IsDeleted)
+            .ToListAsync();
+
+        dto.ByGender = distinctUsers
+            .GroupBy(u => string.IsNullOrWhiteSpace(u.gender) ? "غير محدد" : u.gender)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var nationalityGroups = distinctUsers
+            .GroupBy(u => string.IsNullOrWhiteSpace(u.nationality) ? "غير محدد" : u.nationality)
+            .OrderByDescending(g => g.Count())
+            .ToList();
+
+        if (nationalityGroups.Count <= 5)
         {
-            var distinctUserIds = entityApplications
-                .Select(a => a.user_id)
-                .Distinct()
-                .ToList();
-
-            var usersQuery = await _unitOfWork.UsersRepository.GetQueryable();
-            var distinctUsers = await usersQuery
-                .Where(u => distinctUserIds.Contains(u.Id) && !u.IsDeleted)
-                .ToListAsync();
-
-            // By gender — DB stores English (male/female), grouped as-is
-            dto.ApplicantDemographics.ByGender = distinctUsers
-                .GroupBy(u => string.IsNullOrWhiteSpace(u.gender) ? "غير محدد" : u.gender)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            // By nationality — top 5 + "أخرى", empty/null → "غير محدد"
-            var nationalityGroups = distinctUsers
-                .GroupBy(u => string.IsNullOrWhiteSpace(u.nationality) ? "غير محدد" : u.nationality)
-                .OrderByDescending(g => g.Count())
-                .ToList();
-
-            if (nationalityGroups.Count <= 5)
-            {
-                dto.ApplicantDemographics.ByNationality = nationalityGroups
-                    .ToDictionary(g => g.Key, g => g.Count());
-            }
-            else
-            {
-                var top5 = nationalityGroups.Take(5).ToDictionary(g => g.Key, g => g.Count());
-                var otherCount = nationalityGroups.Skip(5).Sum(g => g.Count());
-                top5["أخرى"] = otherCount;
-                dto.ApplicantDemographics.ByNationality = top5;
-            }
+            dto.ByNationality = nationalityGroups.ToDictionary(g => g.Key, g => g.Count());
+        }
+        else
+        {
+            var top5 = nationalityGroups.Take(5).ToDictionary(g => g.Key, g => g.Count());
+            var otherCount = nationalityGroups.Skip(5).Sum(g => g.Count());
+            top5["أخرى"] = otherCount;
+            dto.ByNationality = top5;
         }
 
         return dto;
