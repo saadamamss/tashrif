@@ -1,3 +1,5 @@
+using tashrif.Tests.Fakes;
+
 namespace tashrif.Tests.Services;
 
 public class AnalyticsServiceTests
@@ -7,6 +9,7 @@ public class AnalyticsServiceTests
     private readonly Mock<IapplicationsRepository> _appsRepoMock;
     private readonly Mock<Iapplication_status_historyRepository> _historyRepoMock;
     private readonly Mock<IusersRepository> _usersRepoMock;
+    private readonly FakeClock _clock;
     private readonly analyticsService _sut;
 
     public AnalyticsServiceTests()
@@ -22,7 +25,8 @@ public class AnalyticsServiceTests
         _uowMock.SetupGet(u => u.Application_status_historyRepository).Returns(_historyRepoMock.Object);
         _uowMock.SetupGet(u => u.UsersRepository).Returns(_usersRepoMock.Object);
 
-        _sut = new analyticsService(_uowMock.Object);
+        _clock = new FakeClock(new DateTime(2026, 9, 19, 12, 0, 0, DateTimeKind.Utc));
+        _sut = new analyticsService(_uowMock.Object, _clock);
     }
 
     private void SetupJobs(params jobs[] data)
@@ -222,8 +226,8 @@ public class AnalyticsServiceTests
     {
         SetupJobs(new jobs { Id = 1, entity_id = 10, status = "active", title = "حارس" });
         SetupApplications(
-            new applications { Id = 1, job_id = 1, user_id = 100, status = "new", CreatedAt = DateTime.UtcNow.AddDays(-5) },
-            new applications { Id = 2, job_id = 1, user_id = 101, status = "new", CreatedAt = DateTime.UtcNow.AddDays(-1) }
+            new applications { Id = 1, job_id = 1, user_id = 100, status = "new", CreatedAt = _clock.UtcNow.AddDays(-5) },
+            new applications { Id = 2, job_id = 1, user_id = 101, status = "new", CreatedAt = _clock.UtcNow.AddDays(-1) }
         );
         SetupHistory();
         SetupUsers(
@@ -236,5 +240,53 @@ public class AnalyticsServiceTests
         result.ApplicationsOverTime.Should().HaveCount(30);
         result.ApplicationsOverTime.Count(d => d.Count > 0).Should().BeGreaterThan(0);
         result.ApplicationsOverTime.Count(d => d.Count == 0).Should().BeGreaterThan(0);
+    }
+
+    // ---- 8. Deterministic 30-day series with FakeClock ----
+
+    [Fact]
+    public async Task GetEntityAnalyticsAsync_DeterministicTimeline_WithFakeClock()
+    {
+        _clock.UtcNow = new DateTime(2026, 9, 19, 12, 0, 0, DateTimeKind.Utc);
+        var appDate = new DateTime(2026, 9, 18, 10, 0, 0, DateTimeKind.Utc);
+
+        SetupJobs(new jobs { Id = 1, entity_id = 10, status = "active", title = "حارس" });
+        SetupApplications(new applications { Id = 1, job_id = 1, user_id = 100, status = "new", CreatedAt = appDate });
+        SetupHistory();
+        SetupUsers(new users { Id = 100, gender = "male", nationality = "سعودي" });
+
+        var result = await _sut.GetEntityAnalyticsAsync(10);
+
+        result.ApplicationsOverTime.Should().HaveCount(30);
+        result.ApplicationsOverTime[0].Date.Should().Be("2026-08-21"); // 29 days before 2026-09-19
+        result.ApplicationsOverTime[29].Date.Should().Be("2026-09-19");
+        result.ApplicationsOverTime.First(d => d.Date == "2026-09-18").Count.Should().Be(1);
+        result.ApplicationsOverTime.First(d => d.Date == "2026-09-17").Count.Should().Be(0);
+    }
+
+    // ---- 9. Empty entity → zeroed DTO without extra queries ----
+
+    [Fact]
+    public async Task GetEntityAnalyticsAsync_EmptyEntity_ReturnsZeroedDto()
+    {
+        SetupJobs();
+        SetupApplications();
+        SetupHistory();
+        SetupUsers();
+
+        var result = await _sut.GetEntityAnalyticsAsync(99);
+
+        result.TotalJobs.Should().Be(0);
+        result.ActiveJobs.Should().Be(0);
+        result.TotalApplications.Should().Be(0);
+        result.ConversionRate.Should().Be(0);
+        result.AverageTimeToHireDays.Should().BeNull();
+        result.TopJobs.Should().BeEmpty();
+        result.ApplicationsOverTime.Should().HaveCount(30);
+        result.ApplicationsOverTime.All(d => d.Count == 0).Should().BeTrue();
+        result.ApplicantDemographics.ByGender.Should().BeEmpty();
+        result.ApplicantDemographics.ByNationality.Should().BeEmpty();
+        result.ApplicationsByStatus.Should().ContainKeys("new", "shortlisted", "interview", "contract_sent", "accepted", "refused", "withdrawn");
+        result.ApplicationsByStatus.Values.All(v => v == 0).Should().BeTrue();
     }
 }
