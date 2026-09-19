@@ -36,6 +36,7 @@ import Jobs from "~/components/icons/jobs.vue";
 import Person from "~/components/icons/person.vue";
 import Shake from "~/components/icons/shake.vue";
 import Audit from "~/components/icons/audit.vue";
+import Stats from "~/components/icons/stats.vue";
 
 const { userType } = useAuth();
 /** @type {{ openSideNav: boolean }} */
@@ -72,6 +73,12 @@ const additionalItems = computed(() => {
         icon: Jobs,
         to: "/dashboard/published-jobs",
         name: "dashboard-published-jobs",
+      },
+      {
+        label: "الإحصائيات",
+        icon: Stats,
+        to: "/dashboard/analytics",
+        name: "dashboard-analytics",
       },
     ];
   }

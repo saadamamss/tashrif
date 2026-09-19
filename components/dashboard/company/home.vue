@@ -106,7 +106,7 @@ onMounted(async () => {
                 >
                   {{ stats.activeJobs }}
                 </h1>
-                <h3 class="text-sm text-muted">مقابلات العمل</h3>
+                <h3 class="text-sm text-muted">الوظائف النشطة</h3>
               </div>
               <span>
                 <ClockIcon width="22" height="22" color="#ECB42B" />
@@ -122,13 +122,20 @@ onMounted(async () => {
                 >
                   {{ stats.totalApplicants }}
                 </h1>
-                <h3 class="text-sm text-muted">عروض العمل</h3>
+                <h3 class="text-sm text-muted">إجمالي المتقدمين</h3>
               </div>
               <span>
                 <FileIcon width="24" height="24" color="#ECB42B" />
               </span>
             </div>
           </div>
+
+          <NuxtLink
+            to="/dashboard/analytics"
+            class="mt-6 flex items-center justify-center gap-2 bg-primary text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-primary/90 transition"
+          >
+            عرض الإحصائيات التفصيلية
+          </NuxtLink>
         </div>
       </div>
     </section>

@@ -231,7 +231,7 @@ const onSubmit = async (values) => {
                   <CustomSelect
                     name="gender"
                     placeholder="الجنس"
-                    :items="['ذكر', 'أنثى']"
+                    :items="[{ value: 'male', label: 'ذكر' }, { value: 'female', label: 'أنثى' }]"
                     :error="errors.gender"
                     v-model="formData.gender"
                   />
