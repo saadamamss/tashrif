@@ -72,6 +72,8 @@ const interview = ref(null);
 const contract = ref(null);
 const route = useRoute();
 const loading = ref(true);
+const statusHistory = ref([]);
+const statusHistoryLoading = ref(false);
 
 const currentStatus = computed(() => application.value?.status || '')
 const meta = computed(() => statusMeta[currentStatus.value] || statusMeta.new)
@@ -95,6 +97,21 @@ onMounted(async () => {
       if (ct.error) useToast().show(ct.error, "error")
       interview.value = (iv.data?.items || []).find(i => i.applicationId === data.id) || null
       contract.value = (ct.data?.items || []).find(c => c.applicationId === data.id) || null
+
+      // Load status history
+      try {
+        statusHistoryLoading.value = true
+        const { data: historyData, error: historyError } = await useApi().get(`/applications/${data.id}/status-history`)
+        if (historyError) {
+          useToast().show(historyError, "error")
+        } else if (historyData) {
+          statusHistory.value = historyData
+        }
+      } catch {
+        useToast().show("حدث خطأ أثناء تحميل سجل الحالات", "error")
+      } finally {
+        statusHistoryLoading.value = false
+      }
     }
   } catch {
     useToast().show("حدث خطأ أثناء تحميل بيانات الطلب", "error");
@@ -225,6 +242,17 @@ function downloadContract() {
             >
               سحب الطلب
             </button>
+          </div>
+        </div>
+
+        <!-- status history -->
+        <div class="bg-white rounded-xl p-6 shadow-md">
+          <div class="pb-4 border-b-2">
+            <h3 class="text-lg font-medium">سجل الحالات</h3>
+          </div>
+          <div class="pt-4">
+            <UiLoadingSkeleton v-if="statusHistoryLoading" :count="3" height="40px" />
+            <StatusTimeline v-else :history="statusHistory" />
           </div>
         </div>
 

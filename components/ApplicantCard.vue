@@ -137,7 +137,7 @@ import ListDots from "./icons/list-dots.vue";
 import PersonIcon from "./icons/person.vue";
 import { formatDate } from "~/services/help";
 const model = defineModel();
-const emit = defineEmits(['shortlist', 'interview', 'send-contract', 'refuse', 'delete', 'restore']);
+const emit = defineEmits(['shortlist', 'interview', 'send-contract', 'refuse', 'delete', 'restore', 'view-details']);
 
 /** @type {{ applicant: import('~/types/application').Application, jobTitle?: string, badgeText: string, badgeStyle: string, cardStyle: string, select: boolean, action: boolean, status: string }} */
 const props = defineProps([
@@ -152,30 +152,35 @@ const props = defineProps([
 ]);
 
 const dropdownActions = computed(() => {
+  const detailsAction = { label: 'تفاصيل الطلب', event: 'view-details' }
   switch (props.status) {
     case 'new':
       return [
+        detailsAction,
         { label: 'إضافة للمرشحين', event: 'shortlist' },
         { label: 'إجراء مقابلة', event: 'interview' },
         { label: 'رفض', event: 'refuse', danger: true },
       ]
     case 'shortlisted':
       return [
+        detailsAction,
         { label: 'إجراء مقابلة', event: 'interview' },
         { label: 'رفض', event: 'refuse', danger: true },
       ]
     case 'interview':
       return [
+        detailsAction,
         { label: 'إرسال العقد', event: 'send-contract' },
         { label: 'رفض', event: 'refuse', danger: true },
       ]
     case 'refused':
       return [
+        detailsAction,
         { label: 'إعادة للمتقدمين', event: 'restore' },
         { label: 'حذف', event: 'delete', danger: true },
       ]
     default:
-      return []
+      return [detailsAction]
   }
 });
 

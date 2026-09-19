@@ -77,6 +77,8 @@ const interviewDialogVisible = ref(false);
 const interviewTargetApplicants = ref([]);
 const contractDialogVisible = ref(false);
 const contractTargetApplicants = ref([]);
+const applicantModalOpen = ref(false);
+const selectedApplicant = ref(null);
 
 const loadApplicants = async ({ initial = false } = {}) => {
   if (initial) applicantsLoading.value = true;
@@ -252,6 +254,11 @@ const submitInterview = async (payload) => {
 const openContract = (apps) => {
   contractTargetApplicants.value = apps;
   contractDialogVisible.value = true;
+};
+
+const openApplicantDetail = (app) => {
+  selectedApplicant.value = { ...app, jobTitle: jobDetails.value?.title };
+  applicantModalOpen.value = true;
 };
 
 const submitContract = async (payload) => {
@@ -439,6 +446,7 @@ onMounted(() => loadApplicants({ initial: true }));
                     @shortlist="moveToShortlist(applicant)"
                     @interview="openInterview(applicant)"
                     @refuse="bulkActionFor(applicant, 'refuse')"
+                    @view-details="openApplicantDetail(applicant)"
                   />
                 </div>
               </template>
@@ -452,6 +460,7 @@ onMounted(() => loadApplicants({ initial: true }));
                   @interview="openInterview"
                   @schedule-interview="openInterview"
                   @bulk-refuse="confirmBulkRefuseFromChild"
+                  @view-details="openApplicantDetail"
                 />
               </template>
               <template #interviews>
@@ -464,6 +473,7 @@ onMounted(() => loadApplicants({ initial: true }));
                   @interview="openInterview"
                   @send-contract="openContract"
                   @bulk-refuse="confirmBulkRefuseFromChild"
+                  @view-details="openApplicantDetail"
                 />
               </template>
               <template #contract>
@@ -479,6 +489,7 @@ onMounted(() => loadApplicants({ initial: true }));
                     badge-text="تم إرسال العقد"
                     badge-style="bg-badge-green/10 text-badge-green"
                     card-style=" bg-[#fff]"
+                    @view-details="openApplicantDetail(applicant)"
                   />
                 </div>
               </template>
@@ -495,6 +506,7 @@ onMounted(() => loadApplicants({ initial: true }));
                     badge-text="تم قبول العقد"
                     badge-style="bg-success/10 text-success"
                     card-style=" bg-[#fff]"
+                    @view-details="openApplicantDetail(applicant)"
                   />
                 </div>
               </template>
@@ -513,6 +525,7 @@ onMounted(() => loadApplicants({ initial: true }));
                     card-style=" bg-[#fff]"
                     @delete="deleteApplicant(applicant)"
                     @restore="bulkActionFor(applicant, 'restore')"
+                    @view-details="openApplicantDetail(applicant)"
                   />
                 </div>
               </template>
@@ -543,6 +556,10 @@ onMounted(() => loadApplicants({ initial: true }));
       confirm-text="رفض"
       :danger="true"
       @confirm="executeBulkRefuse"
+    />
+    <ApplicantDetailModal
+      v-model="applicantModalOpen"
+      :applicant="selectedApplicant"
     />
   </div>
 </template>

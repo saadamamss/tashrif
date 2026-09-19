@@ -59,6 +59,7 @@
           @shortlist="emit('shortlist', applicant)"
           @interview="emit('interview', applicant)"
           @refuse="emit('bulk-refuse', [applicant])"
+          @view-details="emit('view-details', applicant)"
         />
       </div>
     </div>
@@ -76,5 +77,5 @@ const props = defineProps(["shorList", "jobTitle", "displayMethod"]);
 const selectedApplicants = ref([]);
 const showInterviewDialog = ref(false);
 // const showShecdualDialog = ref(false); // unused — feature not implemented
-const emit = defineEmits(['shortlist', 'interview', 'schedule-interview', 'bulk-refuse']);
+const emit = defineEmits(['shortlist', 'interview', 'schedule-interview', 'bulk-refuse', 'view-details']);
 </script>

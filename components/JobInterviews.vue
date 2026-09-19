@@ -38,6 +38,7 @@
         @interview="emit('interview', applicant)"
         @send-contract="emit('send-contract', [applicant])"
         @refuse="emit('bulk-refuse', [applicant])"
+        @view-details="emit('view-details', applicant)"
       />
     </div>
   </div>
@@ -47,5 +48,5 @@
 /** @type {{ interviewList: Array<import('~/types/application').Application>, jobTitle?: string, displayMethod: string }} */
 const props = defineProps(["interviewList", "jobTitle", "displayMethod"]);
 const selectedApplicants = ref([]);
-const emit = defineEmits(['send-contract', 'shortlist', 'interview', 'bulk-refuse']);
+const emit = defineEmits(['send-contract', 'shortlist', 'interview', 'bulk-refuse', 'view-details']);
 </script>
