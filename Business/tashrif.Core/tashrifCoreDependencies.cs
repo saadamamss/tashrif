@@ -22,6 +22,7 @@ public static class tashrifCoreDependencies
         services.AddScoped<IAdminService, adminService>();
         services.AddScoped<IstatusHistoryService, statusHistoryService>();
         services.AddScoped<IanalyticsService, analyticsService>();
+        services.AddSingleton<IClock, SystemClock>();
         return services;
     }
 }
