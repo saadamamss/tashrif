@@ -43,7 +43,8 @@ public class TestDatabaseFixture : IDisposable
         var db = scope.ServiceProvider.GetRequiredService<tashrifDBContext>();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var fileStorage = scope.ServiceProvider.GetRequiredService<IFileStorageService>();
-        var service = new contractsService(uow, fileStorage);
+        var statusHistory = scope.ServiceProvider.GetRequiredService<IstatusHistoryService>();
+        var service = new contractsService(uow, fileStorage, statusHistory);
         return (service, db, scope);
     }
 

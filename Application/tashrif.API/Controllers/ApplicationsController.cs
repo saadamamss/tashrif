@@ -12,11 +12,13 @@ namespace tashrif.API.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly IapplicationsService _applicationsService;
+    private readonly IstatusHistoryService _statusHistoryService;
     private readonly IBackgroundTaskQueue _taskQueue;
 
-    public ApplicationsController(IapplicationsService applicationsService, IBackgroundTaskQueue taskQueue)
+    public ApplicationsController(IapplicationsService applicationsService, IstatusHistoryService statusHistoryService, IBackgroundTaskQueue taskQueue)
     {
         _applicationsService = applicationsService;
+        _statusHistoryService = statusHistoryService;
         _taskQueue = taskQueue;
     }
 
@@ -320,6 +322,26 @@ public class ApplicationsController : ControllerBase
         {
             await _applicationsService.DeleteAsync(id, userId);
             return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { message = "الطلب غير موجود" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
+    [Authorize]
+    [HttpGet("{id}/status-history")]
+    public async Task<ActionResult<List<StatusHistoryDto>>> GetStatusHistory(long id)
+    {
+        try
+        {
+            var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var result = await _statusHistoryService.GetHistoryAsync(id, userId);
+            return Ok(result);
         }
         catch (KeyNotFoundException)
         {

@@ -19,5 +19,6 @@ public interface IUnitOfWork
      Iaudit_logsRepository Audit_logsRepository { get; }
      InotificationsRepository NotificationsRepository { get; }
      ImessagesRepository MessagesRepository { get; }
+     Iapplication_status_historyRepository Application_status_historyRepository { get; }
      Task<int> SaveChangesAsync();
 }

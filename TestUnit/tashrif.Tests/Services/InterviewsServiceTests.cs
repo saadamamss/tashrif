@@ -9,6 +9,7 @@ public class InterviewsServiceTests
     private readonly Mock<IjobsRepository> _jobsRepoMock;
     private readonly Mock<IinterviewsRepository> _interviewsRepoMock;
     private readonly Mock<IusersRepository> _usersRepoMock;
+    private readonly Mock<IstatusHistoryService> _statusHistoryMock;
     private readonly interviewsService _sut;
 
     public InterviewsServiceTests()
@@ -24,7 +25,11 @@ public class InterviewsServiceTests
         _uowMock.SetupGet(u => u.InterviewsRepository).Returns(_interviewsRepoMock.Object);
         _uowMock.SetupGet(u => u.UsersRepository).Returns(_usersRepoMock.Object);
 
-        _sut = new interviewsService(_uowMock.Object);
+        _statusHistoryMock = new Mock<IstatusHistoryService>();
+        _statusHistoryMock.Setup(r => r.RecordAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<long>()))
+            .Returns(Task.CompletedTask);
+
+        _sut = new interviewsService(_uowMock.Object, _statusHistoryMock.Object);
     }
 
     [Fact]

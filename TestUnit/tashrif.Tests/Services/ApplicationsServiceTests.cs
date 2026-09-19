@@ -11,6 +11,7 @@ public class ApplicationsServiceTests
     private readonly Mock<Ijob_benefitsRepository> _benefitsRepoMock;
     private readonly Mock<Ijob_conditionsRepository> _conditionsRepoMock;
     private readonly Mock<Ijob_responsibilitiesRepository> _responsibilitiesRepoMock;
+    private readonly Mock<IstatusHistoryService> _statusHistoryMock;
     private readonly applicationsService _sut;
 
     public ApplicationsServiceTests()
@@ -45,7 +46,11 @@ public class ApplicationsServiceTests
         _qualsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { new qualifications { Id = 1, type = "بكالوريوس", user_id = 1 } }.AsQueryable().BuildMock());
 
-        _sut = new applicationsService(_uowMock.Object);
+        _statusHistoryMock = new Mock<IstatusHistoryService>();
+        _statusHistoryMock.Setup(r => r.RecordAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<long>()))
+            .Returns(Task.CompletedTask);
+
+        _sut = new applicationsService(_uowMock.Object, _statusHistoryMock.Object);
     }
 
     [Fact]

@@ -2,9 +2,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace tashrif.Core;
 
-public class interviewsService(IUnitOfWork unitOfWork) : IinterviewsService
+public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService statusHistoryService) : IinterviewsService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IstatusHistoryService _statusHistory = statusHistoryService;
 
     public async Task<PaginationResultDto<InterviewResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType)
     {
@@ -92,10 +93,14 @@ public class interviewsService(IUnitOfWork unitOfWork) : IinterviewsService
 
         await _unitOfWork.InterviewsRepository.AddAsync(interview);
 
+        var oldStatus = app.status;
         app.status = "interview";
         app.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.ApplicationsRepository.Update(app);
         await _unitOfWork.SaveChangesAsync();
+
+        // Record status history
+        await _statusHistory.RecordAsync(dto.ApplicationId, oldStatus, "interview", entityId);
 
         return new InterviewResponseDto
         {

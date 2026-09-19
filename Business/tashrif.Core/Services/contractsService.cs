@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace tashrif.Core;
 
-public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileStorage) : IcontractsService
+public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, IstatusHistoryService statusHistoryService) : IcontractsService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IFileStorageService _fileStorage = fileStorage;
+    private readonly IstatusHistoryService _statusHistory = statusHistoryService;
 
     public async Task<PaginationResultDto<ContractResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType)
     {
@@ -107,10 +108,14 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
 
         // Use ExecuteUpdateAsync to bypass change tracker — avoids duplicate tracking
         // when AsNoTracking entities are re-queried after SaveChangesAsync auto-tracks them
+        var oldStatus = app.status;
         var now = DateTime.UtcNow;
         await appQuery.Where(a => a.Id == dto.ApplicationId).ExecuteUpdateAsync(
             a => a.SetProperty(x => x.status, "contract_sent")
                   .SetProperty(x => x.UpdatedAt, now));
+
+        // Record status history
+        await _statusHistory.RecordAsync(dto.ApplicationId, oldStatus, "contract_sent", entityId);
 
         var interviewsQuery = await _unitOfWork.InterviewsRepository.GetQueryable();
         var pendingInterviews = await interviewsQuery
@@ -174,11 +179,19 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
         contract.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.ContractsRepository.Update(contract);
 
+        // Load application to capture old status before update
+        var appQueryForSign = await _unitOfWork.ApplicationsRepository.GetQueryable();
+        var appForSign = await appQueryForSign.FirstOrDefaultAsync(a => a.Id == contract.application_id && !a.IsDeleted);
+        var oldStatusForSign = appForSign?.status;
+
         var now = DateTime.UtcNow;
         var appQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
         await appQuery.Where(a => a.Id == contract.application_id && !a.IsDeleted).ExecuteUpdateAsync(
             a => a.SetProperty(x => x.status, "accepted")
                   .SetProperty(x => x.UpdatedAt, now));
+
+        // Record status history
+        await _statusHistory.RecordAsync(contract.application_id, oldStatusForSign, "accepted", userId);
 
         await _unitOfWork.SaveChangesAsync();
 

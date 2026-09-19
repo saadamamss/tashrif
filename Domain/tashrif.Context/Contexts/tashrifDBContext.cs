@@ -34,27 +34,39 @@ public class tashrifDBContext : DbContext
    public DbSet<audit_logs> audit_logs => Set<audit_logs>();
    public DbSet<notifications> notifications => Set<notifications>();
    public DbSet<messages> messages => Set<messages>();
+   public DbSet<application_status_history> application_status_history => Set<application_status_history>();
 
    #endregion
 
    #region OnModelCreating
 
-   protected override void OnModelCreating(ModelBuilder builder)
-   {
-       #region Global Filter
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        #region Global Filter
 
-       foreach (var entityType in builder.Model.GetEntityTypes())
-       {
-           if (typeof(ISharedColumns).IsAssignableFrom(entityType.ClrType) && entityType.BaseType == null)
-           {
-               builder.Entity(entityType.ClrType).HasQueryFilter(CreateIsDeletedFilter(entityType.ClrType));
-           }
-       }
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            if (typeof(ISharedColumns).IsAssignableFrom(entityType.ClrType) && entityType.BaseType == null)
+            {
+                builder.Entity(entityType.ClrType).HasQueryFilter(CreateIsDeletedFilter(entityType.ClrType));
+            }
+        }
 
-       #endregion
+        #endregion
 
-       base.OnModelCreating(builder);
-   }
+        #region FK Behavior
+
+        // changed_by should NOT cascade — deleting a user must not erase audit history
+        builder.Entity<application_status_history>()
+            .HasOne(h => h.changed_by_Entity)
+            .WithMany()
+            .HasForeignKey(h => h.changed_by)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        #endregion
+
+        base.OnModelCreating(builder);
+    }
 
    #endregion
 

@@ -20,6 +20,7 @@ public static class tashrifCoreDependencies
         services.AddScoped<INotificationsService, NotificationsService>();
         services.AddScoped<IMessagesService, MessagesService>();
         services.AddScoped<IAdminService, adminService>();
+        services.AddScoped<IstatusHistoryService, statusHistoryService>();
         return services;
     }
 }

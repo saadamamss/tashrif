@@ -2,9 +2,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace tashrif.Core;
 
-public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
+public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService statusHistoryService) : IapplicationsService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IstatusHistoryService _statusHistory = statusHistoryService;
 
     public async Task<PaginationResultDto<ApplicationResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType, string? status, string? search = null)
     {
@@ -121,6 +122,9 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
         await _unitOfWork.ApplicationsRepository.AddAsync(app);
         await _unitOfWork.SaveChangesAsync();
 
+        // Record initial status history
+        await _statusHistory.RecordAsync(app.Id, null, "new", userId);
+
         var userQuery = await _unitOfWork.UsersRepository.GetQueryable();
         var user = await userQuery.FirstOrDefaultAsync(u => u.Id == userId);
         var jobQuery = await _unitOfWork.JobsRepository.GetQueryable();
@@ -161,10 +165,14 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
         if (job.entity_id != userId)
             throw new UnauthorizedAccessException("لا تملك صلاحية تعديل هذا الطلب");
 
+        var oldStatus = app.status;
         app.status = status;
         app.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.ApplicationsRepository.Update(app);
         await _unitOfWork.SaveChangesAsync();
+
+        // Record status history
+        await _statusHistory.RecordAsync(app.Id, oldStatus, status, userId);
 
         var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
 
@@ -201,10 +209,14 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
         if (!withdrawableStatuses.Contains(app.status))
             throw new InvalidOperationException("لا يمكن سحب الطلب بعد مرحلة العقد");
 
+        var oldStatus = app.status;
         app.status = "withdrawn";
         app.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.ApplicationsRepository.Update(app);
         await _unitOfWork.SaveChangesAsync();
+
+        // Record status history
+        await _statusHistory.RecordAsync(app.Id, oldStatus, "withdrawn", userId);
 
         var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
 
@@ -314,6 +326,12 @@ public class applicationsService(IUnitOfWork unitOfWork) : IapplicationsService
                 .ExecuteUpdateAsync(a => a
                     .SetProperty(x => x.status, targetStatus)
                     .SetProperty(x => x.UpdatedAt, now));
+
+            // Record status history for all successful applications in one save
+            var historyEntries = results.Where(r => r.Success)
+                .Select(r => (r.ApplicationId, r.OldStatus, NewStatus: targetStatus))
+                .ToList();
+            await _statusHistory.RecordBatchAsync(historyEntries, entityId);
         }
 
         return results;
