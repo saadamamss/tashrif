@@ -1,5 +1,6 @@
 <script setup>
 import CustomSelect from "~/components/elements/CustomSelect.vue";
+import { auditLabels, auditBadgeClasses } from "~/services/auditLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -32,22 +33,6 @@ const entityTypeOptions = [
   { label: "المقابلات", value: "interviews" },
   { label: "المستخدمون", value: "users" },
 ];
-
-const actionLabel = {
-  create: "إنشاء",
-  update: "تحديث",
-  delete: "حذف",
-  status_change: "تغيير حالة",
-  login: "تسجيل دخول",
-};
-
-const actionBadgeClass = {
-  create: "bg-green-100 text-green-700",
-  update: "bg-amber-100 text-amber-700",
-  status_change: "bg-amber-100 text-amber-700",
-  delete: "bg-red-100 text-red-700",
-  login: "bg-blue-100 text-blue-700",
-};
 
 const formatDate = (date) => {
   if (!date) return "-";
@@ -178,9 +163,9 @@ const retry = () => fetchLogs();
                 <td class="py-3 px-2">
                   <span
                     class="text-xs px-3 py-1 rounded-full whitespace-nowrap"
-                    :class="actionBadgeClass[log.action] || 'bg-gray-100 text-gray-700'"
+                    :class="auditBadgeClasses[log.action] || 'bg-gray-100 text-gray-700'"
                   >
-                    {{ actionLabel[log.action] || log.action }}
+                    {{ auditLabels[log.action] || log.action }}
                   </span>
                 </td>
                 <td class="py-3 px-2 text-muted whitespace-nowrap">
