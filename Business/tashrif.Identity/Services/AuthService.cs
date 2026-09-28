@@ -201,7 +201,8 @@ public class AuthService : IAuthService
     public async Task<UserDto> GetCurrentUserAsync(long userId)
     {
         var user = await _userRepo.GetByIdAsync(userId);
-        if (user == null)
+        // GetByIdAsync uses FindAsync, which bypasses the soft-delete filter — see known-issues.md
+        if (user == null || user.IsDeleted)
             throw new BadHttpRequestException("المستخدم غير موجود", 404);
 
         return MapToUserDto(user);
@@ -210,7 +211,8 @@ public class AuthService : IAuthService
     public async Task<UserDto> ChangePasswordAsync(long userId, ChangePasswordDto dto)
     {
         var user = await _userRepo.GetByIdAsync(userId);
-        if (user == null)
+        // Guard must precede BCrypt.Verify + Update() so a deactivated user can cause no mutation.
+        if (user == null || user.IsDeleted)
             throw new BadHttpRequestException("المستخدم غير موجود", 404);
 
         if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.password_hash))

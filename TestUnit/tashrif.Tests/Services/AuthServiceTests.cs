@@ -135,4 +135,84 @@ public class AuthServiceTests
 
         await act.Should().ThrowAsync<BadHttpRequestException>().WithMessage("*غير صحيحة*");
     }
+
+    // ---- Spec 02 (phase3-5-hardening): soft-delete guards on /auth/me + change-password ----
+    // GetByIdAsync uses FindAsync, which bypasses the global soft-delete filter; the service
+    // must guard on IsDeleted itself (mirrors RefreshTokenAsync's existing guard).
+
+    [Fact]
+    public async Task GetCurrentUser_DeactivatedUser_ThrowsNotFound()
+    {
+        var user = new users { name = "Deactivated User", IsDeleted = true };
+        _userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<object>())).ReturnsAsync(user);
+
+        var act = () => _sut.GetCurrentUserAsync(9);
+
+        var ex = (await act.Should().ThrowAsync<BadHttpRequestException>()).Which;
+        ex.Message.Should().Be("المستخدم غير موجود");
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_ActiveUser_ReturnsUserDto()
+    {
+        var user = new users
+        {
+            name = "Test User",
+            email = "t@t.com",
+            type = "individual",
+            national_id = "1234567890",
+            gender = "male",
+            nationality = "سعودي",
+            IsDeleted = false
+        };
+        _userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<object>())).ReturnsAsync(user);
+
+        var result = await _sut.GetCurrentUserAsync(9);
+
+        result.Should().NotBeNull();
+        result.Name.Should().Be("Test User");
+        result.Type.Should().Be("individual");
+    }
+
+    [Fact]
+    public async Task ChangePassword_DeactivatedUser_ThrowsAndWritesNothing()
+    {
+        var user = new users
+        {
+            password_hash = BCrypt.Net.BCrypt.HashPassword("current-pass"),
+            IsDeleted = true
+        };
+        _userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<object>())).ReturnsAsync(user);
+
+        var act = () => _sut.ChangePasswordAsync(9, new ChangePasswordDto
+        {
+            CurrentPassword = "current-pass",
+            NewPassword = "new-password-123"
+        });
+
+        var ex = (await act.Should().ThrowAsync<BadHttpRequestException>()).Which;
+        ex.Message.Should().Be("المستخدم غير موجود");
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+        _userRepoMock.Verify(r => r.Update(It.IsAny<users>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangePassword_ActiveUser_WrongCurrentPassword_Throws401()
+    {
+        var user = new users
+        {
+            password_hash = BCrypt.Net.BCrypt.HashPassword("correct-pass"),
+            IsDeleted = false
+        };
+        _userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<object>())).ReturnsAsync(user);
+
+        var act = () => _sut.ChangePasswordAsync(9, new ChangePasswordDto
+        {
+            CurrentPassword = "wrong-pass",
+            NewPassword = "new-password-123"
+        });
+
+        await act.Should().ThrowAsync<BadHttpRequestException>().WithMessage("*الحالية غير صحيحة*");
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
 }
