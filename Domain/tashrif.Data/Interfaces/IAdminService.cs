@@ -16,4 +16,6 @@ public interface IAdminService
     Task<PaginationResultDto<AdminAuditLogDto>> GetAuditLogsAsync(AdminAuditLogFilterDto filter);
     Task<PaginationResultDto<JobResponseDto>> GetAllJobsAsync(PaginationDto pagination, string? status, string? search);
     Task DeactivateJobAsync(long id);
+    /// <summary>Reads a job's current status (for audit old_value — read BEFORE DeactivateJobAsync mutates it).</summary>
+    Task<string?> GetJobStatusAsync(long id);
 }

@@ -364,4 +364,13 @@ public class adminService(IUnitOfWork unitOfWork, IFileStorageService fileStorag
                 .SetProperty(x => x.status, "closed")
                 .SetProperty(x => x.UpdatedAt, now));
     }
+
+    public async Task<string?> GetJobStatusAsync(long id)
+    {
+        var query = await _unitOfWork.JobsRepository.GetQueryable();
+        return await query
+            .Where(j => j.Id == id)
+            .Select(j => j.status)
+            .FirstOrDefaultAsync();
+    }
 }

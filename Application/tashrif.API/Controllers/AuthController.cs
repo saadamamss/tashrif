@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
+using tashrif.Data.Constants;
 using tashrif.Data.DTOs.Auth;
 using tashrif.Email.Interfaces;
 using tashrif.Email.Templates;
@@ -14,13 +16,31 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IEmailService _emailService;
+    private readonly IAuditService _auditService;
     private const string RefreshCookieName = "refresh_token";
     private const string AccessCookieName = "access_token";
 
-    public AuthController(IAuthService authService, IEmailService emailService)
+    public AuthController(IAuthService authService, IEmailService emailService, IAuditService auditService)
     {
         _authService = authService;
         _emailService = emailService;
+        _auditService = auditService;
+    }
+
+    /// <summary>Audit writes must never fail the user's operation — log &amp; continue.</summary>
+    private async Task TryLog(long userId, string action, string entityType, long entityId,
+        string? oldValue = null, string? newValue = null)
+    {
+        try
+        {
+            await _auditService.LogAsync(userId, action, entityType, entityId, oldValue, newValue,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString());
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[audit] failed to write {action} for user {userId}: {ex.Message}");
+        }
     }
 
     [EnableRateLimiting("login")]
@@ -30,6 +50,7 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(dto);
         SetAccessTokenCookie(result.Token);
         SetRefreshCookie(result.RefreshToken);
+        await TryLog(result.User.Id, AuditActions.AuthLogin, "users", result.User.Id);
         return Ok(result.User);
     }
 
@@ -140,8 +161,10 @@ public class AuthController : ControllerBase
     [HttpPut("change-password")]
     public async Task<ActionResult<UserDto>> ChangePassword([FromBody] ChangePasswordDto dto)
     {
-        var userId = long.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var user = await _authService.ChangePasswordAsync(userId, dto);
+        // old_value/new_value stay null — never write password material to the audit trail.
+        await TryLog(userId, AuditActions.AuthPasswordChanged, "users", userId);
         return Ok(user);
     }
 

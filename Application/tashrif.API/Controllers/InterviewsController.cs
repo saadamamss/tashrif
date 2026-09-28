@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using tashrif.API.Services;
+using tashrif.Data.Constants;
 using tashrif.Email.Interfaces;
 using tashrif.Email.Templates;
 
@@ -15,12 +16,30 @@ public class InterviewsController : ControllerBase
     private readonly IinterviewsService _interviewsService;
     private readonly IEmailService _emailService;
     private readonly IBackgroundTaskQueue _taskQueue;
+    private readonly IAuditService _auditService;
 
-    public InterviewsController(IinterviewsService interviewsService, IEmailService emailService, IBackgroundTaskQueue taskQueue)
+    public InterviewsController(IinterviewsService interviewsService, IEmailService emailService, IBackgroundTaskQueue taskQueue, IAuditService auditService)
     {
         _interviewsService = interviewsService;
         _emailService = emailService;
         _taskQueue = taskQueue;
+        _auditService = auditService;
+    }
+
+    /// <summary>Audit writes must never fail the user's operation — log &amp; continue.</summary>
+    private async Task TryLog(long userId, string action, string entityType, long entityId,
+        string? oldValue = null, string? newValue = null)
+    {
+        try
+        {
+            await _auditService.LogAsync(userId, action, entityType, entityId, oldValue, newValue,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString());
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[audit] failed to write {action} for user {userId}: {ex.Message}");
+        }
     }
 
     [HttpGet]
@@ -38,6 +57,7 @@ public class InterviewsController : ControllerBase
     {
         var entityId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var result = await _interviewsService.ScheduleAsync(dto, entityId);
+        await TryLog(entityId, AuditActions.InterviewScheduled, "interviews", result.Id, null, "scheduled");
 
         _taskQueue.Enqueue(async scope =>
         {

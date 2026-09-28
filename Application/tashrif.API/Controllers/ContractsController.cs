@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using tashrif.API.Services;
+using tashrif.Data.Constants;
 using tashrif.Email.Interfaces;
 using tashrif.Email.Templates;
 
@@ -15,12 +16,30 @@ public class ContractsController : ControllerBase
     private readonly IcontractsService _contractsService;
     private readonly IEmailService _emailService;
     private readonly IBackgroundTaskQueue _taskQueue;
+    private readonly IAuditService _auditService;
 
-    public ContractsController(IcontractsService contractsService, IEmailService emailService, IBackgroundTaskQueue taskQueue)
+    public ContractsController(IcontractsService contractsService, IEmailService emailService, IBackgroundTaskQueue taskQueue, IAuditService auditService)
     {
         _contractsService = contractsService;
         _emailService = emailService;
         _taskQueue = taskQueue;
+        _auditService = auditService;
+    }
+
+    /// <summary>Audit writes must never fail the user's operation — log &amp; continue.</summary>
+    private async Task TryLog(long userId, string action, string entityType, long entityId,
+        string? oldValue = null, string? newValue = null)
+    {
+        try
+        {
+            await _auditService.LogAsync(userId, action, entityType, entityId, oldValue, newValue,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString());
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[audit] failed to write {action} for user {userId}: {ex.Message}");
+        }
     }
 
     [HttpGet]
@@ -38,6 +57,7 @@ public class ContractsController : ControllerBase
     {
         var entityId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var result = await _contractsService.SendAsync(dto, entityId);
+        await TryLog(entityId, AuditActions.ContractSent, "contracts", result.Id, null, "sent");
 
         _taskQueue.Enqueue(async scope =>
         {
@@ -74,6 +94,7 @@ public class ContractsController : ControllerBase
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var result = await _contractsService.SignAsync(id, userId);
+        await TryLog(userId, AuditActions.ContractSigned, "contracts", result.Id, "sent", "signed");
 
         _taskQueue.Enqueue(async scope =>
         {
