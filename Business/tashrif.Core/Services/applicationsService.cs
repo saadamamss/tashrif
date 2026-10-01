@@ -91,6 +91,15 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
 
     public async Task<ApplicationResponseDto> ApplyAsync(ApplyJobDto dto, long userId)
     {
+        // Load the job once, up front: it must exist (not soft-deleted) and be open for applications.
+        // Without the status guard, apply-to-closed jobs succeeds (QA bug 2026-10-01, see ISSUES.md).
+        var applyJobsQuery = await _unitOfWork.JobsRepository.GetQueryable();
+        var applyJob = await applyJobsQuery
+            .FirstOrDefaultAsync(j => j.Id == dto.JobId && !j.IsDeleted)
+            ?? throw new KeyNotFoundException("الوظيفة غير موجودة");
+        if (applyJob.status != "active")
+            throw new InvalidOperationException("لا يمكن التقديم على وظيفة غير مفتوحة");
+
         var existingQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();
         var existing = await existingQuery
             .FirstOrDefaultAsync(a => a.job_id == dto.JobId && a.user_id == userId && !a.IsDeleted && a.status != "withdrawn");
@@ -127,8 +136,6 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
 
         var userQuery = await _unitOfWork.UsersRepository.GetQueryable();
         var user = await userQuery.FirstOrDefaultAsync(u => u.Id == userId);
-        var jobQuery = await _unitOfWork.JobsRepository.GetQueryable();
-        var job = await jobQuery.FirstOrDefaultAsync(j => j.Id == dto.JobId);
 
         return new ApplicationResponseDto
         {
@@ -141,7 +148,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             Qualification = app.qualification,
             Status = app.status,
             CreatedAt = app.CreatedAt,
-            Job = await BuildJobAsync(app.job_id),
+            Job = await BuildJobAsync(applyJob),
         };
     }
 
@@ -371,8 +378,17 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             .Include(j => j.entity_Entity)
             .FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
         if (entity == null) return null;
+        return await BuildJobAsync(entity);
+    }
 
+    private Task<JobResponseDto?> BuildJobAsync(jobs entity)
+    {
         var dto = MapJob(entity);
+        return BuildJobListsAsync(entity.Id, dto);
+    }
+
+    private async Task<JobResponseDto?> BuildJobListsAsync(long jobId, JobResponseDto dto)
+    {
         var (benefits, conditions, responsibilities) = await GetJobListsAsync(new[] { jobId });
         dto.Benefits = benefits.GetValueOrDefault(jobId, new List<string>());
         dto.Conditions = conditions.GetValueOrDefault(jobId, new List<string>());

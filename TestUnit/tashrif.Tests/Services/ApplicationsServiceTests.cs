@@ -62,7 +62,7 @@ public class ApplicationsServiceTests
         _usersRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { new users { Id = 1, name = "User" } }.AsQueryable().BuildMock());
         _jobsRepoMock.Setup(r => r.GetQueryable())
-            .ReturnsAsync(new[] { new jobs { Id = 1 } }.AsQueryable().BuildMock());
+            .ReturnsAsync(new[] { new jobs { Id = 1, status = "active" } }.AsQueryable().BuildMock());
         _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         var dto = new ApplyJobDto
@@ -85,6 +85,8 @@ public class ApplicationsServiceTests
         var existingApp = new applications { job_id = 1, user_id = 1 };
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { existingApp }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, status = "active" } }.AsQueryable().BuildMock());
 
         var dto = new ApplyJobDto { JobId = 1 };
 
@@ -92,6 +94,36 @@ public class ApplicationsServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*مسبقاً*");
+    }
+
+    [Fact]
+    public async Task Apply_ClosedJob_ThrowsInvalidOperationException()
+    {
+        // QA bug 2026-10-01: apply succeeded on a moderated (closed) job — the status guard was missing.
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 2, status = "closed" } }.AsQueryable().BuildMock());
+
+        var dto = new ApplyJobDto { JobId = 2, QualificationId = 1 };
+
+        var act = () => _sut.ApplyAsync(dto, 1);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*غير مفتوحة*");
+    }
+
+    [Fact]
+    public async Task Apply_MissingJob_ThrowsKeyNotFound()
+    {
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
+
+        var dto = new ApplyJobDto { JobId = 99, QualificationId = 1 };
+
+        var act = () => _sut.ApplyAsync(dto, 1);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
     [Fact]
