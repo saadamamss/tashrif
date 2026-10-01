@@ -257,13 +257,24 @@ const handleSubmit = () => {
               <TextInput
                 name="nationalId"
                 id="nationalId"
-                label="رقم السجل التجاري"
-                placeholder="رقم السجل التجاري"
+                label="الرقم الوطني"
+                placeholder="الرقم الوطني"
                 v-model="formData.nationalId"
                 :error="errors.nationalId"
                 required
               />
             </div>
+          </div>
+          <div class="mb-6">
+            <TextInput
+              name="commercialReg"
+              id="commercialReg"
+              label="رقم السجل التجاري"
+              placeholder="رقم السجل التجاري"
+              v-model="formData.commercialReg"
+              :error="errors.commercialReg"
+              required
+            />
           </div>
           <div class="w-full flex gap-4 md:gap-6 mb-6">
             <div class="flex-1">
