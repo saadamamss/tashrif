@@ -4,6 +4,7 @@ export interface Entity {
   email: string
   phone: string
   type: 'entity'
+  nationalId?: string
   companyField?: string
   companySize?: string
   commercialReg?: string

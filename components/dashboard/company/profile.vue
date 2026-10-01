@@ -22,7 +22,7 @@ import { buildImageUrl } from "~/services/help";
 
 const loading = ref(false);
 const editProfile = ref(false);
-const companyData = ref({ name: '', email: '', phone: '', companyField: '', sector: '', companySize: '', commercialReg: '', country: '', city: '', zone: '', district: '', street: '', zipcode: '', website: '', facebookUrl: '', twitterUrl: '', youtubeUrl: '', logoUrl: '' })
+const companyData = ref({ name: '', email: '', phone: '', nationalId: '', companyField: '', sector: '', companySize: '', commercialReg: '', country: '', city: '', zone: '', district: '', street: '', zipcode: '', website: '', facebookUrl: '', twitterUrl: '', youtubeUrl: '', logoUrl: '' })
 const contactPerson = ref(null)
 const stats = ref({ totalJobs: 0, activeJobs: 0, totalApplicants: 0 })
 const profileCompletion = ref(0)
@@ -75,6 +75,11 @@ const userInformation = computed(() => {
       value: companyData.value.companySize,
       key: "حجم الشركة",
       icon: Zone,
+    },
+    nationalId: {
+      value: companyData.value.nationalId,
+      key: " الرقم الوطني",
+      icon: Identity,
     },
     commercialReg: {
       value: companyData.value.commercialReg,
