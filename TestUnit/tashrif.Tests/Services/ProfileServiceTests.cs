@@ -100,6 +100,39 @@ public class ProfileServiceTests
     }
 
     [Fact]
+    public async Task GetEntityProfile_ReturnsNationalIdFromUser()
+    {
+        var uowMock = new Mock<IUnitOfWork>();
+        var profilesRepoMock = new Mock<Ientity_profilesRepository>();
+        var usersRepoMock = new Mock<IusersRepository>();
+        var contactsRepoMock = new Mock<Icontact_personsRepository>();
+        var jobsRepoMock = new Mock<IjobsRepository>();
+        var appsRepoMock = new Mock<IapplicationsRepository>();
+
+        var user = new users { Id = 1, national_id = "7009988776", name = "شركة اختبار", email = "e@x.com" };
+        var profile = new entity_profiles { Id = 4, user_id = 1, commercial_reg = "1098765432" };
+
+        uowMock.SetupGet(u => u.UsersRepository).Returns(usersRepoMock.Object);
+        uowMock.SetupGet(u => u.Entity_profilesRepository).Returns(profilesRepoMock.Object);
+        uowMock.SetupGet(u => u.Contact_personsRepository).Returns(contactsRepoMock.Object);
+        uowMock.SetupGet(u => u.JobsRepository).Returns(jobsRepoMock.Object);
+        uowMock.SetupGet(u => u.ApplicationsRepository).Returns(appsRepoMock.Object);
+
+        usersRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new[] { user }.AsQueryable().BuildMock());
+        profilesRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new[] { profile }.AsQueryable().BuildMock());
+        contactsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<contact_persons>().AsQueryable().BuildMock());
+        jobsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
+        appsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+
+        var service = new entity_profilesService(uowMock.Object);
+        var result = await service.GetByUserIdAsync(1);
+
+        result.Should().NotBeNull();
+        result.NationalId.Should().Be("7009988776");
+        result.CommercialReg.Should().Be("1098765432");
+    }
+
+    [Fact]
     public async Task UpdateIndividualProfile_AppliesUserAndProfileFields()
     {
         var uowMock = new Mock<IUnitOfWork>();

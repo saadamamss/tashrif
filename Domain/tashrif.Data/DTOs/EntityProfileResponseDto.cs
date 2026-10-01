@@ -7,6 +7,8 @@ public class EntityProfileResponseDto
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
+    // Login id (read-only) — from users.national_id; mirrors IndividualProfileResponseDto.NationalId.
+    public string? NationalId { get; set; }
     public string? CompanyField { get; set; }
     public string? CompanySize { get; set; }
     public string? CommercialReg { get; set; }

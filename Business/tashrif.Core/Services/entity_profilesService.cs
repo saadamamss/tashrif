@@ -27,6 +27,7 @@ public class entity_profilesService(IUnitOfWork unitOfWork) : Ientity_profilesSe
             Email = user.email,
             Phone = user.phone ?? "",
             Type = user.type,
+            NationalId = user.national_id,
             CompanyField = profile?.company_field,
             CompanySize = profile?.company_size,
             CommercialReg = profile?.commercial_reg,
