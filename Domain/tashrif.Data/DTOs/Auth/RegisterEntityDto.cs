@@ -71,4 +71,8 @@ public class RegisterEntityDto
     [Required(ErrorMessage = "الجنسية مطلوبة")]
     [MaxLength(100)]
     public string Nationality { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "رقم السجل التجاري مطلوب")]
+    [RegularExpression(@"^\d{10}$", ErrorMessage = "رقم السجل التجاري يجب أن يكون 10 أرقام")]
+    public string CommercialReg { get; set; } = string.Empty;
 }

@@ -128,7 +128,7 @@ public class AuthService : IAuthService
             company_field = dto.FieldName,
             sector = dto.Sector,
             company_size = "",
-            commercial_reg = "",
+            commercial_reg = dto.CommercialReg,
             country = dto.Country,
             city = "",
             zone = "",

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using tashrif.Data.Constants;
 using tashrif.Data.DTOs.Auth;
+using tashrif.Data.Validation;
 using tashrif.Email.Interfaces;
 using tashrif.Email.Templates;
 using tashrif.Identity.Interfaces;
@@ -71,6 +72,7 @@ public class AuthController : ControllerBase
                 CompanyLogo = Request.Form.Files.GetFile("companyLogo"),
                 CompanyName = Request.Form["companyName"]!,
                 NationalId = Request.Form["nationalId"]!,
+                CommercialReg = Request.Form["commercialReg"]!,
                 Password = Request.Form["password"]!,
                 FieldName = Request.Form["fieldName"]!,
                 Sector = Request.Form["sector"]!,
@@ -87,6 +89,9 @@ public class AuthController : ControllerBase
                 Role = Request.Form["role"]!,
                 Nationality = Request.Form["nationality"]!,
             };
+            // Phase 3.7: Register() builds the DTO by hand from Request.Form, so [ApiController]
+            // auto-validation never fires — enforce the DTO's DataAnnotations explicitly (both branches).
+            RequestValidator.Validate(dto);
             result = await _authService.RegisterEntityAsync(dto);
 
             _ = Task.Run(async () =>
@@ -110,6 +115,8 @@ public class AuthController : ControllerBase
                 Nationality = Request.Form["nationality"]!,
                 IdFile = Request.Form.Files.GetFile("idFile"),
             };
+            // Phase 3.7: enforce the DTO's DataAnnotations — hand-built DTOs skip [ApiController] validation.
+            RequestValidator.Validate(dto);
             result = await _authService.RegisterIndividualAsync(dto);
 
             _ = Task.Run(async () =>

@@ -13,6 +13,7 @@ global using tashrif.Data.Models;
 global using tashrif.Data.DTOs;
 global using tashrif.Data.DTOs.Auth;
 global using tashrif.Data.Interfaces;
+global using tashrif.Data.Validation;
 global using tashrif.Repository;
 global using tashrif.Core;
 global using tashrif.Identity.Interfaces;

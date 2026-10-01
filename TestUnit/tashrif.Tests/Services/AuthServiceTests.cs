@@ -90,6 +90,56 @@ public class AuthServiceTests
             .WithMessage("*مسجل مسبقاً*");
     }
 
+    // ---- Spec 01 (phase3-7): entity registration stores NationalId + CommercialReg separately ----
+
+    [Fact]
+    public async Task RegisterEntity_StoresNationalIdAndCommercialRegSeparately()
+    {
+        _userRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<users>().AsQueryable().BuildMock());
+        _userRepoMock.Setup(r => r.AddAsync(It.IsAny<users>())).Returns(Task.CompletedTask);
+        _entityProfileRepoMock.Setup(r => r.AddAsync(It.IsAny<entity_profiles>())).Returns(Task.CompletedTask);
+        _contactPersonRepoMock.Setup(r => r.AddAsync(It.IsAny<contact_persons>())).Returns(Task.CompletedTask);
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _fileStorageMock.Setup(f => f.SaveFileAsync(It.IsAny<IFormFile?>(), It.IsAny<string>()))
+            .ReturnsAsync("/uploads/logos/x.png");
+
+        entity_profiles? savedProfile = null;
+        _entityProfileRepoMock.Setup(r => r.AddAsync(It.IsAny<entity_profiles>()))
+            .Callback<entity_profiles>(p => savedProfile = p)
+            .Returns(Task.CompletedTask);
+
+        var dto = new RegisterEntityDto
+        {
+            CompanyName = "شركة اختبار",
+            NationalId = "7001234567",
+            CommercialReg = "1010123456",
+            Password = "TestPass123",
+            FieldName = "خدمات الحج",
+            Sector = "حج وعمرة",
+            Country = "السعودية",
+            Province = "مكة المكرمة",
+            CompanyDesc = "وصف تجريبي",
+            CompanyWebsite = "https://example.com",
+            Name = "مسؤول الاتصال",
+            Email = "c@example.com",
+            Phone = "+966500000002",
+            Role = "مدير",
+            Nationality = "سعودي",
+            CompanyLogo = new Mock<IFormFile>().Object,
+        };
+
+        var result = await _sut.RegisterEntityAsync(dto);
+
+        result.Should().NotBeNull();
+        result.User.NationalId.Should().Be("7001234567");
+        savedProfile.Should().NotBeNull();
+        savedProfile!.commercial_reg.Should().Be("1010123456");
+        savedProfile!.user_id.Should().Be(0);
+        _userRepoMock.Verify(r => r.AddAsync(It.Is<users>(u => u.national_id == "7001234567")), Times.Once);
+        _contactPersonRepoMock.Verify(r => r.AddAsync(It.IsAny<contact_persons>()), Times.Once);
+    }
+
+
     // ---- Spec 01 (phase3-6-remove-registration-cv): registration no longer accepts a CV ----
 
     [Fact]
