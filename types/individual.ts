@@ -16,7 +16,6 @@ export interface Individual {
   jobTitle?: string
   avatarUrl?: string
   profileCompletionPct?: number
-  cvFile?: string
   idFile?: string
   stats?: IndividualStats
 }
@@ -29,7 +28,6 @@ export interface IndividualFormData {
   email: string
   gender: string
   nationality: string
-  cvFile?: File
   idFile?: File
 }
 

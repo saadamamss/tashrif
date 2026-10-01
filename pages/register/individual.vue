@@ -47,7 +47,6 @@ const formData = ref({
   email: "",
   gender: "",
   nationality: "",
-  cvFile: null,
   idFile: null,
 });
 
@@ -75,7 +74,6 @@ const onSubmit = async (values) => {
     Object.entries(values).forEach(([key, val]) => {
       if (val) payload.append(key, val)
     })
-    if (formData.value.cvFile) payload.append('cvFile', formData.value.cvFile)
     if (formData.value.idFile) payload.append('idFile', formData.value.idFile)
     const { error } = await useApi().post('/auth/register', payload)
     if (error) {
@@ -254,24 +252,6 @@ const onSubmit = async (values) => {
               </div>
             </div>
             <div class="w-full flex flex-col md:flex-row gap-4 md:gap-6 mb-6">
-              <div class="flex-1">
-                <label for="cvFile" class="block text-sm mb-2">
-                  السيرة الذاتية
-                  <span class="text-gray-300 text-xs">(اختيارى)</span>
-                </label>
-                <Field
-                  name="cvFile"
-                  id="cvFile"
-                  label="السيرة الذاتية"
-                  v-model="formData.cvFile"
-                >
-                  <FileInput
-                    accept=".pdf,.doc,.docx"
-                    @change="handleFileChange('cvFile', $event)"
-                  />
-                </Field>
-              </div>
-
               <div class="flex-1">
                 <label for="idFile" class="block text-sm mb-2">
                   صورة الهوية الوطنية/الإقامة
