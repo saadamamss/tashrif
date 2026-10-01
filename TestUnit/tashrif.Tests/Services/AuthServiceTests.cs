@@ -90,6 +90,74 @@ public class AuthServiceTests
             .WithMessage("*مسجل مسبقاً*");
     }
 
+    // ---- Spec 01 (phase3-6-remove-registration-cv): registration no longer accepts a CV ----
+
+    [Fact]
+    public async Task RegisterIndividual_WithIdFile_SavesOnlyIdFile()
+    {
+        _userRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<users>().AsQueryable().BuildMock());
+        _userRepoMock.Setup(r => r.AddAsync(It.IsAny<users>())).Returns(Task.CompletedTask);
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        individual_profiles? saved = null;
+        _profileRepoMock.Setup(r => r.AddAsync(It.IsAny<individual_profiles>()))
+            .Callback<individual_profiles>(p => saved = p)
+            .Returns(Task.CompletedTask);
+
+        _fileStorageMock.Setup(f => f.SaveFileAsync(It.IsAny<IFormFile?>(), "ids"))
+            .ReturnsAsync("/uploads/ids/x.jpg");
+
+        var dto = new RegisterIndividualDto
+        {
+            FirstName = "أحمد",
+            LastName = "محمد",
+            NationalId = "1234567890",
+            Phone = "+966501234567",
+            Email = "a@b.com",
+            Gender = "male",
+            Nationality = "سعودي",
+            IdFile = new Mock<IFormFile>().Object,
+        };
+
+        await _sut.RegisterIndividualAsync(dto);
+
+        _fileStorageMock.Verify(f => f.SaveFileAsync(It.IsAny<IFormFile?>(), "ids"), Times.Once);
+        _fileStorageMock.Verify(f => f.SaveFileAsync(It.IsAny<IFormFile?>(), "cvs"), Times.Never);
+        saved.Should().NotBeNull();
+        saved!.id_file.Should().Be("/uploads/ids/x.jpg");
+    }
+
+    [Fact]
+    public async Task RegisterIndividual_NoFiles_DoesNotSaveAnyFile()
+    {
+        _userRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<users>().AsQueryable().BuildMock());
+        _userRepoMock.Setup(r => r.AddAsync(It.IsAny<users>())).Returns(Task.CompletedTask);
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        individual_profiles? saved = null;
+        _profileRepoMock.Setup(r => r.AddAsync(It.IsAny<individual_profiles>()))
+            .Callback<individual_profiles>(p => saved = p)
+            .Returns(Task.CompletedTask);
+
+        var dto = new RegisterIndividualDto
+        {
+            FirstName = "سارة",
+            LastName = "علي",
+            NationalId = "9876543210",
+            Phone = "+966500000000",
+            Email = "s@b.com",
+            Gender = "female",
+            Nationality = "سعودي",
+        };
+
+        await _sut.RegisterIndividualAsync(dto);
+
+        _fileStorageMock.Verify(f => f.SaveFileAsync(It.IsAny<IFormFile?>(), It.IsAny<string>()), Times.Never);
+        saved.Should().NotBeNull();
+        saved!.id_file.Should().Be("");
+    }
+
+
     [Fact]
     public async Task Login_ValidCredentials_ReturnsTokens()
     {

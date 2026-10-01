@@ -108,7 +108,6 @@ public class AuthController : ControllerBase
                 Email = Request.Form["email"]!,
                 Gender = Request.Form["gender"]!,
                 Nationality = Request.Form["nationality"]!,
-                CvFile = Request.Form.Files.GetFile("cvFile"),
                 IdFile = Request.Form.Files.GetFile("idFile"),
             };
             result = await _authService.RegisterIndividualAsync(dto);

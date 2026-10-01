@@ -19,7 +19,6 @@ public class IndividualProfileResponseDto
     public string? JobTitle { get; set; }
     public string? AvatarUrl { get; set; }
     public short ProfileCompletionPct { get; set; }
-    public string? CvFile { get; set; }
     public string? IdFile { get; set; }
     public IndividualStatsDto? Stats { get; set; }
 }

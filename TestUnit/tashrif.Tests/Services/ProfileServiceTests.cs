@@ -197,7 +197,9 @@ public class ProfileServiceTests
         result.City.Should().Be("Riyadh");
         result.Zipcode.Should().Be("12345");
         result.JobTitle.Should().Be("Developer");
-        result.ProfileCompletionPct.Should().Be(55);
+        // Spec 01 (phase3-6): cv_file removed from the completion fields → denominator is 10 (was 11),
+        // so the same 6 filled fields now compute 60.
+        result.ProfileCompletionPct.Should().Be(60);
     }
 
     [Fact]

@@ -34,6 +34,5 @@ public class RegisterIndividualDto
     [Required(ErrorMessage = "الجنسية مطلوبة")]
     public string Nationality { get; set; } = string.Empty;
 
-    public IFormFile? CvFile { get; set; }
     public IFormFile? IdFile { get; set; }
 }

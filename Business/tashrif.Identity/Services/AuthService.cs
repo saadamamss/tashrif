@@ -67,7 +67,6 @@ public class AuthService : IAuthService
         await _userRepo.AddAsync(user);
         await _uow.SaveChangesAsync();
 
-        var cvUrl = dto.CvFile != null ? await _fileStorage.SaveFileAsync(dto.CvFile, "cvs") : null;
         var idUrl = dto.IdFile != null ? await _fileStorage.SaveFileAsync(dto.IdFile, "ids") : null;
 
         var profile = new individual_profiles
@@ -79,7 +78,6 @@ public class AuthService : IAuthService
             street = "",
             zipcode = "",
             job_title = "",
-            cv_file = cvUrl ?? "",
             id_file = idUrl ?? "",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

@@ -12,7 +12,6 @@ public class individual_profiles : ISharedColumns
     public string street { get; set; }
     public string zipcode { get; set; }
     public string job_title { get; set; }
-    public string cv_file { get; set; }
     public string id_file { get; set; }
     [Required]
     public short profile_completion_pct { get; set; }

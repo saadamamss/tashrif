@@ -34,7 +34,6 @@ public class individual_profilesService(IUnitOfWork unitOfWork) : Iindividual_pr
             JobTitle = profile?.job_title,
             AvatarUrl = user.avatar_url,
             ProfileCompletionPct = profile?.profile_completion_pct ?? 0,
-            CvFile = profile?.cv_file,
             IdFile = profile?.id_file,
             Stats = await GetStatsAsync(userId),
         };
