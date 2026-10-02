@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StatusHistoryEntry } from '~/types/status-history'
-import { formatDate } from '~/services/help'
+import { formatDate, buildImageUrl } from '~/services/help'
 
 const props = defineProps<{
   applicant: any
@@ -90,6 +90,22 @@ const genderLabel = computed(() => {
             <div>
               <span class="text-muted block mb-1">تاريخ التقديم</span>
               <span class="font-medium">{{ formatDate(applicant?.createdAt) }}</span>
+            </div>
+            <div v-if="applicant?.experience" class="col-span-2">
+              <span class="text-muted block mb-1">نبذة عن الخبرات</span>
+              <span class="font-medium">{{ applicant.experience }}</span>
+            </div>
+            <div class="col-span-2">
+              <span class="text-muted block mb-1">السيرة الذاتية</span>
+              <a
+                v-if="applicant?.cvFilePath"
+                :href="buildImageUrl(applicant.cvFilePath)"
+                target="_blank"
+                class="font-medium text-primary"
+              >
+                {{ applicant.cvFileName || 'عرض السيرة الذاتية' }}
+              </a>
+              <span v-else class="font-medium text-muted">لا توجد سيرة</span>
             </div>
           </div>
         </div>

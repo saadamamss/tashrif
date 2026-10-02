@@ -123,6 +123,25 @@
           </div>
           <div class="font-bold ps-7">{{ applicant.userCity || applicant.city }}</div>
         </div>
+        <div class="text-xs">
+          <div class="flex gap-2 items-center mb-2">
+            <span>
+              <File width="20" height="20" color="#696C68" />
+            </span>
+            <span class="text-muted">السيرة الذاتية</span>
+          </div>
+          <div class="font-bold ps-7">
+            <a
+              v-if="cvUrl"
+              :href="cvUrl"
+              target="_blank"
+              class="text-primary"
+            >
+              {{ applicant.cvFileName || "عرض السيرة" }}
+            </a>
+            <span v-else class="text-muted font-normal">لا توجد سيرة</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -135,7 +154,8 @@ import City from "./icons/city.vue";
 import Gender from "./icons/gender.vue";
 import ListDots from "./icons/list-dots.vue";
 import PersonIcon from "./icons/person.vue";
-import { formatDate } from "~/services/help";
+import File from "./icons/file.vue";
+import { formatDate, buildImageUrl } from "~/services/help";
 const model = defineModel();
 const emit = defineEmits(['shortlist', 'interview', 'send-contract', 'refuse', 'delete', 'restore', 'view-details']);
 
@@ -190,4 +210,6 @@ const genderLabel = computed(() => {
   if (value === "female" || value === "أنثى" || value === "انثى") return "أنثى"
   return props.applicant?.userGender || props.applicant?.gender || ""
 })
+
+const cvUrl = computed(() => buildImageUrl(props.applicant?.cvFilePath))
 </script>
