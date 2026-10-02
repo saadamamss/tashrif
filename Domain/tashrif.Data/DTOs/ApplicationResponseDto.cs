@@ -8,6 +8,7 @@ public class ApplicationResponseDto
     public string UserName { get; set; } = string.Empty;
     public string UserGender { get; set; } = string.Empty;
     public string UserCity { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public string Qualification { get; set; } = string.Empty;
     public string Experience { get; set; } = string.Empty;
     public long? CvId { get; set; }

@@ -331,7 +331,7 @@ public class JobsServiceTests
 
         var apps = new List<applications>
         {
-            new() { Id = 1, job_id = 1, user_id = 10, status = "new", experience = "سنتان خبرة", cv_id = 7, user_Entity = new users { name = "Applicant 1", gender = "ذكر" }, CreatedAt = DateTime.UtcNow },
+            new() { Id = 1, job_id = 1, user_id = 10, status = "new", experience = "سنتان خبرة", cv_id = 7, user_Entity = new users { name = "Applicant 1", gender = "ذكر", avatar_url = "/uploads/avatars/a.jpg" }, CreatedAt = DateTime.UtcNow },
             new() { Id = 2, job_id = 1, user_id = 11, status = "shortlisted", user_Entity = new users { name = "Applicant 2", gender = "أنثى" }, CreatedAt = DateTime.UtcNow },
         }.AsQueryable().BuildMock();
         _appsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(apps);
@@ -351,5 +351,6 @@ public class JobsServiceTests
         first.CvId.Should().Be(7);
         first.CvFilePath.Should().Be("/uploads/cvs/cv.pdf");
         first.UserCity.Should().Be("مكة");
+        first.AvatarUrl.Should().Be("/uploads/avatars/a.jpg");
     }
 }

@@ -393,6 +393,7 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
                 UserName = a.user_Entity.name,
                 UserGender = a.user_Entity.gender,
                 UserCity = "",
+                AvatarUrl = a.user_Entity.avatar_url,
                 Qualification = a.qualification,
                 Experience = a.experience ?? "",
                 CvId = a.cv_id,
