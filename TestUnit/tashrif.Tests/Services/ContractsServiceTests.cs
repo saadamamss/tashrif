@@ -214,11 +214,71 @@ public class ContractsServiceTests : IClassFixture<TestDatabaseFixture>
             var result = await sut.SendAsync(dto, entity.Id);
 
             result.Notes.Should().Be("يرجى التوقيع قبل بداية الموسم");
-            result.EndDate.Should().Be(endDate);
+            // Deadlines are normalized to the end of the picked day (UTC)
+            result.EndDate.Should().Be(endDate.Date.AddDays(1).AddTicks(-1));
 
             var savedContract = await db.contracts.FindAsync(result.Id);
             savedContract!.notes.Should().Be("يرجى التوقيع قبل بداية الموسم");
             savedContract.end_date.Should().NotBeNull();
+        }
+        finally { }
+    }
+
+    [Fact]
+    public async Task Send_PastEndDate_ThrowsBadHttpRequestException()
+    {
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            var dto = new SendContractDto { ApplicationId = app.Id, EndDate = DateTime.UtcNow.AddDays(-1) };
+
+            var act = () => sut.SendAsync(dto, entity.Id);
+
+            await act.Should().ThrowAsync<BadHttpRequestException>()
+                .WithMessage("*24 ساعة*");
+        }
+        finally { }
+    }
+
+    [Fact]
+    public async Task Send_EndDateWithin24Hours_ThrowsBadHttpRequestException()
+    {
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            // Today at any hour normalizes to end-of-today, always within 24h → rejected
+            var dto = new SendContractDto { ApplicationId = app.Id, EndDate = DateTime.UtcNow };
+
+            var act = () => sut.SendAsync(dto, entity.Id);
+
+            await act.Should().ThrowAsync<BadHttpRequestException>()
+                .WithMessage("*24 ساعة*");
+        }
+        finally { }
+    }
+
+    [Fact]
+    public async Task Send_EndDateBeyond24Hours_PersistsEndOfDay()
+    {
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+            var endDate = DateTime.UtcNow.AddDays(2);
+
+            var result = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id, EndDate = endDate }, entity.Id);
+
+            result.EndDate.Should().Be(endDate.Date.AddDays(1).AddTicks(-1));
         }
         finally { }
     }

@@ -88,6 +88,15 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
             ? DateTime.SpecifyKind(dto.EndDate.Value, DateTimeKind.Utc)
             : (DateTime?)null;
 
+        // The dialog speaks in whole days, so the deadline is the end of the picked day.
+        // It must leave the individual a real signing window: strictly more than 24h from send.
+        if (endDate.HasValue)
+        {
+            endDate = endDate.Value.Date.AddDays(1).AddTicks(-1);
+            if (endDate <= DateTime.UtcNow.AddHours(24))
+                throw new BadHttpRequestException("يجب أن يكون تاريخ انتهاء العقد بعد 24 ساعة على الأقل من الإرسال", 400);
+        }
+
         var newContract = new contracts
         {
             application_id = dto.ApplicationId,
