@@ -8,6 +8,7 @@ public class ApplicationsServiceTests
     private readonly Mock<IusersRepository> _usersRepoMock;
     private readonly Mock<Iindividual_profilesRepository> _profilesRepoMock;
     private readonly Mock<IqualificationsRepository> _qualsRepoMock;
+    private readonly Mock<IcvsRepository> _cvsRepoMock;
     private readonly Mock<Ijob_benefitsRepository> _benefitsRepoMock;
     private readonly Mock<Ijob_conditionsRepository> _conditionsRepoMock;
     private readonly Mock<Ijob_responsibilitiesRepository> _responsibilitiesRepoMock;
@@ -21,6 +22,7 @@ public class ApplicationsServiceTests
         _usersRepoMock = new Mock<IusersRepository>();
         _profilesRepoMock = new Mock<Iindividual_profilesRepository>();
         _qualsRepoMock = new Mock<IqualificationsRepository>();
+        _cvsRepoMock = new Mock<IcvsRepository>();
         _benefitsRepoMock = new Mock<Ijob_benefitsRepository>();
         _conditionsRepoMock = new Mock<Ijob_conditionsRepository>();
         _responsibilitiesRepoMock = new Mock<Ijob_responsibilitiesRepository>();
@@ -31,6 +33,7 @@ public class ApplicationsServiceTests
         _uowMock.SetupGet(u => u.UsersRepository).Returns(_usersRepoMock.Object);
         _uowMock.SetupGet(u => u.Individual_profilesRepository).Returns(_profilesRepoMock.Object);
         _uowMock.SetupGet(u => u.QualificationsRepository).Returns(_qualsRepoMock.Object);
+        _uowMock.SetupGet(u => u.CvsRepository).Returns(_cvsRepoMock.Object);
         _uowMock.SetupGet(u => u.Job_benefitsRepository).Returns(_benefitsRepoMock.Object);
         _uowMock.SetupGet(u => u.Job_conditionsRepository).Returns(_conditionsRepoMock.Object);
         _uowMock.SetupGet(u => u.Job_responsibilitiesRepository).Returns(_responsibilitiesRepoMock.Object);
@@ -45,6 +48,8 @@ public class ApplicationsServiceTests
             .ReturnsAsync(new List<individual_profiles>().AsQueryable().BuildMock());
         _qualsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { new qualifications { Id = 1, type = "بكالوريوس", user_id = 1 } }.AsQueryable().BuildMock());
+        _cvsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new cvs { Id = 5, user_id = 1, file_name = "cv.pdf", file_path = "/uploads/cvs/cv-1.pdf" } }.AsQueryable().BuildMock());
 
         _statusHistoryMock = new Mock<IstatusHistoryService>();
         _statusHistoryMock.Setup(r => r.RecordAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<long>()))
@@ -56,9 +61,12 @@ public class ApplicationsServiceTests
     [Fact]
     public async Task Apply_CreatesApplicationWithNewStatus()
     {
+        applications? added = null;
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
-        _appsRepoMock.Setup(r => r.AddAsync(It.IsAny<applications>())).Returns(Task.CompletedTask);
+        _appsRepoMock.Setup(r => r.AddAsync(It.IsAny<applications>()))
+            .Callback<applications>(a => added = a)
+            .Returns(Task.CompletedTask);
         _usersRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { new users { Id = 1, name = "User" } }.AsQueryable().BuildMock());
         _jobsRepoMock.Setup(r => r.GetQueryable())
@@ -69,6 +77,7 @@ public class ApplicationsServiceTests
         {
             JobId = 1,
             QualificationId = 1,
+            CvId = 5,
             Experience = "3 سنوات"
         };
 
@@ -76,7 +85,50 @@ public class ApplicationsServiceTests
 
         result.Should().NotBeNull();
         result.Status.Should().Be("new");
+        result.CvId.Should().Be(5);
+        result.CvFilePath.Should().Be("/uploads/cvs/cv-1.pdf");
+        added!.cv_id.Should().Be(5);
+        added!.experience.Should().Be("3 سنوات");
         _appsRepoMock.Verify(r => r.AddAsync(It.IsAny<applications>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Apply_ForeignCv_ThrowsInvalidOperationException()
+    {
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+        _usersRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new users { Id = 1, name = "User" } }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, status = "active" } }.AsQueryable().BuildMock());
+        _cvsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new cvs { Id = 9, user_id = 2, file_name = "other.pdf", file_path = "/uploads/cvs/other.pdf" } }.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var dto = new ApplyJobDto { JobId = 1, QualificationId = 1, CvId = 9, Experience = "3 سنوات" };
+
+        var act = () => _sut.ApplyAsync(dto, 1);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*السيرة*");
+    }
+
+    [Fact]
+    public async Task Apply_DeletedCv_ThrowsInvalidOperationException()
+    {
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, status = "active" } }.AsQueryable().BuildMock());
+        _cvsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new cvs { Id = 5, user_id = 1, file_name = "cv.pdf", file_path = "/uploads/cvs/cv-1.pdf", IsDeleted = true } }.AsQueryable().BuildMock());
+
+        var dto = new ApplyJobDto { JobId = 1, QualificationId = 1, CvId = 5, Experience = "3 سنوات" };
+
+        var act = () => _sut.ApplyAsync(dto, 1);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*السيرة*");
     }
 
     [Fact]

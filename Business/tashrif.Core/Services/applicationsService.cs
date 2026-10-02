@@ -43,6 +43,8 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
                 UserGender = a.user_Entity.gender,
                 UserCity = "",
                 Qualification = a.qualification,
+                Experience = a.experience ?? "",
+                CvId = a.cv_id,
                 Status = a.status,
                 CreatedAt = a.CreatedAt,
             })
@@ -50,6 +52,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
 
         await PopulateJobsAsync(items);
         await PopulateApplicantDetailsAsync(items);
+        await PopulateCvsAsync(items);
 
         return new PaginationResultDto<ApplicationResponseDto>
         {
@@ -73,6 +76,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             throw new UnauthorizedAccessException("غير مصرح لك بمشاهدة هذا الطلب");
 
         var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
+        var (cvFileName, cvFilePath) = await GetCvInfoAsync(app.cv_id);
 
         return new ApplicationResponseDto
         {
@@ -83,6 +87,10 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             UserGender = app.user_Entity.gender,
             UserCity = city,
             Qualification = string.IsNullOrEmpty(app.qualification) ? qualification : app.qualification,
+            Experience = app.experience ?? "",
+            CvId = app.cv_id,
+            CvFileName = cvFileName,
+            CvFilePath = cvFilePath,
             Status = app.status,
             CreatedAt = app.CreatedAt,
             Job = await BuildJobAsync(app.job_id),
@@ -113,6 +121,13 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         if (qual == null)
             throw new InvalidOperationException("المؤهل المحدد غير موجود");
 
+        // Resolve CV by ID — required since the required-CV change: must belong to the applicant.
+        var cvsQuery = await _unitOfWork.CvsRepository.GetQueryable();
+        var cv = await cvsQuery
+            .FirstOrDefaultAsync(c => c.Id == dto.CvId && c.user_id == userId && !c.IsDeleted);
+        if (cv == null)
+            throw new InvalidOperationException("السيرة الذاتية المحددة غير موجودة");
+
         var (city, _) = await GetApplicantDetailsAsync(userId);
 
         var app = new applications
@@ -122,7 +137,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             qualification = qual.type,
             experience = dto.Experience ?? "",
             cover_letter = "",
-            cv_id = null,
+            cv_id = dto.CvId,
             status = "new",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -146,6 +161,10 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             UserGender = user?.gender,
             UserCity = city,
             Qualification = app.qualification,
+            Experience = app.experience ?? "",
+            CvId = app.cv_id,
+            CvFileName = cv.file_name,
+            CvFilePath = cv.file_path,
             Status = app.status,
             CreatedAt = app.CreatedAt,
             Job = await BuildJobAsync(applyJob),
@@ -182,6 +201,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         await _statusHistory.RecordAsync(app.Id, oldStatus, status, userId);
 
         var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
+        var (statusCvFileName, statusCvFilePath) = await GetCvInfoAsync(app.cv_id);
 
         return new ApplicationResponseDto
         {
@@ -192,6 +212,10 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             UserGender = app.user_Entity?.gender,
             UserCity = city,
             Qualification = string.IsNullOrEmpty(app.qualification) ? qualification : app.qualification,
+            Experience = app.experience ?? "",
+            CvId = app.cv_id,
+            CvFileName = statusCvFileName,
+            CvFilePath = statusCvFilePath,
             Status = app.status,
             CreatedAt = app.CreatedAt,
             Job = await BuildJobAsync(app.job_id),
@@ -226,6 +250,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         await _statusHistory.RecordAsync(app.Id, oldStatus, "withdrawn", userId);
 
         var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
+        var (withdrawCvFileName, withdrawCvFilePath) = await GetCvInfoAsync(app.cv_id);
 
         return new ApplicationResponseDto
         {
@@ -236,6 +261,10 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             UserGender = app.user_Entity?.gender,
             UserCity = city,
             Qualification = string.IsNullOrEmpty(app.qualification) ? qualification : app.qualification,
+            Experience = app.experience ?? "",
+            CvId = app.cv_id,
+            CvFileName = withdrawCvFileName,
+            CvFilePath = withdrawCvFilePath,
             Status = app.status,
             CreatedAt = app.CreatedAt,
             Job = await BuildJobAsync(app.job_id),
@@ -450,6 +479,27 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         }
     }
 
+    private async Task PopulateCvsAsync(IEnumerable<ApplicationResponseDto> items)
+    {
+        var list = items.ToList();
+        var cvIds = list.Select(a => a.CvId).Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        if (cvIds.Count == 0) return;
+
+        var cvsQuery = await _unitOfWork.CvsRepository.GetQueryable();
+        var cvMap = await cvsQuery
+            .Where(c => cvIds.Contains(c.Id) && !c.IsDeleted)
+            .ToDictionaryAsync(c => c.Id);
+
+        foreach (var app in list)
+        {
+            if (app.CvId.HasValue && cvMap.TryGetValue(app.CvId.Value, out var cv))
+            {
+                app.CvFileName = cv.file_name;
+                app.CvFilePath = cv.file_path;
+            }
+        }
+    }
+
     private async Task<(string city, string qualification)> GetApplicantDetailsAsync(long userId)
     {
         var profilesQuery = await _unitOfWork.Individual_profilesRepository.GetQueryable();
@@ -463,6 +513,17 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             .FirstOrDefaultAsync();
 
         return (profile?.city ?? "", primaryQualification?.type ?? "");
+    }
+
+    private async Task<(string? fileName, string? filePath)> GetCvInfoAsync(long? cvId)
+    {
+        if (!cvId.HasValue) return (null, null);
+
+        var cvsQuery = await _unitOfWork.CvsRepository.GetQueryable();
+        var cv = await cvsQuery
+            .FirstOrDefaultAsync(c => c.Id == cvId.Value && !c.IsDeleted);
+        if (cv == null) return (null, null);
+        return (cv.file_name, cv.file_path);
     }
 
     private static JobResponseDto MapJob(jobs j)

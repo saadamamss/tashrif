@@ -10,6 +10,9 @@ public class ApplyJobDto
     [Range(1, long.MaxValue, ErrorMessage = "يجب اختيار المؤهل")]
     public long QualificationId { get; set; }
 
+    [Range(1, long.MaxValue, ErrorMessage = "يجب اختيار السيرة الذاتية")]
+    public long CvId { get; set; }
+
     [Required(ErrorMessage = "الخبرة مطلوبة")]
     [MaxLength(500)]
     public string Experience { get; set; } = string.Empty;
