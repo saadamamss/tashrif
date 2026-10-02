@@ -130,8 +130,11 @@ defineRule("validateContractFile", (value) => {
 defineRule("validateEndDate", (value) => {
   if (!value) return "حدد تاريخ انتهاء صلاحية التوقيع";
 
+  // The deadline is the end of the picked day and must leave a real signing
+  // window: strictly more than 24h after sending (mirrors the backend rule).
   const endDate = new Date(`${value}T23:59:59`);
-  if (endDate <= new Date()) return "يجب أن يكون تاريخ الانتهاء في المستقبل";
+  if (endDate.getTime() - Date.now() <= 24 * 60 * 60 * 1000)
+    return "يجب أن يكون تاريخ الانتهاء بعد 24 ساعة على الأقل من الإرسال";
 
   return true;
 });
