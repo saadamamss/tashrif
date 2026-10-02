@@ -394,10 +394,15 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
                 UserGender = a.user_Entity.gender,
                 UserCity = "",
                 Qualification = a.qualification,
+                Experience = a.experience ?? "",
+                CvId = a.cv_id,
                 Status = a.status,
                 CreatedAt = a.CreatedAt,
             })
             .ToListAsync();
+
+        await PopulateApplicationCitiesAsync(items);
+        await PopulateApplicationCvsAsync(items);
 
         return new PaginationResultDto<ApplicationResponseDto>
         {
@@ -408,8 +413,44 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
         };
     }
 
-    private static JobResponseDto MapJobToDto(jobs j)
+    private async Task PopulateApplicationCitiesAsync(List<ApplicationResponseDto> items)
     {
+        var userIds = items.Select(a => a.UserId).Where(id => id > 0).Distinct().ToList();
+        if (userIds.Count == 0) return;
+
+        var profilesQuery = await _unitOfWork.Individual_profilesRepository.GetQueryable();
+        var cityMap = await profilesQuery
+            .Where(p => userIds.Contains(p.user_id) && !p.IsDeleted)
+            .ToDictionaryAsync(p => p.user_id, p => p.city);
+
+        foreach (var app in items)
+        {
+            if (cityMap.TryGetValue(app.UserId, out var city))
+                app.UserCity = city;
+        }
+    }
+
+    private async Task PopulateApplicationCvsAsync(List<ApplicationResponseDto> items)
+    {
+        var cvIds = items.Select(a => a.CvId).Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        if (cvIds.Count == 0) return;
+
+        var cvsQuery = await _unitOfWork.CvsRepository.GetQueryable();
+        var cvMap = await cvsQuery
+            .Where(c => cvIds.Contains(c.Id) && !c.IsDeleted)
+            .ToDictionaryAsync(c => c.Id);
+
+        foreach (var app in items)
+        {
+            if (app.CvId.HasValue && cvMap.TryGetValue(app.CvId.Value, out var cv))
+            {
+                app.CvFileName = cv.file_name;
+                app.CvFilePath = cv.file_path;
+            }
+        }
+    }
+
+    private static JobResponseDto MapJobToDto(jobs j)    {
         return new JobResponseDto
         {
             Id = j.Id,

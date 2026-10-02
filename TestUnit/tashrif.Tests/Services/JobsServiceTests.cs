@@ -9,6 +9,8 @@ public class JobsServiceTests
     private readonly Mock<Ijob_conditionsRepository> _conditionsRepoMock;
     private readonly Mock<Ijob_responsibilitiesRepository> _responsibilitiesRepoMock;
     private readonly Mock<IapplicationsRepository> _appsRepoMock;
+    private readonly Mock<Iindividual_profilesRepository> _profilesRepoMock;
+    private readonly Mock<IcvsRepository> _cvsRepoMock;
     private readonly jobsService _sut;
 
     public JobsServiceTests()
@@ -19,6 +21,8 @@ public class JobsServiceTests
         _conditionsRepoMock = new Mock<Ijob_conditionsRepository>();
         _responsibilitiesRepoMock = new Mock<Ijob_responsibilitiesRepository>();
         _appsRepoMock = new Mock<IapplicationsRepository>();
+        _profilesRepoMock = new Mock<Iindividual_profilesRepository>();
+        _cvsRepoMock = new Mock<IcvsRepository>();
         _uowMock = new Mock<IUnitOfWork>();
 
         _uowMock.SetupGet(u => u.JobsRepository).Returns(_jobsRepoMock.Object);
@@ -27,9 +31,15 @@ public class JobsServiceTests
         _uowMock.SetupGet(u => u.Job_conditionsRepository).Returns(_conditionsRepoMock.Object);
         _uowMock.SetupGet(u => u.Job_responsibilitiesRepository).Returns(_responsibilitiesRepoMock.Object);
         _uowMock.SetupGet(u => u.ApplicationsRepository).Returns(_appsRepoMock.Object);
+        _uowMock.SetupGet(u => u.Individual_profilesRepository).Returns(_profilesRepoMock.Object);
+        _uowMock.SetupGet(u => u.CvsRepository).Returns(_cvsRepoMock.Object);
 
         _appsRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+        _profilesRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<individual_profiles>().AsQueryable().BuildMock());
+        _cvsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new List<cvs>().AsQueryable().BuildMock());
 
         _sut = new jobsService(_uowMock.Object);
     }
@@ -321,10 +331,14 @@ public class JobsServiceTests
 
         var apps = new List<applications>
         {
-            new() { Id = 1, job_id = 1, user_id = 10, status = "new", user_Entity = new users { name = "Applicant 1", gender = "ذكر" }, CreatedAt = DateTime.UtcNow },
+            new() { Id = 1, job_id = 1, user_id = 10, status = "new", experience = "سنتان خبرة", cv_id = 7, user_Entity = new users { name = "Applicant 1", gender = "ذكر" }, CreatedAt = DateTime.UtcNow },
             new() { Id = 2, job_id = 1, user_id = 11, status = "shortlisted", user_Entity = new users { name = "Applicant 2", gender = "أنثى" }, CreatedAt = DateTime.UtcNow },
         }.AsQueryable().BuildMock();
         _appsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(apps);
+        _profilesRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new individual_profiles { user_id = 10, city = "مكة" } }.AsQueryable().BuildMock());
+        _cvsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new cvs { Id = 7, user_id = 10, file_name = "cv.pdf", file_path = "/uploads/cvs/cv.pdf" } }.AsQueryable().BuildMock());
 
         var result = await _sut.GetApplicationsAsync(1, 5, new PaginationDto { Page = 1, Limit = 10 });
 
@@ -332,5 +346,10 @@ public class JobsServiceTests
         result.Items.Should().HaveCount(2);
         result.Total.Should().Be(2);
         result.Items.Should().OnlyContain(a => a.JobId == 1);
+        var first = result.Items.Should().ContainSingle(a => a.Id == 1).Subject;
+        first.Experience.Should().Be("سنتان خبرة");
+        first.CvId.Should().Be(7);
+        first.CvFilePath.Should().Be("/uploads/cvs/cv.pdf");
+        first.UserCity.Should().Be("مكة");
     }
 }
