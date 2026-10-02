@@ -23,9 +23,23 @@
           </div>
 
           <div class="mb-8">
+            <label class="text-sm block mb-2"> السيرة الذاتية </label>
+            <CustomSelect
+              v-if="!hasNoCvs"
+              v-model="formData.cvId"
+              :items="cvItems"
+              placeholder="اختر السيرة الذاتية"
+            />
+            <div v-else class="text-sm bg-bg-light p-4 rounded-lg">
+              <p class="text-gray-600 mb-2">لا توجد سيرة ذاتية في ملفك — أضف واحدة أولاً لتتمكن من التقديم.</p>
+              <NuxtLink to="/dashboard/profile" class="text-primary font-medium">الذهاب إلى الملف الشخصي</NuxtLink>
+            </div>
+          </div>
+
+          <div class="mb-8">
             <label class="text-sm block mb-2"> نبذة عن خبراتك </label>
             <textarea
-              v-model="formData.coverLetter"
+              v-model="formData.experience"
               placeholder="اكتب ملخصاً عن خبراتك السابقة ومؤهلاتك لهذه الوظيفة..."
               rows="5"
               class="text-sm w-full placeholder:text-xs bg-bg-light p-4 border border-[#fff]/0 rounded-lg focus:outline-none focus:border-primary transition"
@@ -44,7 +58,7 @@
           >
             إلغاء
           </button>
-          <button type="submit" class="btn-primary text-sm">التقديم</button>
+          <button type="submit" class="btn-primary text-sm" :disabled="hasNoCvs">التقديم</button>
         </div>
       </Form>
     </div>
@@ -66,8 +80,9 @@ const props = defineProps({
 });
 
 const formData = ref({
-  coverLetter: "",
+  experience: "",
   qualificationId: null,
+  cvId: null,
 });
 
 const qualifications = ref([]);
@@ -75,25 +90,51 @@ const qualificationItems = computed(() =>
   qualifications.value.map((q) => ({ value: q.id, label: q.type }))
 );
 
+const cvs = ref([]);
+const cvsLoaded = ref(false);
+const cvItems = computed(() =>
+  cvs.value.map((c) => ({ value: c.id, label: c.fileName || "السيرة الذاتية" }))
+);
+const hasNoCvs = computed(() => cvsLoaded.value && cvs.value.length === 0);
+
 const isSubmitting = ref(false);
 
 const emit = defineEmits(["applied"]);
 
-// Fetch qualifications when dialog opens
+// Fetch qualifications + CVs when dialog opens (fresh each time so a CV
+// added from the profile mid-session is picked up)
 watch(model, async (val) => {
-  if (val && qualifications.value.length === 0) {
-    const { data } = await useApi().get("/qualifications");
-    if (data?.items) qualifications.value = data.items;
+  if (!val) return;
+  const [qualsRes, cvsRes] = await Promise.allSettled([
+    useApi().get("/qualifications"),
+    useApi().get("/cvs"),
+  ]);
+  if (qualsRes.status === "fulfilled" && qualsRes.value.data?.items) {
+    qualifications.value = qualsRes.value.data.items;
+  }
+  if (cvsRes.status === "fulfilled") {
+    const items = cvsRes.value.data?.items;
+    cvs.value = Array.isArray(items) ? items : cvsRes.value.data || [];
+    cvsLoaded.value = true;
   }
 });
 
 const submitApplication = async () => {
+  if (!formData.value.qualificationId) {
+    useToast().show("يجب اختيار المؤهل", "error");
+    return;
+  }
+  if (!formData.value.cvId) {
+    useToast().show("يجب اختيار السيرة الذاتية", "error");
+    return;
+  }
   isSubmitting.value = true;
   try {
     const { error } = await useApi().post("/applications/apply", {
       jobId: Number(props.jobId),
       qualificationId: Number(formData.value.qualificationId),
-      experience: formData.value.coverLetter,
+      cvId: Number(formData.value.cvId),
+      experience: formData.value.experience,
     });
     if (error) {
       useToast().show(error, "error");
@@ -102,8 +143,7 @@ const submitApplication = async () => {
     useToast().show("تم إرسال طلب التقديم بنجاح", "success");
     emit("applied", Number(props.jobId));
     model.value = false;
-    formData.value.coverLetter = "";
-    formData.value.qualificationId = null;
+    resetForm();
   } catch {
     useToast().show("حدث خطأ غير متوقع", "error");
   } finally {
@@ -111,9 +151,14 @@ const submitApplication = async () => {
   }
 };
 
-const cancelApplication = () => {
-  formData.value.coverLetter = "";
+const resetForm = () => {
+  formData.value.experience = "";
   formData.value.qualificationId = null;
+  formData.value.cvId = null;
+};
+
+const cancelApplication = () => {
+  resetForm();
   model.value = false;
 };
 </script>

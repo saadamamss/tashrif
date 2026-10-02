@@ -8,6 +8,10 @@ export interface Application {
   userGender: string
   userCity: string
   qualification: string
+  experience?: string
+  cvId?: number | null
+  cvFileName?: string | null
+  cvFilePath?: string | null
   status: ApplicationStatus
   createdAt: string
   job?: Job
