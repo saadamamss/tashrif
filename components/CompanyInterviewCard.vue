@@ -7,8 +7,7 @@
     <div class="pb-4 border-b-2">
       <div class="flex items-center gap-2">
         <span class="company-logo w-10 h-10 rounded-full relative overflow-hidden">
-          <img v-if="interview.userAvatar" :src="interview.userAvatar" class="w-full h-full object-cover" />
-          <img v-else src="~/assets/images/avatar-1.png" class="w-full h-full object-cover" />
+          <img  :src="logoSrc" class="w-full h-full object-cover" />
         </span>
         <span class="company-name font-medium text-sm text-dark">
           {{ interview.userName }}
@@ -53,7 +52,7 @@
   </div>
 </template>
 <script setup>
-import { formatDate, formatTime } from '~/services/help.js';
+import { buildImageUrl, formatDate, formatTime } from '~/services/help.js';
 import AddToCalendar from './AddToCalendar.vue';
 
 import { computed } from "vue";
@@ -65,6 +64,8 @@ const props = defineProps({
     default: null,
   },
 });
+
+const logoSrc = computed(()=> buildImageUrl(props.interview?.userAvatar, ""))
 const statusLabel = computed(() => {
   const labels = { scheduled: 'قادمة', completed: 'منتهية', cancelled: 'ملغية' }
   return labels[props.interview?.status] || 'قادمة'

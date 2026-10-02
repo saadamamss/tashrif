@@ -7,8 +7,8 @@
     <div class="pb-4 border-b-2">
       <div class="flex items-center gap-2">
         <span class="company-logo w-12 h-12 rounded-full relative overflow-hidden">
-          <img src="~/assets/images/avatar-1.png" class="w-full h-full object-cover" />
-          <img :src="contract.userAvatar" class="w-full h-full object-cover" />
+          <!-- <img src="~/assets/images/avatar-1.png" class="w-full h-full object-cover" /> -->
+          <img :src="logoSrc" class="w-full h-full object-cover" />
         </span>
         <span class="company-name font-medium text-sm text-dark">
           {{ contract.userName }}
@@ -68,11 +68,13 @@
 
 <script setup>
 import { computed } from "vue";
-import { formatDate } from "~/services/help";
+import { buildImageUrl, formatDate } from "~/services/help";
 
 const props = defineProps({
   contract: { type: Object, default: () => ({}) },
 })
+
+const logoSrc = computed(()=> buildImageUrl(props.contract?.userAvatar, "/images/avatar-1.png"))
 const statusLabel = computed(() => {
   const labels = { sent: 'تم إرسال العقد', signed: 'تم التوقيع', cancelled: 'ملغي' }
   return labels[props.contract.status] || 'تم إرسال العقد'

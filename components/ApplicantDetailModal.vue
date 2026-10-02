@@ -49,7 +49,7 @@ const avatarSrc = computed(() => buildImageUrl(props.applicant?.avatarUrl || pro
   <Teleport to="body">
     <div
       v-if="model"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
       @click.self="model = false"
     >
       <div class="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-xl">

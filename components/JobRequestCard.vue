@@ -14,7 +14,7 @@
 
       <div class="flex items-center gap-2">
         <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
-          <img :src="job.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
+          <img :src="logoSrc" class="w-10 h-6 object-cover" />
         </span>
         <span class="company-name text-sm text-dark">
           {{ job.entityName }}
@@ -44,8 +44,9 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import { formatDate } from "~/services/help.js";
+import { buildImageUrl, formatDate } from "~/services/help.js";
 import CalenderIcon from "./icons/calender.vue";
 import ClockIcon from "./icons/clock.vue";
 import { computed } from "vue";
@@ -56,6 +57,7 @@ const props = defineProps({
 })
 
 const job = computed(() => props.job?.id ? props.job : (props.application?.job || {}))
+const logoSrc = computed(()=> buildImageUrl(props.job?.entityLogo,'/images/partner-3.svg'))
 
 const statusLabel = computed(() => {
   const labels = { new: 'قيد المراجعة', shortlisted: 'مقبول مبدئي', interview: 'مقابلة', contract_sent: 'تم إرسال العقد', accepted: 'مقبول', refused: 'مرفوض', withdrawn: 'مسحوب' }

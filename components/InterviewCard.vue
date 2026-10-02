@@ -7,7 +7,7 @@
     <div class="border-b-2 border-[#E9F1F2] flex flex-col gap-4 pb-6">
       <div class="flex items-center gap-2">
         <span class="company-logo border-2 rounded-md overflow-hidden py-1 px-2">
-          <img :src="interview.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
+          <img :src="logoSrc" class="w-10 h-6 object-cover" />
         </span>
         <span class="company-name font-medium text-sm text-dark">
           {{ interview.entityName }}
@@ -41,7 +41,7 @@
   </div>
 </template>
 <script setup>
-import { formatDate, formatTime } from "~/services/help.js";
+import { buildImageUrl, formatDate, formatTime } from "~/services/help.js";
 import Calender from "./icons/calender.vue";
 import Clock from "./icons/clock.vue";
 import Location from "./icons/location.vue";
@@ -50,6 +50,9 @@ import { computed } from "vue";
 const props = defineProps({
   interview: { type: Object, default: () => ({}) },
 })
+
+const logoSrc = computed(() => buildImageUrl(props.interview?.entityLogo, '/images/partner-3.svg'))
+
 const statusLabel = computed(() => {
   const labels = { scheduled: 'قادمة', completed: 'منتهية', cancelled: 'ملغية' }
   return labels[props.interview.status] || 'قادمة'

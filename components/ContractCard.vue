@@ -1,9 +1,12 @@
 <script lang="ts" setup>
-import { formatDate, formatPeriod } from "~/services/help";
+import { buildImageUrl, formatPeriod } from "~/services/help";
+
 
 const props = defineProps({
     contract: { type: Object, default: () => ({}) },
 })
+
+const logoSrc = computed(() => buildImageUrl(props.contract?.entityLogo, '/images/partner-3.svg'));
 
 const emits = defineEmits<{
     (e: "openSignContract", contract: object): void
@@ -20,13 +23,17 @@ const fileSizeText = computed(() => {
     if (!bytes) return "";
     return `${(bytes / 1024 / 1024).toFixed(2)} Mb`;
 });
+
+const downloadContract = () => {
+  window.open(buildImageUrl(props.contract?.fileUrl));
+}
 </script>
 <template>
     <div class="interview-card shadow-md bg-white relative overflow-hidden rounded-2xl p-6">
         <div class="pb-4 border-b-2">
             <div class="flex items-center gap-2">
                 <span class="company-logo border-2 rounded-md overflow-hidden py-1 px-2">
-                    <img :src="contract.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
+                    <img :src="logoSrc" class="w-10 h-6 object-cover" />
                 </span>
                 <span class="company-name font-medium text-sm text-dark">
                     {{ contract.entityName }}
@@ -62,13 +69,15 @@ const fileSizeText = computed(() => {
                         <span class="block text-slate-900 text-sm mb-1 truncate">
                             {{ contract.fileName }}
                         </span>
-                        <span class="text-xs block text-slate-400">
+                        <span class="text-xs text-slate-400" dir="ltr">
                             {{ fileSizeText }}
                         </span>
                     </div>
                 </div>
                 <div class="shrink-0">
-                    <button class="block shadow-sm p-2 bg-white rounded-lg">
+                    <button class="block shadow-sm p-2 bg-white rounded-lg"
+                    @click="downloadContract"
+                    >
                         <Download />
                     </button>
                 </div>

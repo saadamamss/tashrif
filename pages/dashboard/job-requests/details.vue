@@ -4,7 +4,7 @@ import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
-import { formatDate } from "~/services/help";
+import { buildImageUrl, formatDate } from "~/services/help";
 
 definePageMeta({
   layout: "dashboard",
@@ -25,11 +25,6 @@ const statusMeta = {
   refused: { label: 'مرفوض', badge: 'refused', title: 'لم يتم القبول', msg: 'نأسف لإعلامك بعدم قبول طلبك لهذه الوظيفة حالياً.' },
   withdrawn: { label: 'مسحوب', badge: 'withdrawn', title: 'تم سحب الطلب', msg: 'لقد سحبت طلبك لهذه الوظيفة بنجاح.' },
 }
-
-const canWithdraw = computed(() => {
-  const s = application.value?.status
-  return s === 'new' || s === 'shortlisted' || s === 'interview'
-})
 
 const showWithdrawConfirm = ref(false)
 const withdrawLoading = ref(false)
@@ -75,6 +70,11 @@ const loading = ref(true);
 const statusHistory = ref([]);
 const statusHistoryLoading = ref(false);
 
+const logoSrc = computed(()=> buildImageUrl(application.value?.job?.entityLogo , '/images/partner-3.svg'))
+const canWithdraw = computed(() => {
+  const s = application.value?.status
+  return s === 'new' || s === 'shortlisted' || s === 'interview'
+})
 const currentStatus = computed(() => application.value?.status || '')
 const meta = computed(() => statusMeta[currentStatus.value] || statusMeta.new)
 
@@ -161,7 +161,7 @@ function downloadContract() {
 
             <div class="flex items-center gap-2">
               <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
-                <img :src="application?.job?.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
+                 <img :src="logoSrc" class="w-10 h-6 object-cover" /> 
               </span>
               <span class="company-name text-sm text-dark">
                 {{ application?.job?.entityName || application?.entityName }}
@@ -393,9 +393,12 @@ function downloadContract() {
             </div>
             <div class="flex gap-2 items-center">
               <span>
-                <CalenderIcon width="21" height="20" />
+                <Clock width="21" height="20" />
               </span>
-              <span class="text-icon-muted text-xs"> {{ application?.job?.hours || application?.hours }} </span>
+              <span class="text-icon-muted text-xs"> 
+                  {{ application?.job?.hours || application?.hours }} 
+                  ساعات
+              </span>
             </div>
             <div class="flex gap-2 items-center">
               <span>
@@ -432,7 +435,7 @@ function downloadContract() {
     <Teleport to="body">
       <div
         v-if="showWithdrawConfirm"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
         @click.self="showWithdrawConfirm = false"
       >
         <div class="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-xl">
