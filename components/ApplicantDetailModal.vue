@@ -41,6 +41,8 @@ const genderLabel = computed(() => {
   if (value === 'female' || value === 'أنثى' || value === 'انثى') return 'أنثى'
   return value
 })
+
+const avatarSrc = computed(() => buildImageUrl(props.applicant?.avatarUrl || props.applicant?.avatar))
 </script>
 
 <template>
@@ -66,7 +68,7 @@ const genderLabel = computed(() => {
         <div class="p-5 border-b">
           <div class="flex items-center gap-3 mb-4">
             <span class="w-12 h-12 rounded-full bg-bg-light flex items-center justify-center text-primary font-bold text-lg overflow-hidden">
-              <img v-if="applicant?.avatar" :src="applicant.avatar" class="w-full h-full object-cover" />
+              <img v-if="avatarSrc" :src="avatarSrc" class="w-full h-full object-cover" />
               <span v-else>{{ (applicant?.userName || applicant?.name || '').charAt(0) }}</span>
             </span>
             <div>

@@ -15,7 +15,7 @@
           <span
             class="applicant-avatar min-w-12 w-12 lg:w-14 min-h-12 h-12 lg:h-14 rounded-full relative overflow-hidden bg-bg-light"
           >
-            <img v-if="applicant.avatar" :src="applicant.avatar" class="w-full h-full object-cover" />
+            <img v-if="avatarSrc" :src="avatarSrc" class="w-full h-full object-cover" />
             <span
               v-else
               class="flex items-center justify-center w-full h-full text-primary font-bold text-xl"
@@ -212,4 +212,5 @@ const genderLabel = computed(() => {
 })
 
 const cvUrl = computed(() => buildImageUrl(props.applicant?.cvFilePath))
+const avatarSrc = computed(() => buildImageUrl(props.applicant?.avatarUrl || props.applicant?.avatar))
 </script>

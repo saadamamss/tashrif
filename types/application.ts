@@ -7,6 +7,7 @@ export interface Application {
   userName: string
   userGender: string
   userCity: string
+  avatarUrl?: string | null
   qualification: string
   experience?: string
   cvId?: number | null
