@@ -1,9 +1,8 @@
 <script setup>
 import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
 import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
-import CustomSelect from "~/components/elements/CustomSelect.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
-import JobCard from "~/components/JobCard.vue";
+import { buildImageUrl } from "~/services/help";
 
 definePageMeta({
   layout: "dashboard",
@@ -32,6 +31,8 @@ const loading = ref(false);
 const error = ref(null);
 const job = ref(null);
 const route = useRoute();
+
+const logoSrc = computed(() => buildImageUrl(job.value?.entityLogo, '/images/partner-3.svg'));
 
 function onApplied() {
   if (job.value) job.value.isApplied = true;
@@ -78,7 +79,7 @@ onMounted(async () => {
 
             <div class="flex items-center gap-2">
               <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
-                <img :src="job?.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
+                <img :src="logoSrc" class="w-10 h-6 object-cover" />
               </span>
               <span class="company-name text-sm text-dark">
                 {{ job?.entityName }}

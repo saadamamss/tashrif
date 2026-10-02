@@ -20,7 +20,7 @@ import FileInput from "~/components/elements/FileInput.vue";
 import TextInput from "~/components/elements/TextInput.vue";
 import OTPDialog from "~/components/OtpDialog.vue";
 import { Field, Form, ErrorMessage, defineRule } from "vee-validate";
-import { required, email, min, numeric, confirmed } from "@vee-validate/rules";
+import { required, email, min, numeric, confirmed, length } from "@vee-validate/rules";
 import PhoneInput from "~/components/PhoneInput.vue";
 
 // Define validation rules
@@ -28,6 +28,7 @@ defineRule("required", required);
 defineRule("email", email);
 defineRule("min", min);
 defineRule("numeric", numeric);
+defineRule("length", length);
 defineRule("confirmed", confirmed);
 
 const route = useRoute();
@@ -139,7 +140,7 @@ const onSubmit = async (values) => {
                 name="nationalId"
                 id="nationalId"
                 required
-                rules="required|numeric|min:10"
+                rules="required|numeric|length:10"
                 label="رقم الهوية الوطنية أو الإقامة"
                 placeholder="رقم الهوية الوطنية أو الإقامة"
                 v-model="formData.nationalId"
