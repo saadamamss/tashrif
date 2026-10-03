@@ -1,0 +1,65 @@
+name: CI
+
+# Branch-per-app setup: this workflow lives on the `backend` branch,
+# where the .NET solution sits at the repo root.
+on:
+  push:
+    branches: [backend]
+  pull_request:
+    branches: [backend]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tashrif_user
+          POSTGRES_PASSWORD: tashrif_pass
+          POSTGRES_DB: tashrif_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tashrif_user -d tashrif_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install EF tools
+        run: |
+          dotnet tool install --global dotnet-ef --version 8
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Restore
+        run: dotnet restore tashrif.sln
+
+      - name: Build
+        run: dotnet build tashrif.sln --no-restore --nologo -v q
+
+      - name: Generate throwaway JWT keys
+        # The app refuses to start without Jwt:* configured, and CI has no
+        # user-secrets. These are random per run, used for the migration
+        # step only, never stored anywhere.
+        run: |
+          echo "Jwt__Key=$(openssl rand -base64 32)" >> $GITHUB_ENV
+          echo "Jwt__RefreshKey=$(openssl rand -base64 32)" >> $GITHUB_ENV
+
+      - name: Apply test DB migrations
+        run: >
+          dotnet ef database update
+          --project Domain/tashrif.Context
+          --startup-project Application/tashrif.API
+          --connection "Host=localhost;Port=5432;Database=tashrif_test;Username=tashrif_user;Password=tashrif_pass"
+
+      - name: Test
+        run: dotnet test tashrif.sln --no-build --nologo
