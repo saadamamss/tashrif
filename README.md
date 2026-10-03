@@ -1,5 +1,7 @@
 # Tashreef Platform 🕋
 
+![CI](https://github.com/saadamamss/tashrif/actions/workflows/ci.yml/badge.svg?branch=front)
+
 A smart digital platform specialized in seasonal recruitment for Hajj and Umrah seasons. Bridges the gap between qualified individuals and operating entities.
 
 ## Quick Start
