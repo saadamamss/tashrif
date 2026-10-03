@@ -1,0 +1,36 @@
+name: CI
+
+# Branch-per-app setup: this workflow lives on the `front` branch,
+# where the Nuxt app sits at the repo root.
+on:
+  push:
+    branches: [front]
+  pull_request:
+    branches: [front]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: npx vitest run
