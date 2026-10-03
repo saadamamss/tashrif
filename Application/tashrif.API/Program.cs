@@ -10,6 +10,14 @@ using tashrif.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Hosting platforms (Railway, etc.) assign a dynamic port via $PORT.
+// When present it wins over the appsettings Kestrel endpoint (:5001 local dev).
+var railwayPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(railwayPort) && int.TryParse(railwayPort, out var port))
+{
+    builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(port));
+}
+
 // Add services to the container
 builder.Services.AddControllers()
     .AddJsonOptions(opts =>
