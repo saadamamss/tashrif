@@ -9,7 +9,7 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
     private readonly IFileStorageService _fileStorage = fileStorage;
     private readonly IstatusHistoryService _statusHistory = statusHistoryService;
 
-    public async Task<PaginationResultDto<ContractResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType)
+    public async Task<PaginationResultDto<ContractResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType, long? applicationId = null)
     {
         var query = await _unitOfWork.ContractsRepository.GetQueryable();
         query = query.Where(c => !c.IsDeleted)
@@ -21,6 +21,11 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
             query = query.Where(c => c.user_id == userId);
         else if (userType == "entity")
             query = query.Where(c => c.entity_id == userId);
+
+        // Narrow to a single application (details page). Ordering stays
+        // CreatedAt DESC so Items[0] is always the latest contract.
+        if (applicationId.HasValue)
+            query = query.Where(c => c.application_id == applicationId.Value);
 
         var total = await query.CountAsync();
         var items = await query

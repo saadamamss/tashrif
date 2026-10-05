@@ -43,11 +43,11 @@ public class ContractsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PaginationResultDto<ContractResponseDto>>> GetAll([FromQuery] PaginationDto pagination)
+    public async Task<ActionResult<PaginationResultDto<ContractResponseDto>>> GetAll([FromQuery] PaginationDto pagination, [FromQuery] long? applicationId)
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var userType = User.FindFirst(ClaimTypes.Role)?.Value;
-        var result = await _contractsService.GetAllAsync(pagination, userId, userType);
+        var result = await _contractsService.GetAllAsync(pagination, userId, userType, applicationId);
         return Ok(result);
     }
 

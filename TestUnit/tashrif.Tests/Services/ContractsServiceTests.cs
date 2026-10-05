@@ -342,4 +342,48 @@ public class ContractsServiceTests : IClassFixture<TestDatabaseFixture>
         }
         finally { }
     }
+
+    [Fact]
+    public async Task GetAll_FiltersByApplicationId()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+            var individual = await db.users.FirstAsync(u => u.type == "individual");
+
+            await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            db.ChangeTracker.Clear();
+
+            var match = await sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, individual.Id, "individual", app.Id);
+            match.Items.Should().HaveCount(1);
+            match.Items[0].ApplicationId.Should().Be(app.Id);
+
+            var miss = await sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, individual.Id, "individual", app.Id + 999);
+            miss.Items.Should().BeEmpty();
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task GetAll_ApplicationFilter_StillScopedToOwner()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            db.ChangeTracker.Clear();
+
+            // A different user asking for this applicationId must see nothing
+            var other = await sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, 99999, "individual", app.Id);
+            other.Items.Should().BeEmpty();
+        }
+        finally { scope.Dispose(); }
+    }
 }

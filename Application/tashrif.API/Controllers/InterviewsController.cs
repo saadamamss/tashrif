@@ -43,11 +43,11 @@ public class InterviewsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PaginationResultDto<InterviewResponseDto>>> GetAll([FromQuery] PaginationDto pagination)
+    public async Task<ActionResult<PaginationResultDto<InterviewResponseDto>>> GetAll([FromQuery] PaginationDto pagination, [FromQuery] long? applicationId)
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var userType = User.FindFirst(ClaimTypes.Role)?.Value;
-        var result = await _interviewsService.GetAllAsync(pagination, userId, userType);
+        var result = await _interviewsService.GetAllAsync(pagination, userId, userType, applicationId);
         return Ok(result);
     }
 

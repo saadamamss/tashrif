@@ -162,4 +162,83 @@ public class InterviewsServiceTests
         result.Items[0].UserName.Should().Be("المتقدم");
         result.Items[0].UserAvatar.Should().Be("avatar.png");
     }
+
+    [Fact]
+    public async Task GetAll_FiltersByApplicationId()
+    {
+        var applicantUser = new users { Id = 2, name = "المتقدم", avatar_url = "avatar.png" };
+        var entityUser = new users { Id = 10, name = "الجهة", avatar_url = "logo.png" };
+        interviews MakeInterview(long id, long appId) => new()
+        {
+            Id = id,
+            application_id = appId,
+            job_id = 1,
+            user_id = 2,
+            entity_id = 10,
+            method = "online",
+            interview_date = DateTime.UtcNow.AddDays(1),
+            interview_time = "10:00",
+            location = "مكة",
+            link = "",
+            notes = "",
+            status = "scheduled",
+            attendance = "pending",
+            entity_Entity = entityUser,
+            user_Entity = applicantUser,
+            job_Entity = new jobs { Id = 1 },
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+
+        _interviewsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { MakeInterview(1, 5), MakeInterview(2, 6) }.AsQueryable().BuildMock());
+
+        var result = await _sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, 10, "entity", 5);
+
+        result.Items.Should().HaveCount(1);
+        result.Items[0].ApplicationId.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetAll_UnknownApplicationId_ReturnsEmpty()
+    {
+        _interviewsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(Enumerable.Empty<interviews>().AsQueryable().BuildMock());
+
+        var result = await _sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, 10, "entity", 999);
+
+        result.Items.Should().BeEmpty();
+        result.Total.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetAll_SameApplication_ReturnsLatestFirst()
+    {
+        var applicantUser = new users { Id = 2, name = "المتقدم", avatar_url = "avatar.png" };
+        var entityUser = new users { Id = 10, name = "الجهة", avatar_url = "logo.png" };
+        var older = new interviews
+        {
+            Id = 1, application_id = 5, job_id = 1, user_id = 2, entity_id = 10,
+            method = "online", interview_date = DateTime.UtcNow.AddDays(1), interview_time = "10:00",
+            location = "مكة", link = "", notes = "الأولى", status = "scheduled", attendance = "pending",
+            entity_Entity = entityUser, user_Entity = applicantUser, job_Entity = new jobs { Id = 1 },
+            CreatedAt = DateTime.UtcNow.AddDays(-2), UpdatedAt = DateTime.UtcNow.AddDays(-2),
+        };
+        var newer = new interviews
+        {
+            Id = 2, application_id = 5, job_id = 1, user_id = 2, entity_id = 10,
+            method = "online", interview_date = DateTime.UtcNow.AddDays(3), interview_time = "11:00",
+            location = "جدة", link = "", notes = "الثانية", status = "scheduled", attendance = "pending",
+            entity_Entity = entityUser, user_Entity = applicantUser, job_Entity = new jobs { Id = 1 },
+            CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+        };
+
+        _interviewsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { older, newer }.AsQueryable().BuildMock());
+
+        var result = await _sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, 10, "entity", 5);
+
+        result.Items.Should().HaveCount(2);
+        result.Items[0].Id.Should().Be(2);
+    }
 }

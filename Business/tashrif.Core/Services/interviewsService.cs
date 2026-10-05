@@ -7,7 +7,7 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IstatusHistoryService _statusHistory = statusHistoryService;
 
-    public async Task<PaginationResultDto<InterviewResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType)
+    public async Task<PaginationResultDto<InterviewResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType, long? applicationId = null)
     {
         var query = await _unitOfWork.InterviewsRepository.GetQueryable();
         query = query.Where(i => !i.IsDeleted).Include(i => i.job_Entity)
@@ -18,6 +18,11 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
             query = query.Where(i => i.user_id == userId);
         else if (userType == "entity")
             query = query.Where(i => i.entity_id == userId);
+
+        // Narrow to a single application (details page). Ordering stays
+        // CreatedAt DESC so Items[0] is always the latest interview.
+        if (applicationId.HasValue)
+            query = query.Where(i => i.application_id == applicationId.Value);
 
         var total = await query.CountAsync();
         var items = await query
