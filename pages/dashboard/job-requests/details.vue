@@ -4,7 +4,7 @@ import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
-import { buildImageUrl, formatDate } from "~/services/help";
+import { buildImageUrl, formatDate, isPast } from "~/services/help";
 
 definePageMeta({
   layout: "dashboard",
@@ -71,6 +71,16 @@ const statusHistory = ref([]);
 const statusHistoryLoading = ref(false);
 
 const logoSrc = computed(()=> buildImageUrl(application.value?.job?.entityLogo , '/images/partner-3.svg'))
+const isContractExpired = computed(() =>
+  !!contract.value && contract.value.status !== 'signed' && isPast(contract.value.endDate)
+)
+const contractFileSize = computed(() => {
+  const bytes = Number(contract.value?.fileSize) || 0
+  if (!bytes) return ''
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} Mb`
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} Kb`
+  return `${bytes} bytes`
+})
 const canWithdraw = computed(() => {
   const s = application.value?.status
   return s === 'new' || s === 'shortlisted' || s === 'interview'
@@ -78,58 +88,63 @@ const canWithdraw = computed(() => {
 const currentStatus = computed(() => application.value?.status || '')
 const meta = computed(() => statusMeta[currentStatus.value] || statusMeta.new)
 
-onMounted(async () => {
+async function loadData() {
   loading.value = true;
+  statusHistoryLoading.value = true;
   const appId = route.query.id || route.params.id || 1
   try {
-    const { data, error } = await useApi().get(`/applications/${appId}`);
-    if (error) {
-      useToast().show(error, "error");
+    // All four are independent (the id comes from the route, not from the
+    // application response) — one parallel batch instead of the old
+    // app → (interviews + contracts) → history waterfall.
+    // Interviews/contracts are narrowed server-side via ?applicationId=
+    // (CreatedAt DESC, so the first item is the latest one). The client-side
+    // .find() stays as a safety net for mock mode, which ignores the param.
+    const [appRes, ivRes, ctRes, histRes] = await Promise.all([
+      useApi().get(`/applications/${appId}`),
+      useApi().get(`/interviews?applicationId=${appId}`),
+      useApi().get(`/contracts?applicationId=${appId}`),
+      useApi().get(`/applications/${appId}/status-history`),
+    ])
+    if (appRes.error) {
+      useToast().show(appRes.error, "error");
       return;
     }
-    if (data) {
-      application.value = data
-      const [iv, ct] = await Promise.all([
-        useApi().get('/interviews?limit=100'),
-        useApi().get('/contracts?limit=100'),
-      ])
-      if (iv.error) useToast().show(iv.error, "error")
-      if (ct.error) useToast().show(ct.error, "error")
-      interview.value = (iv.data?.items || []).find(i => i.applicationId === data.id) || null
-      contract.value = (ct.data?.items || []).find(c => c.applicationId === data.id) || null
-
-      // Load status history
-      try {
-        statusHistoryLoading.value = true
-        const { data: historyData, error: historyError } = await useApi().get(`/applications/${data.id}/status-history`)
-        if (historyError) {
-          useToast().show(historyError, "error")
-        } else if (historyData) {
-          statusHistory.value = historyData
-        }
-      } catch {
-        useToast().show("حدث خطأ أثناء تحميل سجل الحالات", "error")
-      } finally {
-        statusHistoryLoading.value = false
-      }
+    if (appRes.data) {
+      application.value = appRes.data
+      const appIdNum = Number(appId)
+      if (ivRes.error) useToast().show(ivRes.error, "error")
+      else interview.value = (ivRes.data?.items || []).find(i => i.applicationId === appIdNum) || null
+      if (ctRes.error) useToast().show(ctRes.error, "error")
+      else contract.value = (ctRes.data?.items || []).find(c => c.applicationId === appIdNum) || null
+      if (histRes.error) useToast().show(histRes.error, "error")
+      else if (histRes.data) statusHistory.value = histRes.data
     }
   } catch {
     useToast().show("حدث خطأ أثناء تحميل بيانات الطلب", "error");
   } finally {
     loading.value = false;
+    statusHistoryLoading.value = false;
   }
-});
+}
+
+onMounted(loadData)
 
 
 function downloadContract() {
   if (!contract.value?.fileUrl) return
   const link = document.createElement('a')
-  link.href = contract.value.fileUrl
-  link.download = 'contract.pdf'
+  link.href = buildImageUrl(contract.value.fileUrl)
+  link.download = contract.value.fileName || 'contract.pdf'
   link.target = '_blank'
   document.body.appendChild(link)
   link.click()
   link.remove()
+}
+
+async function refreshAfterSign() {
+  // SignContract closes itself on success — re-read server state so the
+  // card flips to "signed" and the timeline gains the accepted entry.
+  await loadData()
 }
 </script>
 <template>
@@ -328,23 +343,39 @@ function downloadContract() {
                 <CalenderIcon width="18" height="18" />
               </span>
               <span class="text-icon-muted text-xs">
-                {{ contract.status === 'signed' ? 'تم توقيع العقد' : 'العقد بانتظار التوقيع' }}
+                {{ contract.status === 'signed' ? 'تم توقيع العقد' : (isContractExpired ? 'انتهت صلاحية توقيع العقد' : 'العقد بانتظار التوقيع') }}
+              </span>
+            </div>
+            <div v-if="contract.status !== 'signed' && contract.endDate" class="flex gap-2 items-center">
+              <span>
+                <Clock width="18" height="18" />
+              </span>
+              <span class="text-icon-muted text-xs">
+                آخر موعد للتوقيع: {{ formatDate(contract.endDate) }}
+              </span>
+            </div>
+            <div v-if="contract.status === 'signed' && contract.signedAt" class="flex gap-2 items-center">
+              <span>
+                <Clock width="18" height="18" />
+              </span>
+              <span class="text-icon-muted text-xs">
+                تم التوقيع بتاريخ: {{ formatDate(contract.signedAt) }}
               </span>
             </div>
           </div>
 
           <div class="p-4 rounded-xl bg-bg-subtle mb-2">
             <div class="flex justify-between gap-4 items-center">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-2 min-w-0">
                 <span class="block p-2 bg-white rounded-xl">
                   <Pdf />
                 </span>
-                <div>
-                  <span class="block text-slate-900 text-sm mb-1">
-                    عقد العمل
+                <div class="min-w-0">
+                  <span class="block text-slate-900 text-sm mb-1 truncate">
+                    {{ contract.fileName || 'عقد العمل' }}
                   </span>
                   <span class="text-xs block text-slate-400">
-                    {{ contract.status === 'signed' ? 'تم التوقيع' : 'PDF' }}
+                    {{ contract.status === 'signed' ? 'تم التوقيع' : 'PDF' }}{{ contractFileSize ? ` • ${contractFileSize}` : '' }}
                   </span>
                 </div>
               </div>
@@ -359,13 +390,27 @@ function downloadContract() {
             </div>
           </div>
 
+          <div class="p-4 rounded-xl bg-bg-subtle mb-4" v-if="contract.notes">
+            <h3 class="text-sm mb-3 text-surface">📌 ملاحظات الجهة</h3>
+            <div class="text-xs text-muted">
+              <p>{{ contract.notes }}</p>
+            </div>
+          </div>
+
           <div class="flex gap-4">
             <button
-              v-if="contract.status === 'sent'"
+              v-if="contract.status === 'sent' && !isContractExpired"
               @click="signContractOpen = true"
               class="flex-1 text-center btn-primary text-sm"
             >
               توقيع العقد الإلكترونى
+            </button>
+            <button
+              v-else-if="isContractExpired"
+              disabled
+              class="flex-1 text-center btn-outline text-sm"
+            >
+              انتهت صلاحية التوقيع
             </button>
             <button
               v-else
@@ -429,7 +474,7 @@ function downloadContract() {
 
     </template>
     <!--  -->
-    <SignContract v-model="signContractOpen" />
+    <SignContract v-model="signContractOpen" :contract="contract" :contractId="contract?.id" @signed="refreshAfterSign" />
 
     <!-- Withdraw Confirmation Dialog -->
     <Teleport to="body">

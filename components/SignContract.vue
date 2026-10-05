@@ -113,6 +113,7 @@ const props = defineProps({
   },
 });
 const model = defineModel();
+const emit = defineEmits(['signed']);
 
 const sequenceConfirm = ref("أوافق على كل بنود العقد");
 const agreementConfirmed = ref(false);
@@ -162,6 +163,7 @@ const submitContract = async () => {
     agreementConfirmed.value = false;
     signatureAgreement.value = null;
     model.value = false;
+    emit('signed');
   } catch {
     useToast().show("حدث خطأ أثناء توقيع العقد", "error");
   } finally {

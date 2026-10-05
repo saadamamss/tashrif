@@ -69,10 +69,9 @@ function getBadgeStyle(status: string) {
               ← {{ getLabel(entry.oldStatus) }}
             </span>
           </div>
-          <div class="mt-1.5 flex items-center gap-2 text-xs text-muted">
-            <span v-if="entry.changedByName">{{ entry.changedByName }}</span>
-            <span v-if="entry.changedByName" class="text-border-light">•</span>
-            <span>{{ formatDateTime(entry.changedAt) }}</span>
+          <div class="timeline-meta mt-1.5 text-xs text-muted leading-relaxed">
+            <div v-if="entry.changedByName" class="timeline-meta-name font-medium truncate">{{ entry.changedByName }}</div>
+            <div class="timeline-meta-date">{{ formatDateTime(entry.changedAt) }}</div>
           </div>
         </div>
       </div>

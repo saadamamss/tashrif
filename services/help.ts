@@ -30,6 +30,12 @@ export function formatDate(value: string, withTime = false) {
       });
 }
 
+export function isPast(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const d = new Date(value);
+  return !isNaN(d.getTime()) && d.getTime() < Date.now();
+}
+
 export function formatTime(time24: string) {
   const [hours, minutes] = time24.split(":");
 
