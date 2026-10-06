@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware((to) => {
-  const userStore = useUserStore();
+  const { userType } = useAuth()
 
-  if (userStore.userType != "entity") {
-    return false;
+  if (userType.value !== 'entity') {
+    return navigateTo('/dashboard')
   }
-});
+})

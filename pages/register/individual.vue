@@ -1,28 +1,35 @@
 <script setup>
 useHead({
+  title: 'إنشاء حساب فرد',
+  meta: [
+    { name: "description", content: "إنشاء حساب فرد جديد في منصة تشريف للتوظيف الموسمي. قدم على الوظائف الموسمية في الحج والعمرة." },
+  ],
   bodyAttrs: {
     class: "register-page",
   },
 });
 
 definePageMeta({
-  middleware:"guest"
+  middleware:["auth"],
+  meta: { guest: true },
 })
 
 import Dialog from "~/components/Dialog.vue";
-import CustomSelect from "~/components/elements/custom-select.vue";
-import FileInput from "~/components/elements/file-input.vue";
-import TextInput from "~/components/elements/text-input.vue";
-import OTPDialog from "~/components/OTP-dialog.vue";
+import CustomSelect from "~/components/elements/CustomSelect.vue";
+import FileInput from "~/components/elements/FileInput.vue";
+import TextInput from "~/components/elements/TextInput.vue";
+import OTPDialog from "~/components/OtpDialog.vue";
 import { Field, Form, ErrorMessage, defineRule } from "vee-validate";
-import { required, email, min, numeric } from "@vee-validate/rules";
-import PhoneInput from "~/components/phone-input.vue";
+import { required, email, min, numeric, confirmed, length } from "@vee-validate/rules";
+import PhoneInput from "~/components/PhoneInput.vue";
 
 // Define validation rules
 defineRule("required", required);
 defineRule("email", email);
 defineRule("min", min);
 defineRule("numeric", numeric);
+defineRule("length", length);
+defineRule("confirmed", confirmed);
 
 const route = useRoute();
 const showOTPDialog = ref(false);
@@ -35,11 +42,12 @@ const formData = ref({
   firstName: "",
   lastName: "",
   nationalId: "",
+  password: "",
+  confirmPassword: "",
   phone: "",
   email: "",
   gender: "",
   nationality: "",
-  cvFile: null,
   idFile: null,
 });
 
@@ -59,17 +67,25 @@ const handleCountryChange = (country) => {
   console.log("Country changed:", country);
 };
 const router = useRouter();
-const onSubmit = (values) => {
-  console.log("Form submitted", {
-    ...values,
-    cvFile: formData.value.cvFile,
-    idFile: formData.value.idFile,
-  });
-
-  router.push("/register/success");
-
-  // Handle form submission here
-  // showOTPDialog.value = true; // Uncomment to show OTP dialog after submission
+const isSubmitting = ref(false);
+const onSubmit = async (values) => {
+  isSubmitting.value = true;
+  try {
+    const payload = new FormData()
+    Object.entries(values).forEach(([key, val]) => {
+      if (val) payload.append(key, val)
+    })
+    if (formData.value.idFile) payload.append('idFile', formData.value.idFile)
+    const { error } = await useApi().post('/auth/register', payload)
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    useToast().show("تم إنشاء الحساب بنجاح", "success")
+    router.push("/register/success")
+  } finally {
+    isSubmitting.value = false
+  }
 };
 </script>
 
@@ -79,10 +95,10 @@ const onSubmit = (values) => {
       class="card p-6 md:p-8 lg:p-10 max-w-[846px] mx-auto bg-white rounded-2xl"
     >
       <div class="header">
-        <h1 class="text-xl lg:text-2xl font-bold text-[#161614] mb-3">
+        <h1 class="text-xl lg:text-2xl font-bold text-dark mb-3">
           إنشاء حساب جديد
         </h1>
-        <p class="text-sm lg:text-base text-[#161614]">
+        <p class="text-sm lg:text-base text-dark">
           املأ النموذج أدناه ليتم تسجيل حساب جديد والانضمام إلى منصة تشريف.
         </p>
       </div>
@@ -124,12 +140,40 @@ const onSubmit = (values) => {
                 name="nationalId"
                 id="nationalId"
                 required
-                rules="required|numeric|min:10"
+                rules="required|numeric|length:10"
                 label="رقم الهوية الوطنية أو الإقامة"
                 placeholder="رقم الهوية الوطنية أو الإقامة"
                 v-model="formData.nationalId"
                 :error="errors.nationalId"
               />
+            </div>
+            <div class="w-full flex gap-4 md:gap-6 mb-6">
+              <div class="flex-1">
+                <TextInput
+                  name="password"
+                  id="password"
+                  type="password"
+                  required
+                  rules="required|min:8"
+                  label="كلمة المرور"
+                  placeholder="أدخل كلمة مرور قوية (8 أحرف على الأقل)"
+                  v-model="formData.password"
+                  :error="errors.password"
+                />
+              </div>
+              <div class="flex-1">
+                <TextInput
+                  name="confirmPassword"
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  rules="required|confirmed:@password"
+                  label="تأكيد كلمة المرور"
+                  placeholder="أعد إدخال كلمة المرور"
+                  v-model="formData.confirmPassword"
+                  :error="errors.confirmPassword"
+                />
+              </div>
             </div>
             <div class="w-full flex-col sm:flex-row flex gap-4 md:gap-6 mb-6">
               <div class="flex-1">
@@ -186,13 +230,12 @@ const onSubmit = (values) => {
                   <CustomSelect
                     name="gender"
                     placeholder="الجنس"
-                    :items="['ذكر', 'أنثى']"
+                    :items="[{ value: 'male', label: 'ذكر' }, { value: 'female', label: 'أنثى' }]"
                     :error="errors.gender"
                     v-model="formData.gender"
                   />
                 </Field>
 
-                <!-- </Field> -->
                 <ErrorMessage name="gender" class="text-red-500 text-xs mt-1" />
               </div>
 
@@ -210,24 +253,6 @@ const onSubmit = (values) => {
               </div>
             </div>
             <div class="w-full flex flex-col md:flex-row gap-4 md:gap-6 mb-6">
-              <div class="flex-1">
-                <label for="cvFile" class="block text-sm mb-2">
-                  السيرة الذاتية
-                  <span class="text-gray-300 text-xs">(اختيارى)</span>
-                </label>
-                <Field
-                  name="cvFile"
-                  id="cvFile"
-                  label="السيرة الذاتية"
-                  v-model="formData.cvFile"
-                >
-                  <FileInput
-                    accept=".pdf,.doc,.docx"
-                    @change="handleFileChange('cvFile', $event)"
-                  />
-                </Field>
-              </div>
-
               <div class="flex-1">
                 <label for="idFile" class="block text-sm mb-2">
                   صورة الهوية الوطنية/الإقامة
@@ -254,8 +279,8 @@ const onSubmit = (values) => {
             </div>
 
             <div class="mt-10 flex justify-end">
-              <button type="submit" class="btn-primary text-sm py-3 px-10">
-                إنشاء حساب
+              <button type="submit" class="btn-primary text-sm py-3 px-10" :disabled="isSubmitting">
+                {{ isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب' }}
               </button>
             </div>
           </div>

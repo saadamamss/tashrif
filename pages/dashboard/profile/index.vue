@@ -1,23 +1,31 @@
 <script setup>
 import { defineAsyncComponent, computed } from "vue";
-import { useUserStore } from "~/stores/userStore";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global","auth-guard", "user-type"],
+  middleware: ["auth", "user-type"],
+  meta: { requiresAuth: true },
 });
 
-const userStore = useUserStore();
+useHead({
+  title: 'الملف الشخصي',
+})
 
-// Computed property for better reactivity
+const { userType } = useAuth();
+
 const currentHomeComponent = computed(() => {
-  if (!userStore.userType) return null; // Handle loading state
+  if (!userType.value) return null;
 
-  return defineAsyncComponent(() =>
-    userStore.userType === "individual"
+  return defineAsyncComponent(() => {
+    // Admin has no individual/entity profile endpoints — show a read-only
+    // profile card instead of loading the entity profile (which 403s).
+    if (userType.value === "admin") {
+      return import("~/components/dashboard/admin/profile.vue");
+    }
+    return userType.value === "individual"
       ? import("~/components/dashboard/individual/profile.vue")
-      : import("~/components/dashboard/company/profile.vue")
-  );
+      : import("~/components/dashboard/company/profile.vue");
+  });
 });
 </script>
 
@@ -25,6 +33,9 @@ const currentHomeComponent = computed(() => {
   <div>
     <Suspense>
       <component :is="currentHomeComponent" v-if="currentHomeComponent" />
+      <template #fallback>
+        <UiLoadingSkeleton :count="3" height="300px" />
+      </template>
     </Suspense>
   </div>
 </template>

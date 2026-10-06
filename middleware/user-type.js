@@ -1,7 +1,8 @@
 export default defineNuxtRouteMiddleware((to) => {
-  const userStore = useUserStore();
+  const { userType } = useAuth()
 
-  if (!["individual", "entity"].includes(userStore.userType)) {
-    return false;
+  // Admin passes through — admin's /dashboard IS the stats home (D8).
+  if (!['individual', 'entity', 'admin'].includes(userType.value || '')) {
+    return navigateTo('/dashboard')
   }
-});
+})

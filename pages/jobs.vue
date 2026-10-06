@@ -30,9 +30,9 @@
                   نوع الوظيفة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="typeOptions"
                   placeholder="اختر"
-                  @selected="handleSelection"
+                  v-model="filters.type"
                   key="select-1"
                 />
               </div>
@@ -43,9 +43,9 @@
                   المنطقة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="locationOptions"
                   placeholder="اختر"
-                  @selected="handleSelection"
+                  v-model="filters.location"
                   key="select-2"
                 />
               </div>
@@ -56,9 +56,9 @@
                   الجنس <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="genderOptions"
                   placeholder="اختر"
-                  @selected="handleSelection"
+                  v-model="filters.gender"
                   key="select-3"
                 />
               </div>
@@ -69,9 +69,9 @@
                   الجهة الموظفة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
+                  :items="filterOptions.entities"
                   placeholder="اختر"
-                  @selected="handleSelection"
+                  v-model="filters.entityId"
                   key="select-4"
                 />
               </div>
@@ -80,7 +80,10 @@
               <div
                 class="w-full mt-4 lg:mt-0 sm:col-span-2 lg:col-span-1 flex items-end justify-center"
               >
-                <button class="btn-primary text-sm h-[42px]">
+                <button
+                  class="btn-primary text-sm h-[42px]"
+                  @click="applyFilters"
+                >
                   البحث عن وظيفة
                 </button>
               </div>
@@ -96,101 +99,204 @@
           class="flex flex-col sm:flex-row items-start justify-between gap-8"
         >
           <div>
-            <h2 class="text-lg font-semibold mb-3">عرض 84 نتيجة وظيفة</h2>
-            <p class="text-sm text-[#667178]">
-              بناءً على ملفك الشخصي وتفضيلاتك
-            </p>
+            <h2 class="text-lg font-semibold mb-3">
+              عرض {{ items.length }} نتيجة وظيفة
+            </h2>
+            <p class="text-sm text-muted">بناءً على ملفك الشخصي وتفضيلاتك</p>
           </div>
           <button class="self-end btn-outline text-sm gap-2">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M3.56061 5.6857C3.69102 5.53896 3.85651 5.30857 4.0088 5.09651L4.04439 5.04693C4.11131 4.9537 4.18003 4.85797 4.24999 4.76188V9C4.24999 9.41421 4.58578 9.75 4.99999 9.75C5.41421 9.75 5.74999 9.41421 5.74999 9V4.76188C5.81997 4.85798 5.88867 4.95369 5.9556 5.04693L5.99119 5.09651C6.14348 5.30857 6.30897 5.53896 6.43938 5.6857C6.71453 5.99532 7.18858 6.02327 7.4982 5.74812C7.80782 5.47297 7.83576 4.99892 7.56061 4.6893C7.49441 4.6148 7.38162 4.46113 7.20957 4.22155L7.1718 4.16893C7.01991 3.95729 6.8405 3.70729 6.6555 3.46849C6.45778 3.21329 6.23272 2.94317 6.00474 2.73079C5.89068 2.62454 5.75732 2.51509 5.6095 2.42857C5.46897 2.34632 5.25683 2.25 4.99999 2.25C4.74316 2.25 4.53102 2.34632 4.39049 2.42857C4.24267 2.51509 4.10931 2.62454 3.99525 2.73079C3.76726 2.94317 3.54221 3.21329 3.34449 3.46849C3.15949 3.70729 2.98007 3.9573 2.82818 4.16895L2.79042 4.22155C2.61837 4.46113 2.50558 4.6148 2.43938 4.6893C2.16423 4.99892 2.19217 5.47297 2.50179 5.74812C2.81141 6.02327 3.28546 5.99532 3.56061 5.6857Z"
-                fill="#161616"
-              />
-              <path
-                d="M11 5.25C10.5858 5.25 10.25 5.58579 10.25 6C10.25 6.41421 10.5858 6.75 11 6.75H21C21.4142 6.75 21.75 6.41421 21.75 6C21.75 5.58579 21.4142 5.25 21 5.25H11Z"
-                fill="#161616"
-              />
-              <path
-                d="M11 9.25001C10.5858 9.25 10.25 9.58579 10.25 10C10.25 10.4142 10.5858 10.75 11 10.75L18 10.7501C18.4142 10.7501 18.75 10.4143 18.75 10.0001C18.75 9.58585 18.4142 9.25006 18 9.25005L11 9.25001Z"
-                fill="#161616"
-              />
-              <path
-                d="M11 13.25C10.5858 13.25 10.25 13.5858 10.25 14C10.25 14.4142 10.5858 14.75 11 14.75H16C16.4142 14.75 16.75 14.4142 16.75 14C16.75 13.5858 16.4142 13.25 16 13.25H11Z"
-                fill="#161616"
-              />
-              <path
-                d="M10.25 18C10.25 17.5858 10.5858 17.25 11 17.25H14C14.4142 17.25 14.75 17.5858 14.75 18C14.75 18.4142 14.4142 18.75 14 18.75H11C10.5858 18.75 10.25 18.4142 10.25 18Z"
-                fill="#161616"
-              />
-              <path
-                d="M5.99117 18.9035C6.14346 18.6914 6.30895 18.461 6.43936 18.3143C6.71451 18.0047 7.18856 17.9767 7.49818 18.2519C7.8078 18.527 7.83575 19.0011 7.5606 19.3107C7.49439 19.3852 7.3816 19.5389 7.20955 19.7785L7.17179 19.8311C7.0199 20.0427 6.84048 20.2927 6.65548 20.5315C6.45777 20.7867 6.23271 21.0568 6.00472 21.2692C5.89067 21.3755 5.7573 21.4849 5.60948 21.5714C5.46895 21.6537 5.25681 21.75 4.99998 21.75C4.74314 21.75 4.531 21.6537 4.39047 21.5714C4.24265 21.4849 4.10929 21.3755 3.99523 21.2692C3.76725 21.0568 3.54219 20.7867 3.34448 20.5315C3.15948 20.2927 2.98006 20.0427 2.82817 19.8311L2.7904 19.7785C2.61835 19.5389 2.50556 19.3852 2.43936 19.3107C2.16421 19.0011 2.19215 18.527 2.50177 18.2519C2.81139 17.9767 3.28545 18.0047 3.5606 18.3143C3.691 18.461 3.8565 18.6914 4.00878 18.9035L4.04437 18.9531C4.11127 19.0463 4.18004 19.1421 4.24998 19.2381L4.24998 15C4.24998 14.5858 4.58576 14.25 4.99998 14.25C5.41419 14.25 5.74998 14.5858 5.74998 15L5.74998 19.2381C5.81984 19.1422 5.88842 19.0466 5.95524 18.9535L5.99117 18.9035Z"
-                fill="#161616"
-              />
-            </svg>
+            <SortBars />
             <span> بحلول تاريخ الإغلاق </span>
           </button>
         </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <JobCard v-for="i in 12" :key="i" @open-apply-form="openApplyForm" />
+      <UiLoadingSkeleton v-if="loading" :count="12" :columns="3" height="380px" rounded="xl" />
+      <UiErrorState v-else-if="error" :message="error" @retry="retry" />
+      <UiEmptyState
+        v-else-if="!items.length"
+        title="لا توجد نتائج"
+        description="لم يتم العثور على وظائف تطابق معايير البحث"
+      />
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <JobCard
+          v-for="item in items"
+          :key="item.id"
+          :job="item"
+          @open-apply-form="openApplyForm"
+        />
       </div>
 
       <div class="pt-6">
         <Pagination
-          :current-page="currentPage"
+          :current-page="page"
           :total-pages="totalPages"
-          :per-page="9"
+          :per-page="perPage"
           @page-changed="handlePageChange"
+          @per-page-change="onPerPageChange"
         />
       </div>
     </section>
 
     <!--  -->
-    <ApplyJobDialog v-model="applyJobDialog" v-if="authStore.isAuthenticated" />
+    <ApplyJobDialog
+      v-model="applyJobDialog"
+      :job-id="selectedJobId"
+      v-if="isAuthenticated"
+      @applied="markJobApplied"
+    />
   </div>
 </template>
 
 <script setup>
-import CustomSelect from "~/components/elements/custom-select.vue";
-import Pagination from "~/components/pagination.vue";
+import CustomSelect from "~/components/elements/CustomSelect.vue";
+import Pagination from "~/components/Pagination.vue";
+import { jobGenderLabel } from "~/services/analyticsLabels";
+import { cityLabel, workTypeLabel } from "~/services/jobLabels";
 definePageMeta({
-  middleware: ["auth-global"],
-  auth:false
+  middleware: [],
 });
-// 
+//
+useHead({
+  title: "الوظائف الموسمية",
+  meta: [
+    {
+      name: "description",
+      content:
+        "تصفح الوظائف الموسمية المتاحة في موسم الحج والعمرة، وقدّم على الفرص التي تناسب مهاراتك وخبراتك.",
+    },
+  ],
+});
+
 useScrollSpy();
 
-const authStore = useAuthStore();
+const { isAuthenticated } = useAuth();
 const { showModal, closeModal } = useLoginModal();
 const applyJobDialog = ref(false);
-const openApplyForm = () => {
-  if (authStore.isAuthenticated) {
+const selectedJobId = ref(null);
+const openApplyForm = (jobId) => {
+  if (isAuthenticated.value) {
+    selectedJobId.value = jobId;
     applyJobDialog.value = true;
     return;
   }
   showModal();
 };
-const handleSelection = () => {};
+const loading = ref(true);
+const error = ref(null);
+const items = ref([]);
 
-const currentPage = ref(1);
-const totalPages = ref(10);
-const handlePageChange = (page) => {
-  currentPage.value = page;
+function markJobApplied(jobId) {
+  const item = items.value.find(j => j.id === jobId)
+  if (item) item.isApplied = true
+}
+
+const filterOptions = ref({
+  workTypes: [],
+  locations: [],
+  genders: [],
+  entities: [],
+});
+
+const filters = ref({
+  type: "",
+  location: "",
+  gender: "",
+  entityId: "",
+});
+
+const genderOptions = computed(() =>
+  (filterOptions.value.genders || []).map((g) =>
+    typeof g === "string" ? { value: g, label: jobGenderLabel(g) } : g
+  )
+);
+
+const typeOptions = computed(() =>
+  (filterOptions.value.workTypes || []).map((t) =>
+    typeof t === "string" ? { value: t, label: workTypeLabel(t) } : t
+  )
+);
+
+const locationOptions = computed(() =>
+  (filterOptions.value.locations || []).map((l) =>
+    typeof l === "string" ? { value: l, label: cityLabel(l) } : l
+  )
+);
+
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } =
+  usePagination({ perPage: 9 });
+
+const handlePageChange = (p) => {
+  goToPage(p);
+  fetchJobs();
 };
+
+async function fetchFilterOptions() {
+  try {
+    const { data, error } = await useApi().get("/jobs/filter-options");
+    if (error) {
+      useToast().show(error, "error");
+      return;
+    }
+    if (data) {
+      filterOptions.value = data;
+    }
+  } catch (err) {
+    console.error("Failed to load filter options:", err);
+  }
+}
+
+async function fetchJobs() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const params = { page: page.value, limit: perPage.value };
+    if (filters.value.type) params.type = filters.value.type;
+    if (filters.value.location) params.location = filters.value.location;
+    if (filters.value.gender) params.gender = filters.value.gender;
+    if (filters.value.entityId) params.entityId = filters.value.entityId;
+
+    const { data, error } = await useApi().get("/jobs", params);
+    if (error) {
+      error.value = error;
+      useToast().show(error, "error");
+      return;
+    }
+    items.value = data?.items || [];
+    total.value = data?.total || 0;
+  } catch (err) {
+    error.value = err?.message || "حدث خطأ في تحميل الوظائف";
+    useToast().show("حدث خطأ في تحميل الوظائف", "error");
+  } finally {
+    loading.value = false;
+  }
+}
+
+function applyFilters() {
+  page.value = 1;
+  fetchJobs();
+}
+
+onMounted(() => {
+  const q = useRoute().query
+  if (q.type) filters.value.type = String(q.type)
+  if (q.location) filters.value.location = String(q.location)
+  if (q.gender) filters.value.gender = String(q.gender)
+  if (q.entityId) filters.value.entityId = isNaN(Number(q.entityId)) ? String(q.entityId) : Number(q.entityId)
+  fetchFilterOptions();
+  fetchJobs();
+});
+
+function retry() {
+  window.location.reload();
+}
 </script>
 <style lang="scss" scoped>
 .job-page {
   .hero-section {
     .section-content {
       min-height: 610px;
-      background: linear-gradient(
+      background:
+        linear-gradient(
           179.24deg,
           rgba(0, 0, 0, 0.7) 12.77%,
           rgba(0, 0, 0, 0) 139.66%

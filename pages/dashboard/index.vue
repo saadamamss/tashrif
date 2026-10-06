@@ -1,23 +1,29 @@
 <script setup>
 import { defineAsyncComponent, computed } from "vue";
-import { useUserStore } from "~/stores/userStore";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global","auth-guard", "user-type"],
+  middleware: ["auth", "user-type"],
+  meta: { requiresAuth: true },
 });
 
-const userStore = useUserStore();
+useHead({
+  title: 'الرئيسية',
+})
 
-// Computed property for better reactivity
+const { userType } = useAuth();
+
 const currentHomeComponent = computed(() => {
-  if (!userStore.userType) return null; // Handle loading state
+  if (!userType.value) return null;
 
-  return defineAsyncComponent(() =>
-    userStore.userType === "individual"
+  return defineAsyncComponent(() => {
+    if (userType.value === "admin") {
+      return import("~/components/dashboard/admin/home.vue");
+    }
+    return userType.value === "individual"
       ? import("~/components/dashboard/individual/home.vue")
-      : import("~/components/dashboard/company/home.vue")
-  );
+      : import("~/components/dashboard/company/home.vue");
+  });
 });
 </script>
 
@@ -25,6 +31,9 @@ const currentHomeComponent = computed(() => {
   <div>
     <Suspense>
       <component :is="currentHomeComponent" v-if="currentHomeComponent" />
+      <template #fallback>
+        <UiLoadingSkeleton :count="8" :columns="2" height="180px" />
+      </template>
     </Suspense>
   </div>
 </template>

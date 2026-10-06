@@ -1,14 +1,20 @@
 <script setup>
 import { Field, Form } from "vee-validate";
-import Breadcrumbs from "~/components/elements/breadcrumbs.vue";
-import CustomSelect from "~/components/elements/custom-select.vue";
-import TextInput from "~/components/elements/text-input.vue";
-import SuccessPublishing from "~/components/success-publishing.vue";
+import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
+import CustomSelect from "~/components/elements/CustomSelect.vue";
+import TextInput from "~/components/elements/TextInput.vue";
+import SuccessPublishing from "~/components/SuccessPublishing.vue";
+import { cityOptions, workTypeOptions, durationOptions, hoursOptions } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global", "auth-guard", "entity"],
+  middleware: ["auth", "entity"],
+  meta: { requiresAuth: true },
 });
+
+useHead({
+  title: 'نشر وظيفة جديدة',
+})
 
 const breadcrumbs = [
   {
@@ -25,22 +31,76 @@ const breadcrumbs = [
 const succesDialog = ref(false);
 
 const formData = ref({
-  qualification: "1",
-  jobTitle: "abdullah",
-  vacancies: "11",
-  jobPlace: "1",
-  jobType: "1",
-  targets: "1",
-  salary: "1200",
-  jobDesc: "abdullah",
-  benefits: "abdullah",
-  responsibilities: "responsiblities",
-  conditions: "consitions",
+  qualification: "",
+  jobTitle: "",
+  vacancies: "",
+  jobPlace: "",
+  jobType: "",
+  targets: "",
+  hours: "",
+  duration: "",
+  endDate: "",
+  salary: "",
+  jobDesc: "",
+  benefits: "",
+  responsibilities: "",
+  conditions: "",
 });
 
-const submitForm = () => {
-  console.log(formData.value);
-  succesDialog.value = true;
+const { save: saveForm, restore: restoreForm, clear: clearForm } = useFormPersistence('publish-job')
+const { enable: warnBeforeUnload, disable: disableUnloadWarning } = useBeforeUnload('لديك بيانات غير محفوظة في نموذج النشر')
+
+watch(formData, () => saveForm(formData.value), { deep: true })
+
+onMounted(() => {
+  const saved = restoreForm()
+  if (saved) formData.value = saved
+})
+
+warnBeforeUnload()
+
+const isSubmitting = ref(false);
+
+const splitLines = (value) =>
+  (value || "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+const submitForm = async () => {
+  isSubmitting.value = true
+  try {
+    const payload = {
+      title: formData.value.jobTitle,
+      description: formData.value.jobDesc,
+      location: formData.value.jobPlace,
+      type: formData.value.jobType,
+      target: formData.value.targets,
+      gender: formData.value.targets,
+      hours: formData.value.hours,
+      duration: formData.value.duration,
+      endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : null,
+      vacancies: Number(formData.value.vacancies) || 0,
+      qualification: formData.value.qualification,
+      salary: formData.value.salary,
+      benefits: splitLines(formData.value.benefits),
+      responsibilities: splitLines(formData.value.responsibilities),
+      conditions: splitLines(formData.value.conditions),
+    }
+    const { error } = await useApi().post('/jobs/publish', payload)
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    useToast().show("تم نشر الوظيفة بنجاح", "success")
+    clearForm()
+    disableUnloadWarning()
+    succesDialog.value = true;
+  } catch {
+    useToast().show("حدث خطأ أثناء نشر الوظيفة", "error")
+  } finally {
+    isSubmitting.value = false
+  }
 };
 </script>
 
@@ -52,7 +112,7 @@ const submitForm = () => {
     <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
       <div>
         <h1 class="text-lg lg:text-xl font-bold mb-3">نشر وظيفة جديدة</h1>
-        <p class="text-sm text-[#667178]">
+        <p class="text-sm text-muted">
           أضف تفاصيل الوظيفة لعرضها في المنصة، ليتمكن الباحثون عن العمل من
           الاطلاع عليها والتقديم.
         </p>
@@ -100,7 +160,7 @@ const submitForm = () => {
               >
                 <CustomSelect
                   placeholder="مكان العمل"
-                  :items="['1', '2']"
+                  :items="cityOptions"
                   required
                   v-model="formData.jobPlace"
                   :error="errors.jobPlace"
@@ -118,7 +178,7 @@ const submitForm = () => {
               <Field name="job-type" id="job-type" v-model="formData.jobType">
                 <CustomSelect
                   placeholder="نوع العمل"
-                  :items="['1', '2']"
+                  :items="workTypeOptions"
                   required
                   v-model="formData.jobType"
                   :error="errors.jobType"
@@ -133,7 +193,11 @@ const submitForm = () => {
               <Field name="targets" id="targets" v-model="formData.targets">
                 <CustomSelect
                   placeholder="الفئة المستهدفة"
-                  :items="['1', '2']"
+                  :items="[
+                    { value: 'both', label: 'رجال ونساء' },
+                    { value: 'male', label: 'رجال' },
+                    { value: 'female', label: 'نساء' },
+                  ]"
                   required
                   v-model="formData.targets"
                   :error="errors.targets"
@@ -155,7 +219,7 @@ const submitForm = () => {
               >
                 <CustomSelect
                   placeholder="المؤهل المطلوب"
-                  :items="['1', '2']"
+                  :items="['ثانوية عامة', 'دبلوم', 'بكالوريوس', 'ماجستير']"
                   required
                   v-model="formData.qualification"
                   :error="errors.qualification"
@@ -165,6 +229,7 @@ const submitForm = () => {
             <div class="relative">
               <TextInput
                 name="salary"
+                type="number"
                 id="salary"
                 label="الراتب"
                 placeholder="000"
@@ -174,12 +239,55 @@ const submitForm = () => {
                 required
               >
                 <span
-                  class="block absolute h-[38px] flex items-center left-[1px] bottom-[1px] px-3 bg-white text-sm rounded-2xl"
+                  class="block absolute h-[40px] flex items-center left-[0px] bottom-[0px] px-3 bg-white text-sm rounded-2xl shadow"
                   style="z-index: 1"
                 >
                   ريال سعودى
                 </span>
               </TextInput>
+            </div>
+          </div>
+          <!--  -->
+          <div class="grid sm:grid-cols-3 gap-6 mb-6">
+            <div>
+              <label for="job-hours" class="text-sm mb-2 block">
+                ساعات العمل
+                <span class="text-red-400">*</span>
+              </label>
+              <Field name="job-hours" id="job-hours" v-model="formData.hours">
+                <CustomSelect
+                  placeholder="ساعات العمل"
+                  :items="hoursOptions"
+                  required
+                  v-model="formData.hours"
+                  :error="errors.hours"
+                />
+              </Field>
+            </div>
+            <div>
+              <label for="job-duration" class="text-sm mb-2 block">
+                المدة
+                <span class="text-red-400">*</span>
+              </label>
+              <Field name="job-duration" id="job-duration" v-model="formData.duration">
+                <CustomSelect
+                  placeholder="المدة"
+                  :items="durationOptions"
+                  required
+                  v-model="formData.duration"
+                  :error="errors.duration"
+                />
+              </Field>
+            </div>
+            <div>
+              <TextInput
+                name="end-date"
+                id="end-date"
+                label="تاريخ الانتهاء"
+                type="date"
+                v-model="formData.endDate"
+                :error="errors.endDate"
+              />
             </div>
           </div>
           <!--  -->
@@ -192,7 +300,7 @@ const submitForm = () => {
               <Field name="job-desc" id="job-desc" v-model="formData.jobDesc">
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="وصف الوظيفة"
                   v-model="formData.jobDesc"
                   :error="errors.jobDesc"
@@ -211,7 +319,7 @@ const submitForm = () => {
               >
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="المزايا والمكافأة "
                   v-model="formData.benefits"
                   :error="errors.benefits"
@@ -233,7 +341,7 @@ const submitForm = () => {
               >
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="المهام والمسؤوليات"
                   v-model="formData.responsibilities"
                   :error="errors.responsibilities"
@@ -252,7 +360,7 @@ const submitForm = () => {
               >
                 <textarea
                   rows="6"
-                  class="text-sm placeholder:text-xs p-3 bg-[#f5f5f5] border border-[#fff]/0 focus:border-[#ecb42b] focus:outline-none rounded-xl w-full transition"
+                  class="text-sm placeholder:text-xs p-3 bg-bg-light border border-[#fff]/0 focus:border-primary focus:outline-none rounded-xl w-full transition"
                   placeholder="شروط القبول"
                   v-model="formData.conditions"
                   :error="errors.conditions"

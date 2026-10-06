@@ -1,20 +1,23 @@
 <script setup>
 import { defineAsyncComponent, computed } from "vue";
-import { useUserStore } from "~/stores/userStore";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global","auth-guard", "user-type"],
+  middleware: ["auth", "user-type"],
+  meta: { requiresAuth: true },
 });
 
-const userStore = useUserStore();
+useHead({
+  title: 'عقود التوظيف',
+})
 
-// Computed property for better reactivity
+const { userType } = useAuth();
+
 const currentHomeComponent = computed(() => {
-  if (!userStore.userType) return null; // Handle loading state
+  if (!userType.value) return null;
 
   return defineAsyncComponent(() =>
-    userStore.userType === "individual"
+    userType.value === "individual"
       ? import("~/components/dashboard/individual/contracts.vue")
       : import("~/components/dashboard/company/contracts.vue")
   );
@@ -24,9 +27,10 @@ const currentHomeComponent = computed(() => {
 <template>
   <div>
     <Suspense>
-     
-        <component :is="currentHomeComponent" v-if="currentHomeComponent" />
-
+      <component :is="currentHomeComponent" v-if="currentHomeComponent" />
+      <template #fallback>
+        <UiLoadingSkeleton :count="8" :columns="2" height="180px" />
+      </template>
     </Suspense>
   </div>
 </template>
