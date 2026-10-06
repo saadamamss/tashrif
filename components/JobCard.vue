@@ -36,14 +36,14 @@
           <span>
             <CalenderIcon width="21" height="20" />
           </span>
-          <span class="text-icon-muted text-xs"> {{ job.hours }} </span>
+            <span class="text-icon-muted text-xs"> {{ hoursLabel(job.hours) }} </span>
         </div>
         <div class="flex gap-2 items-center">
           <span>
             <CalenderIcon width="21" height="20" />
           </span>
           <span class="text-icon-muted text-xs">
-            {{ job.duration }}
+            {{ durationLabel(job.duration) }}
           </span>
         </div>
       </div>
@@ -66,7 +66,7 @@
 </template>
 <script setup>
 import { buildImageUrl } from '~/services/help';
-import { cityLabel } from '~/services/jobLabels';
+import { cityLabel, hoursLabel, durationLabel } from '~/services/jobLabels';
 
 /** @type {import('~/types/job').Job} */
 const props = defineProps({

@@ -49,3 +49,38 @@ export function workTypeLabel(key: string | null | undefined): string {
   if (!key) return ''
   return workTypeLabels[key] ?? key
 }
+
+export const durationOptions: JobOption[] = [
+  { value: 'month', label: 'شهر واحد' },
+  { value: '2months', label: 'شهرين' },
+  { value: '3months', label: '3 أشهر' },
+  { value: '6months', label: '6 أشهر' },
+  { value: 'year', label: 'سنة' },
+  { value: '2years', label: 'سنتين' },
+  { value: 'continuous', label: 'مستمر' },
+]
+
+export const durationLabels: Record<string, string> = Object.fromEntries(
+  durationOptions.map((o) => [o.value, o.label]),
+)
+
+export function durationLabel(key: string | null | undefined): string {
+  if (!key) return ''
+  return durationLabels[key] ?? key
+}
+
+export const hoursOptions: JobOption[] = [
+  { value: '6', label: '6 ساعات' },
+  { value: '8', label: '8 ساعات' },
+  { value: '10', label: '10 ساعات' },
+  { value: '12', label: '12 ساعة' },
+]
+
+export const hoursLabels: Record<string, string> = Object.fromEntries(
+  hoursOptions.map((o) => [o.value, o.label]),
+)
+
+export function hoursLabel(key: string | null | undefined): string {
+  if (!key) return ''
+  return hoursLabels[key] ?? key
+}

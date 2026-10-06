@@ -5,7 +5,7 @@ import CustomTabs from "~/components/elements/CustomTabs.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
 import { buildImageUrl, formatDate, isPast } from "~/services/help";
-import { cityLabel } from "~/services/jobLabels";
+import { cityLabel, hoursLabel, durationLabel } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -442,9 +442,8 @@ async function refreshAfterSign() {
               <span>
                 <Clock width="21" height="20" />
               </span>
-              <span class="text-icon-muted text-xs"> 
-                  {{ application?.job?.hours || application?.hours }} 
-                  ساعات
+              <span class="text-icon-muted text-xs">
+                  {{ hoursLabel(application?.job?.hours || application?.hours) }}
               </span>
             </div>
             <div class="flex gap-2 items-center">
@@ -452,7 +451,7 @@ async function refreshAfterSign() {
                 <CalenderIcon width="21" height="20" />
               </span>
               <span class="text-icon-muted text-xs">
-                {{ application?.job?.duration || application?.duration }}
+                {{ durationLabel(application?.job?.duration || application?.duration) }}
               </span>
             </div>
             <div class="flex gap-2 items-center">

@@ -4,7 +4,7 @@ import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import TextInput from "~/components/elements/TextInput.vue";
 import SuccessPublishing from "~/components/SuccessPublishing.vue";
-import { cityOptions, workTypeOptions } from "~/services/jobLabels";
+import { cityOptions, workTypeOptions, durationOptions, hoursOptions } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -229,6 +229,7 @@ const submitForm = async () => {
             <div class="relative">
               <TextInput
                 name="salary"
+                type="number"
                 id="salary"
                 label="الراتب"
                 placeholder="000"
@@ -238,7 +239,7 @@ const submitForm = async () => {
                 required
               >
                 <span
-                  class="block absolute h-[38px] flex items-center left-[1px] bottom-[1px] px-3 bg-white text-sm rounded-2xl"
+                  class="block absolute h-[40px] flex items-center left-[0px] bottom-[0px] px-3 bg-white text-sm rounded-2xl shadow"
                   style="z-index: 1"
                 >
                   ريال سعودى
@@ -256,11 +257,7 @@ const submitForm = async () => {
               <Field name="job-hours" id="job-hours" v-model="formData.hours">
                 <CustomSelect
                   placeholder="ساعات العمل"
-                  :items="[
-                    { value: '8', label: '8 ساعات' },
-                    { value: '10', label: '10 ساعات' },
-                    { value: '12', label: '12 ساعة' },
-                  ]"
+                  :items="hoursOptions"
                   required
                   v-model="formData.hours"
                   :error="errors.hours"
@@ -275,13 +272,7 @@ const submitForm = async () => {
               <Field name="job-duration" id="job-duration" v-model="formData.duration">
                 <CustomSelect
                   placeholder="المدة"
-                  :items="[
-                    { value: 'month', label: 'شهر واحد' },
-                    { value: '2months', label: 'شهرين' },
-                    { value: '3months', label: '3 أشهر' },
-                    { value: '6months', label: '6 أشهر' },
-                    { value: 'year', label: 'سنة' },
-                  ]"
+                  :items="durationOptions"
                   required
                   v-model="formData.duration"
                   :error="errors.duration"
