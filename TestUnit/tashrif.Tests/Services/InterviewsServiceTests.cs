@@ -77,7 +77,8 @@ public class InterviewsServiceTests
         var result = await _sut.ScheduleAsync(dto, 10);
 
         result.Should().NotBeNull();
-        result.Status.Should().Be("scheduled");
+        // Display contract: a just-scheduled (future) interview reads as upcoming.
+        result.Status.Should().Be("upcoming");
         result.EntityName.Should().Be("الجهة");
         result.UserName.Should().Be("المتقدم");
         _interviewsRepoMock.Verify(r => r.AddAsync(It.IsAny<interviews>()), Times.Once);
@@ -240,5 +241,48 @@ public class InterviewsServiceTests
 
         result.Items.Should().HaveCount(2);
         result.Items[0].Id.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetAll_StatusFilter_TranslatesDisplayValues()
+    {
+        var applicantUser = new users { Id = 2, name = "المتقدم", avatar_url = "avatar.png" };
+        var entityUser = new users { Id = 10, name = "الجهة", avatar_url = "logo.png" };
+        interviews Row(long id, string status, int dayOffset) => new()
+        {
+            Id = id, application_id = 5, job_id = 1, user_id = 2, entity_id = 10,
+            method = "online", interview_date = DateTime.UtcNow.AddDays(dayOffset), interview_time = "10:00",
+            location = "مكة", link = "", notes = "", status = status, attendance = "pending",
+            entity_Entity = entityUser, user_Entity = applicantUser, job_Entity = new jobs { Id = 1 },
+            CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+        };
+
+        _interviewsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { Row(1, "scheduled", 2), Row(2, "scheduled", -2), Row(3, "completed", -5) }
+                .AsQueryable().BuildMock());
+
+        var page = new PaginationDto { Page = 1, Limit = 10 };
+        (await _sut.GetAllAsync(page, 10, "entity", null, "upcoming")).Items
+            .Should().ContainSingle().Which.Id.Should().Be(1);
+        (await _sut.GetAllAsync(page, 10, "entity", null, "past")).Items
+            .Should().ContainSingle().Which.Id.Should().Be(2);
+        (await _sut.GetAllAsync(page, 10, "entity", null, "completed")).Items
+            .Should().ContainSingle().Which.Id.Should().Be(3);
+        (await _sut.GetAllAsync(page, 10, "entity", null, "cancelled")).Items
+            .Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("scheduled", -1, "past")]
+    [InlineData("scheduled", 0, "upcoming")]
+    [InlineData("scheduled", 2, "upcoming")]
+    [InlineData("completed", -5, "completed")]
+    [InlineData("completed", 5, "completed")]
+    public void MapDisplayStatus_DerivesFromDateUnlessCompleted(string dbStatus, int dayOffset, string expected)
+    {
+        // Day granularity: an interview stays upcoming for the whole of its day.
+        var now = new DateTime(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc);
+        interviewsService.MapDisplayStatus(dbStatus, now.Date.AddDays(dayOffset), now)
+            .Should().Be(expected);
     }
 }

@@ -7,7 +7,7 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IstatusHistoryService _statusHistory = statusHistoryService;
 
-    public async Task<PaginationResultDto<InterviewResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType, long? applicationId = null)
+    public async Task<PaginationResultDto<InterviewResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType, long? applicationId = null, string? status = null)
     {
         var query = await _unitOfWork.InterviewsRepository.GetQueryable();
         query = query.Where(i => !i.IsDeleted).Include(i => i.job_Entity)
@@ -23,6 +23,21 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
         // CreatedAt DESC so Items[0] is always the latest interview.
         if (applicationId.HasValue)
             query = query.Where(i => i.application_id == applicationId.Value);
+
+        // Display-status filter (mirrors MapDisplayStatus so the list matches the badges):
+        // completed is stored, upcoming/past are date-derived. Day granularity.
+        if (!string.IsNullOrEmpty(status))
+        {
+            var today = DateTime.UtcNow.Date;
+            query = status switch
+            {
+                "completed" => query.Where(i => i.status == "completed"),
+                "upcoming" => query.Where(i => i.status != "completed" && i.interview_date.Date >= today),
+                "past" => query.Where(i => i.status != "completed" && i.interview_date.Date < today),
+                // Unknown values exact-match like the applications/contracts filters (→ empty).
+                _ => query.Where(i => i.status == status),
+            };
+        }
 
         var total = await query.CountAsync();
         var items = await query
@@ -52,6 +67,12 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
             })
             .ToListAsync();
 
+        // Display contract: completed stays; otherwise the date decides (day granularity —
+        // an interview stays upcoming for the whole of its day). No stored upcoming/past.
+        var now = DateTime.UtcNow;
+        foreach (var item in items)
+            item.Status = MapDisplayStatus(item.Status, item.Date, now);
+
         return new PaginationResultDto<InterviewResponseDto>
         {
             Items = items,
@@ -60,6 +81,13 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
             Total = total,
         };
     }
+
+    /// <summary>
+    /// Display contract for interview status: <c>completed</c> stays as stored, otherwise the
+    /// date decides — <c>upcoming</c> (today or later) or <c>past</c>. Day granularity.
+    /// </summary>
+    public static string MapDisplayStatus(string dbStatus, DateTime date, DateTime now) =>
+        dbStatus == "completed" ? "completed" : (date.Date < now.Date ? "past" : "upcoming");
 
     public async Task<InterviewResponseDto> ScheduleAsync(ScheduleInterviewDto dto, long entityId)
     {
@@ -126,7 +154,7 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
             Location = interview.location,
             Link = interview.link,
             Notes = interview.notes,
-            Status = interview.status,
+            Status = MapDisplayStatus(interview.status, interview.interview_date, DateTime.UtcNow),
             Attendance = interview.attendance,
             CreatedAt = interview.CreatedAt,
         };
