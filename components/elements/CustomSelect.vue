@@ -17,7 +17,17 @@
       <span :class="{ 'text-gray-400 text-xs': !selectedOption }">
         {{ selectedOption || placeholder }}
       </span>
-      <ArrowDownIcon className="dropdown-icon" />
+      <Close
+        v-if="hasValue"
+        :width="14"
+        :height="14"
+        bgColor="transparent"
+        class="dropdown-icon cursor-pointer"
+        role="button"
+        aria-label="مسح الاختيار"
+        @click.stop="clearSelection"
+      />
+      <ArrowDownIcon v-else className="dropdown-icon" />
     </div>
 
     <transition name="slide-fade">
@@ -82,6 +92,15 @@ const selectedOption = computed(() => {
   const option = options.value.find((opt) => opt.value === props.modelValue);
   return option ? option.label : "";
 });
+
+const hasValue = computed(() => {
+  return props.modelValue !== "" && props.modelValue !== null && props.modelValue !== undefined;
+});
+
+const clearSelection = () => {
+  emit("update:modelValue", "");
+  isOpen.value = false;
+};
 
 const dropdownPosition = computed(() => {
   if (!selectField.value || !isOpen.value) return {};

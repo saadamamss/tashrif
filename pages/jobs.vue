@@ -277,6 +277,11 @@ function applyFilters() {
 }
 
 onMounted(() => {
+  const q = useRoute().query
+  if (q.type) filters.value.type = String(q.type)
+  if (q.location) filters.value.location = String(q.location)
+  if (q.gender) filters.value.gender = String(q.gender)
+  if (q.entityId) filters.value.entityId = isNaN(Number(q.entityId)) ? String(q.entityId) : Number(q.entityId)
   fetchFilterOptions();
   fetchJobs();
 });

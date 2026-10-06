@@ -21,22 +21,22 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
             <div class="w-full">
               <label class="text-sm mb-2 block">نوع الوظيفة <span class="text-red-500">*</span></label>
-              <CustomSelect :items="workTypes" placeholder="اختر" />
+              <CustomSelect :items="typeOptions" placeholder="اختر" v-model="filters.type" />
             </div>
             <div class="w-full">
               <label class="text-sm mb-2 block">المنطقة <span class="text-red-500">*</span></label>
-              <CustomSelect :items="locations" placeholder="اختر" />
+              <CustomSelect :items="locationOptions" placeholder="اختر" v-model="filters.location" />
             </div>
             <div class="w-full">
               <label class="text-sm mb-2 block">الجنس <span class="text-red-500">*</span></label>
-              <CustomSelect :items="genders" placeholder="اختر" />
+              <CustomSelect :items="genderOptions" placeholder="اختر" v-model="filters.gender" />
             </div>
             <div class="w-full">
               <label class="text-sm mb-2 block">الجهة الموظفة <span class="text-red-500">*</span></label>
-              <CustomSelect :items="['Option 1', 'Option 2', 'Option 3']" placeholder="اختر" />
+              <CustomSelect :items="entities" placeholder="اختر" v-model="filters.entityId" />
             </div>
             <div class="w-full mt-4 lg:mt-0 sm:col-span-2 lg:col-span-1 flex items-end justify-center">
-              <button class="btn-primary text-sm h-[42px]">البحث عن وظيفة</button>
+              <button class="btn-primary text-sm h-[42px]" @click="search">البحث عن وظيفة</button>
             </div>
           </div>
         </div>
@@ -47,11 +47,53 @@
 
 <script setup>
 import CustomSelect from "./elements/CustomSelect.vue";
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { jobGenderLabel } from "~/services/analyticsLabels";
+import { cityLabel, workTypeLabel } from "~/services/jobLabels";
 
-const workTypes = ref([])
-const locations = ref([])
-const genders = ref([])
+const filterOptions = ref({
+  workTypes: [],
+  locations: [],
+  genders: [],
+  entities: [],
+})
+
+const filters = ref({
+  type: "",
+  location: "",
+  gender: "",
+  entityId: "",
+})
+
+const typeOptions = computed(() =>
+  (filterOptions.value.workTypes || []).map((t) =>
+    typeof t === "string" ? { value: t, label: workTypeLabel(t) } : t
+  )
+)
+
+const locationOptions = computed(() =>
+  (filterOptions.value.locations || []).map((l) =>
+    typeof l === "string" ? { value: l, label: cityLabel(l) } : l
+  )
+)
+
+const genderOptions = computed(() =>
+  (filterOptions.value.genders || []).map((g) => {
+    if (typeof g === "string") return { value: g, label: jobGenderLabel(g) }
+    return g
+  })
+)
+
+const entities = computed(() => filterOptions.value.entities || [])
+
+function search() {
+  const query = {}
+  if (filters.value.type) query.type = filters.value.type
+  if (filters.value.location) query.location = filters.value.location
+  if (filters.value.gender) query.gender = filters.value.gender
+  if (filters.value.entityId) query.entityId = filters.value.entityId
+  navigateTo({ path: "/jobs", query })
+}
 
 onMounted(async () => {
   try {
@@ -61,9 +103,7 @@ onMounted(async () => {
       return
     }
     if (data) {
-      workTypes.value = data.workTypes || ['ميداني', 'مكتبي', 'عن بعد']
-      locations.value = data.locations || ['مكة المكرمة', 'المدينة المنورة', 'منى', 'عرفات', 'مزدلفة']
-      genders.value = data.genders || ['الكل', 'رجال', 'نساء']
+      filterOptions.value = data
     }
   } catch (e) { console.error(e) }
 })
