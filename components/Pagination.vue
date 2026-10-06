@@ -4,7 +4,7 @@
   >
     <div class="text-sm text-muted">
       <div class="flex items-center gap-3">
-        <CustomSelect v-model="perPageSelect" :items="[9, 12, 15, 21]" style="min-width: 80px; width: 80px;"/>
+        <CustomSelect v-model="perPageSelect" :items="[9, 12, 15, 21]" :clearable="false" style="min-width: 80px; width: 80px;"/>
         <p>
           تم عرض من {{ (currentPage - 1) * perPage + 1 }} إلى
           {{ Math.min(currentPage * perPage, perPage * totalPages) }} من أصل

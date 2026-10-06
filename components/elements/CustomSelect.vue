@@ -18,7 +18,7 @@
         {{ selectedOption || placeholder }}
       </span>
       <Close
-        v-if="hasValue"
+        v-if="clearable && hasValue"
         :width="14"
         :height="14"
         bgColor="transparent"
@@ -65,6 +65,7 @@ const props = defineProps({
   placeholder: String,
   error: String,
   modelValue: [String, Number],
+  clearable: { type: Boolean, default: true },
 });
 
 /**
