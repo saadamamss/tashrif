@@ -67,7 +67,7 @@ const props = defineProps({
 
 const logoSrc = computed(()=> buildImageUrl(props.interview?.userAvatar, ""))
 const statusLabel = computed(() => {
-  const labels = { scheduled: 'قادمة', completed: 'منتهية', cancelled: 'ملغية' }
+  const labels = { completed: 'منتهية', upcoming: 'قادمة', past: 'فات موعدها' }
   return labels[props.interview?.status] || 'قادمة'
 })
 </script>

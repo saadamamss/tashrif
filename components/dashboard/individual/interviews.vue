@@ -1,8 +1,13 @@
 <script setup>
-import CustomSelect from "~/components/elements/CustomSelect.vue";
 import InterviewCard from "~/components/InterviewCard.vue";
+import CustomSelect from "~/components/elements/CustomSelect.vue";
+import ExpandArea from "~/components/ExpandArea.vue";
 
-const statusOptions = ['الكل', 'قادمة', 'منتهية', 'ملغية']
+const statusOptions = [
+  { value: 'upcoming', label: 'قادمة' },
+  { value: 'past', label: 'فات موعدها' },
+  { value: 'completed', label: 'منتهية' },
+]
 const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
@@ -10,10 +15,16 @@ const toggleFilterAria = () => {
 const loading = ref(false);
 const items = ref([]);
 
-onMounted(async () => {
+const filters = ref({
+  status: '',
+})
+
+async function fetchInterviews() {
   loading.value = true
   try {
-    const { data, error } = await useApi().get('/interviews')
+    const params = {}
+    if (filters.value.status) params.status = filters.value.status
+    const { data, error } = await useApi().get('/interviews', params)
     if (error) {
       useToast().show(error, "error")
       return
@@ -22,7 +33,18 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+function applyFilters() {
+  fetchInterviews()
+}
+
+function resetFilters() {
+  filters.value = { status: '' }
+  fetchInterviews()
+}
+
+onMounted(fetchInterviews)
 </script>
 <template>
   <div class="px-4 lg:px-0">
@@ -31,13 +53,15 @@ onMounted(async () => {
         <div>
           <h1 class="text-base font-semibold mb-3">تصفية</h1>
           <p class="text-sm text-muted">
-            قم بتخصيص نتائج البحث لعرض الوظائف التي تناسبك بشكل أفضل.
+            قم بتخصيص نتائج البحث لعرض المقابلات التي تناسبك.
           </p>
         </div>
         <div>
           <button
             @click="toggleFilterAria"
             class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
+            :aria-expanded="filterAreaExpands"
+            aria-label="تصفية"
           >
             <ChevronUp />
           </button>
@@ -52,48 +76,16 @@ onMounted(async () => {
           </div>
           <div class="py-4">
             <div
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full"
             >
-              <!-- Region -->
+              <!-- Status -->
               <div class="w-full">
-                <label class="text-sm mb-2 block"> تاريخ المقابلة </label>
+                <label class="text-sm mb-2 block"> الحالة </label>
                 <CustomSelect
                   :items="statusOptions"
-                  placeholder="تاريخ المقابلة"
-                  
-                  key="select-2"
-                />
-              </div>
-              <!-- Job Type -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> نوع الوظيفة </label>
-                <CustomSelect
-                  :items="statusOptions"
-                  placeholder="اختر"
-                  
+                  placeholder="الحالة"
+                  v-model="filters.status"
                   key="select-1"
-                />
-              </div>
-
-              <!-- Employer -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> الموقع </label>
-                <CustomSelect
-                  :items="statusOptions"
-                  placeholder="الموقع"
-                  
-                  key="select-4"
-                />
-              </div>
-
-              <!-- Gender -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> الشركة </label>
-                <CustomSelect
-                  :items="statusOptions"
-                  placeholder="الشركة"
-                  
-                  key="select-3"
                 />
               </div>
             </div>
@@ -102,9 +94,9 @@ onMounted(async () => {
             <hr />
           </div>
           <div class="flex justify-between items-center">
-            <button class="btn-outline text-sm px-10">إعادة تعيين</button>
+            <button class="btn-outline text-sm px-10" @click="resetFilters">إعادة تعيين</button>
 
-            <button class="btn-primary text-sm px-10">تطبيق</button>
+            <button class="btn-primary text-sm px-10" @click="applyFilters">تطبيق</button>
           </div>
         </div>
       </ExpandArea>

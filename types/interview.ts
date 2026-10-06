@@ -14,7 +14,8 @@ export interface Interview {
   location?: string
   link?: string
   notes: string
-  status: 'scheduled' | 'completed' | 'cancelled'
+  // Display contract (backend-mapped): completed stays stored, otherwise date-derived.
+  status: 'upcoming' | 'past' | 'completed'
   attendance: 'pending' | 'present' | 'absent'
   createdAt: string
 }
