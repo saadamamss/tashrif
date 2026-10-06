@@ -43,11 +43,11 @@ public class ContractsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PaginationResultDto<ContractResponseDto>>> GetAll([FromQuery] PaginationDto pagination, [FromQuery] long? applicationId)
+    public async Task<ActionResult<PaginationResultDto<ContractResponseDto>>> GetAll([FromQuery] PaginationDto pagination, [FromQuery] long? applicationId, [FromQuery] string? status)
     {
         var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var userType = User.FindFirst(ClaimTypes.Role)?.Value;
-        var result = await _contractsService.GetAllAsync(pagination, userId, userType, applicationId);
+        var result = await _contractsService.GetAllAsync(pagination, userId, userType, applicationId, status);
         return Ok(result);
     }
 
@@ -87,6 +87,44 @@ public class ContractsController : ControllerBase
         });
 
         return CreatedAtAction(null, result);
+    }
+
+    [Authorize(Policy = "Entity")]
+    [HttpPut("{id}")]
+    public async Task<ActionResult<ContractResponseDto>> Update(long id, [FromForm] UpdateContractDto dto)
+    {
+        var entityId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var result = await _contractsService.UpdateAsync(id, dto, entityId);
+        await TryLog(entityId, AuditActions.ContractUpdated, "contracts", id, null, "sent");
+
+        _taskQueue.Enqueue(async scope =>
+        {
+            var notificationsService = scope.ServiceProvider.GetRequiredService<INotificationsService>();
+            var notificationHub = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
+
+            if (result.UserEmail is not null)
+            {
+                await _emailService.SendAsync(result.UserEmail, "تم تحديث عقد العمل", EmailTemplates.ContractUpdated(result.UserName!, result.JobTitle!));
+            }
+
+            var notification = await notificationsService.CreateAsync(
+                result.UserId,
+                "تم تحديث العقد",
+                $"قامت {result.EntityName} بتحديث العقد لوظيفة {result.JobTitle} — اطلع على الشروط الجديدة",
+                "contract_updated",
+                result.Id,
+                "contract");
+
+            await notificationHub.SendToUserAsync(result.UserId, "ContractUpdated", new
+            {
+                notification.Id,
+                ContractId = result.Id,
+                JobTitle = result.JobTitle,
+                EntityName = result.EntityName,
+            });
+        });
+
+        return Ok(result);
     }
 
     [HttpPost("{id}/sign")]

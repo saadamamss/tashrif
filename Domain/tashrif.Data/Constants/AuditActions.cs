@@ -16,6 +16,7 @@ public static class AuditActions
     public const string ProfileUpdated       = "profile.updated";
     public const string ContractSent         = "contract.sent";
     public const string ContractSigned       = "contract.signed";
+    public const string ContractUpdated      = "contract.updated";
     public const string InterviewScheduled   = "interview.scheduled";
 
     /// <summary>Must match frontend `entityTypeOptions` exactly (plural).</summary>

@@ -6,6 +6,7 @@ using tashrif.Data.DTOs;
 
 namespace tashrif.Tests.Services;
 
+[Collection("SequentialDb")]
 public class ContractsServiceTests : IClassFixture<TestDatabaseFixture>
 {
     private readonly TestDatabaseFixture _fixture;
@@ -383,6 +384,171 @@ public class ContractsServiceTests : IClassFixture<TestDatabaseFixture>
             // A different user asking for this applicationId must see nothing
             var other = await sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, 99999, "individual", app.Id);
             other.Items.Should().BeEmpty();
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task Update_ExpiredContract_RevivesToSentWithNewDeadline()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            await db.contracts.Where(c => c.Id == sent.Id)
+                .ExecuteUpdateAsync(c => c
+                    .SetProperty(x => x.status, "expired")
+                    .SetProperty(x => x.end_date, DateTime.UtcNow.AddDays(-1)));
+            db.ChangeTracker.Clear();
+
+            var newEnd = DateTime.UtcNow.AddDays(5);
+            var result = await sut.UpdateAsync(sent.Id,
+                new UpdateContractDto { EndDate = newEnd }, entity.Id);
+
+            result.Status.Should().Be("sent");
+            result.EndDate.Should().Be(newEnd.Date.AddDays(1).AddTicks(-1));
+            result.FileUrl.Should().Be(sent.FileUrl);
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task Update_SentContract_ExtendsDeadlineAnytime()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            db.ChangeTracker.Clear();
+
+            var result = await sut.UpdateAsync(sent.Id,
+                new UpdateContractDto { EndDate = DateTime.UtcNow.AddDays(7) }, entity.Id);
+
+            result.Status.Should().Be("sent");
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task Update_WithNewFile_ReplacesFile()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            db.ChangeTracker.Clear();
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes("%PDF-1.4 probe");
+            var file = new FormFile(new MemoryStream(bytes), 0, bytes.Length, "contractFile", "contract.pdf");
+            var result = await sut.UpdateAsync(sent.Id,
+                new UpdateContractDto { ContractFile = file }, entity.Id);
+
+            result.FileUrl.Should().NotBe(sent.FileUrl);
+            result.FileSize.Should().Be(bytes.Length);
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task Update_SignedContract_ThrowsBadHttpRequestException()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+            var individual = await db.users.FirstAsync(u => u.type == "individual");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            await sut.SignAsync(sent.Id, individual.Id);
+            db.ChangeTracker.Clear();
+
+            var act = () => sut.UpdateAsync(sent.Id,
+                new UpdateContractDto { EndDate = DateTime.UtcNow.AddDays(5) }, entity.Id);
+            await act.Should().ThrowAsync<BadHttpRequestException>()
+                .WithMessage("لا يمكن تعديل عقد موقع");
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task Update_WrongEntity_ThrowsUnauthorizedAccessException()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            db.ChangeTracker.Clear();
+
+            var act = () => sut.UpdateAsync(sent.Id,
+                new UpdateContractDto { EndDate = DateTime.UtcNow.AddDays(5) }, entity.Id + 999);
+            await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task Update_PastEndDate_ThrowsBadHttpRequestException()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            db.ChangeTracker.Clear();
+
+            var act = () => sut.UpdateAsync(sent.Id,
+                new UpdateContractDto { EndDate = DateTime.UtcNow.AddHours(2) }, entity.Id);
+            await act.Should().ThrowAsync<BadHttpRequestException>();
+        }
+        finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task GetAll_FiltersByStatus()
+    {
+        var (sut, db, scope) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+            var individual = await db.users.FirstAsync(u => u.type == "individual");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            db.ChangeTracker.Clear();
+
+            var asSent = await sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, individual.Id, "individual", null, "sent");
+            asSent.Items.Should().ContainSingle().Which.Id.Should().Be(sent.Id);
+
+            var asSigned = await sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, individual.Id, "individual", null, "signed");
+            asSigned.Items.Should().BeEmpty();
+
+            await sut.SignAsync(sent.Id, individual.Id);
+            db.ChangeTracker.Clear();
+
+            var afterSign = await sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, individual.Id, "individual", null, "signed");
+            afterSign.Items.Should().ContainSingle().Which.Id.Should().Be(sent.Id);
         }
         finally { scope.Dispose(); }
     }

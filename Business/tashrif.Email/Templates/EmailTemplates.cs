@@ -72,4 +72,19 @@ public static class EmailTemplates
             <p>تمت إعادة تقييمك لوظيفة {jobTitle} في {entityName}.</p>
             <p>سيتم مراجعة طلبك مرة أخرى.</p>
         </div>";
+
+    public static string ContractExpired(string recipientName, string jobTitle, string otherParty) => $@"
+        <div dir=""rtl"" style=""font-family: sans-serif;"">
+            <h1>انتهت مهلة العقد</h1>
+            <p>عزيزي {recipientName}،</p>
+            <p>انتهت مهلة توقيع العقد لوظيفة {jobTitle} ({otherParty}) دون توقيع.</p>
+            <p>يمكن للجهة تحديث العقد وإعادة إرساله بمهلة جديدة.</p>
+        </div>";
+
+    public static string ContractUpdated(string individualName, string jobTitle) => $@"
+        <div dir=""rtl"" style=""font-family: sans-serif;"">
+            <h1>تم تحديث العقد</h1>
+            <p>عزيزي {individualName}،</p>
+            <p>قامت الجهة بتحديث العقد لوظيفة {jobTitle}. يرجى الاطلاع على الشروط الجديدة وتوقيعه.</p>
+        </div>";
 }

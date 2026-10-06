@@ -142,6 +142,7 @@ builder.Services.AddHostedService<QueuedHostedService>();
 
 // Add hosted services
 builder.Services.AddHostedService<JobExpiryService>();
+builder.Services.AddHostedService<ContractExpiryService>();
 
 var app = builder.Build();
 

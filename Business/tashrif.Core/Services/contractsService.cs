@@ -9,7 +9,7 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
     private readonly IFileStorageService _fileStorage = fileStorage;
     private readonly IstatusHistoryService _statusHistory = statusHistoryService;
 
-    public async Task<PaginationResultDto<ContractResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType, long? applicationId = null)
+    public async Task<PaginationResultDto<ContractResponseDto>> GetAllAsync(PaginationDto pagination, long userId, string? userType, long? applicationId = null, string? status = null)
     {
         var query = await _unitOfWork.ContractsRepository.GetQueryable();
         query = query.Where(c => !c.IsDeleted)
@@ -26,6 +26,9 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
         // CreatedAt DESC so Items[0] is always the latest contract.
         if (applicationId.HasValue)
             query = query.Where(c => c.application_id == applicationId.Value);
+
+        if (!string.IsNullOrEmpty(status))
+            query = query.Where(c => c.status == status);
 
         var total = await query.CountAsync();
         var items = await query
@@ -171,6 +174,79 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
             EndDate = endDate,
             Status = newContract.status,
             CreatedAt = newContract.CreatedAt,
+        };
+    }
+
+    public async Task<ContractResponseDto> UpdateAsync(long id, UpdateContractDto dto, long entityId)
+    {
+        var contract = await _unitOfWork.ContractsRepository.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException("العقد غير موجود");
+
+        if (contract.entity_id != entityId)
+            throw new UnauthorizedAccessException("لا تملك صلاحية الوصول");
+
+        if (contract.status == "signed")
+            throw new BadHttpRequestException("لا يمكن تعديل عقد موقع", 400);
+
+        if (dto.EndDate.HasValue)
+        {
+            // Same deadline rule as send: end of the picked day, strictly more than 24h out.
+            var endDate = DateTime.SpecifyKind(dto.EndDate.Value, DateTimeKind.Utc)
+                .Date.AddDays(1).AddTicks(-1);
+            if (endDate <= DateTime.UtcNow.AddHours(24))
+                throw new BadHttpRequestException("يجب أن يكون تاريخ انتهاء العقد بعد 24 ساعة على الأقل من الإرسال", 400);
+            contract.end_date = endDate;
+        }
+
+        if (dto.ContractFile is not null)
+        {
+            var oldUrl = contract.file_url;
+            contract.file_url = await _fileStorage.SaveFileAsync(dto.ContractFile, "contracts");
+            contract.file_size = dto.ContractFile.Length;
+            if (!string.IsNullOrEmpty(oldUrl))
+            {
+                // Cleanup must never fail the update itself.
+                try { await _fileStorage.DeleteFileAsync(oldUrl); } catch { }
+            }
+        }
+
+        if (dto.Notes is not null)
+            contract.notes = dto.Notes;
+
+        // An expired contract revived by an update becomes signable again.
+        contract.status = "sent";
+        contract.UpdatedAt = DateTime.UtcNow;
+        _unitOfWork.ContractsRepository.Update(contract);
+        await _unitOfWork.SaveChangesAsync();
+
+        var jobQuery = await _unitOfWork.JobsRepository.GetQueryable();
+        var job = await jobQuery.FirstOrDefaultAsync(j => j.Id == contract.job_id);
+
+        var userQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        var user = await userQuery.FirstOrDefaultAsync(u => u.Id == contract.user_id);
+
+        var entityQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        var entity = await entityQuery.FirstOrDefaultAsync(u => u.Id == contract.entity_id);
+
+        return new ContractResponseDto
+        {
+            Id = contract.Id,
+            ApplicationId = contract.application_id,
+            JobId = contract.job_id,
+            EntityId = contract.entity_id,
+            UserId = contract.user_id,
+            JobTitle = job?.title,
+            UserName = user?.name,
+            UserEmail = user?.email,
+            EntityName = entity?.name,
+            EntityEmail = entity?.email,
+            FileUrl = contract.file_url,
+            FileSize = contract.file_size,
+            Notes = contract.notes,
+            EndDate = contract.end_date,
+            Status = contract.status,
+            SignedAt = contract.signed_at as DateTime?,
+            CreatedAt = contract.CreatedAt,
         };
     }
 
