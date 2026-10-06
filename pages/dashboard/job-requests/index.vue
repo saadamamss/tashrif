@@ -2,6 +2,7 @@
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import JobRequestCard from "~/components/JobRequestCard.vue";
 import Pagination from "~/components/Pagination.vue";
+import { statusLabels } from "~/services/statusLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -24,11 +25,21 @@ const items = ref([]);
 
 const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
 
+const filters = ref({
+  status: '',
+})
+
+const statusOptions = computed(() =>
+  Object.entries(statusLabels).map(([value, label]) => ({ value, label }))
+)
+
 async function fetchApplications() {
   loading.value = true;
   error.value = null;
   try {
-    const { data, error } = await useApi().get('/applications', { page: page.value, limit: perPage.value });
+    const params = { page: page.value, limit: perPage.value }
+    if (filters.value.status) params.status = filters.value.status
+    const { data, error } = await useApi().get('/applications', params);
     if (error) {
       error.value = error;
       useToast().show(error, "error");
@@ -46,6 +57,17 @@ async function fetchApplications() {
 
 watch(page, fetchApplications)
 onMounted(fetchApplications)
+
+function applyFilters() {
+  page.value = 1
+  fetchApplications()
+}
+
+function resetFilters() {
+  filters.value = { status: '' }
+  page.value = 1
+  fetchApplications()
+}
 
 function retry() {
   window.location.reload();
@@ -80,48 +102,16 @@ function retry() {
           </div>
           <div class="py-4">
             <div
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full"
             >
-              <!-- Region -->
+              <!-- Status -->
               <div class="w-full">
-                <label class="text-sm mb-2 block"> تاريخ التقديم </label>
+                <label class="text-sm mb-2 block"> الحالة </label>
                 <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
-                  placeholder="تاريخ التقديم"
-                 
-                  key="select-2"
-                />
-              </div>
-              <!-- Job Type -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> نوع الوظيفة </label>
-                <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
-                  placeholder="اختر"
-                 
+                  :items="statusOptions"
+                  placeholder="الحالة"
+                  v-model="filters.status"
                   key="select-1"
-                />
-              </div>
-
-              <!-- Employer -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> الموقع </label>
-                <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
-                  placeholder="الموقع"
-                 
-                  key="select-4"
-                />
-              </div>
-
-              <!-- Gender -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> الشركة </label>
-                <CustomSelect
-                  :items="['Option 1', 'Option 2', 'Option 3']"
-                  placeholder="الشركة"
-                 
-                  key="select-3"
                 />
               </div>
             </div>
@@ -130,9 +120,9 @@ function retry() {
             <hr />
           </div>
           <div class="flex justify-between items-center">
-            <button class="btn-outline text-sm px-10">إعادة تعيين</button>
+            <button class="btn-outline text-sm px-10" @click="resetFilters">إعادة تعيين</button>
 
-            <button class="btn-primary text-sm px-10">تطبيق</button>
+            <button class="btn-primary text-sm px-10" @click="applyFilters">تطبيق</button>
           </div>
         </div>
       </ExpandArea>
