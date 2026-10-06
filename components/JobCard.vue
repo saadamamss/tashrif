@@ -29,7 +29,7 @@
             <Location />
           </span>
           <span class="text-icon-muted text-xs">
-            {{ job.location }}
+            {{ cityLabel(job.location) }}
           </span>
         </div>
         <div class="flex gap-2 items-center">
@@ -66,6 +66,7 @@
 </template>
 <script setup>
 import { buildImageUrl } from '~/services/help';
+import { cityLabel } from '~/services/jobLabels';
 
 /** @type {import('~/types/job').Job} */
 const props = defineProps({

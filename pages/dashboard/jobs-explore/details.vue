@@ -3,6 +3,7 @@ import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
 import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
 import { buildImageUrl } from "~/services/help";
+import { cityLabel } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -151,7 +152,7 @@ onMounted(async () => {
                 <Location width="20" height="20" />
               </span>
               <span class="text-xs text-icon-muted">
-                {{ job?.location }}
+                {{ cityLabel(job?.location) }}
               </span>
           </div>
           <div class="flex gap-2 items-center">

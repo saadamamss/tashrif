@@ -2,6 +2,7 @@
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import JobOfferCard from "~/components/JobOfferCard.vue";
 import Pagination from "~/components/Pagination.vue";
+import { workTypeLabel } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -31,6 +32,12 @@ const filters = ref({
   type: '',
   status: '',
 })
+
+const typeOptions = computed(() =>
+  (filterOptions.value.workTypes || []).map((t) =>
+    typeof t === 'string' ? { value: t, label: workTypeLabel(t) } : t
+  )
+)
 
 const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
 
@@ -130,10 +137,10 @@ function retry() {
             >
               <!-- Job Type -->
               <div class="w-full">
-                <label class="text-sm mb-2 block"> تاريخ النشر </label>
+                <label class="text-sm mb-2 block"> نوع الوظيفة </label>
                 <CustomSelect
-                  :items="filterOptions.workTypes"
-                  placeholder="تاريخ النشر"
+                  :items="typeOptions"
+                  placeholder="نوع الوظيفة"
                   v-model="filters.type"
                   key="select-2"
                 />

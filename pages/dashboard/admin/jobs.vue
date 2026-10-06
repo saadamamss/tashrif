@@ -1,5 +1,6 @@
 <script setup>
 import CustomSelect from "~/components/elements/CustomSelect.vue";
+import { cityLabel } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -145,7 +146,7 @@ onMounted(fetchJobs);
                   <p class="text-xs text-muted line-clamp-1 max-w-[280px]">{{ job.description }}</p>
                 </td>
                 <td class="py-3 px-2 text-muted">{{ job.entityName }}</td>
-                <td class="py-3 px-2 text-muted">{{ job.location }}</td>
+                <td class="py-3 px-2 text-muted">{{ cityLabel(job.location) }}</td>
                 <td class="py-3 px-2">
                   <span
                     class="text-xs px-3 py-1 rounded-full whitespace-nowrap"

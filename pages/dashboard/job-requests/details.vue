@@ -5,6 +5,7 @@ import CustomTabs from "~/components/elements/CustomTabs.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
 import { buildImageUrl, formatDate, isPast } from "~/services/help";
+import { cityLabel } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -433,7 +434,7 @@ async function refreshAfterSign() {
                 <Location width="20" height="20" />
               </span>
               <span class="text-xs text-icon-muted">
-                {{ application?.job?.location || application?.location }}
+                {{ cityLabel(application?.job?.location) || cityLabel(application?.location) }}
               </span>
             </div>
             <div class="flex gap-2 items-center">

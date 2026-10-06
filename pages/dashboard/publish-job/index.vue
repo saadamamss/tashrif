@@ -4,6 +4,7 @@ import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import TextInput from "~/components/elements/TextInput.vue";
 import SuccessPublishing from "~/components/SuccessPublishing.vue";
+import { cityOptions, workTypeOptions } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -159,7 +160,7 @@ const submitForm = async () => {
               >
                 <CustomSelect
                   placeholder="مكان العمل"
-                  :items="['مكة المكرمة', 'المدينة المنورة', 'جدة', 'الطائف', 'الرياض']"
+                  :items="cityOptions"
                   required
                   v-model="formData.jobPlace"
                   :error="errors.jobPlace"
@@ -177,11 +178,7 @@ const submitForm = async () => {
               <Field name="job-type" id="job-type" v-model="formData.jobType">
                 <CustomSelect
                   placeholder="نوع العمل"
-                  :items="[
-                    { value: 'full-time', label: 'دوام كامل' },
-                    { value: 'part-time', label: 'دوام جزئي' },
-                    { value: 'seasonal', label: 'موسمي' },
-                  ]"
+                  :items="workTypeOptions"
                   required
                   v-model="formData.jobType"
                   :error="errors.jobType"

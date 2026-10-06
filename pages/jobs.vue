@@ -30,7 +30,7 @@
                   نوع الوظيفة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="filterOptions.workTypes"
+                  :items="typeOptions"
                   placeholder="اختر"
                   v-model="filters.type"
                   key="select-1"
@@ -43,7 +43,7 @@
                   المنطقة <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="filterOptions.locations"
+                  :items="locationOptions"
                   placeholder="اختر"
                   v-model="filters.location"
                   key="select-2"
@@ -56,7 +56,7 @@
                   الجنس <span class="text-red-500">*</span>
                 </label>
                 <CustomSelect
-                  :items="filterOptions.genders"
+                  :items="genderOptions"
                   placeholder="اختر"
                   v-model="filters.gender"
                   key="select-3"
@@ -150,6 +150,8 @@
 <script setup>
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import Pagination from "~/components/Pagination.vue";
+import { jobGenderLabel } from "~/services/analyticsLabels";
+import { cityLabel, workTypeLabel } from "~/services/jobLabels";
 definePageMeta({
   middleware: [],
 });
@@ -201,6 +203,24 @@ const filters = ref({
   gender: "",
   entityId: "",
 });
+
+const genderOptions = computed(() =>
+  (filterOptions.value.genders || []).map((g) =>
+    typeof g === "string" ? { value: g, label: jobGenderLabel(g) } : g
+  )
+);
+
+const typeOptions = computed(() =>
+  (filterOptions.value.workTypes || []).map((t) =>
+    typeof t === "string" ? { value: t, label: workTypeLabel(t) } : t
+  )
+);
+
+const locationOptions = computed(() =>
+  (filterOptions.value.locations || []).map((l) =>
+    typeof l === "string" ? { value: l, label: cityLabel(l) } : l
+  )
+);
 
 const { page, perPage, total, totalPages, goToPage, onPerPageChange } =
   usePagination({ perPage: 9 });

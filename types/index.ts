@@ -114,15 +114,15 @@ export interface Job {
   entityLogo: string
   title: string
   description: string
-  location: string
-  workType: 'field' | 'office' | 'remote'
+  location: 'makkah' | 'madinah' | 'jeddah' | 'taif' | 'mina' | 'arafat' | 'muzdalifah' | 'rabigh' | 'khulais' | 'bahrah' | 'jumum' | 'allith' | 'qunfudhah' | 'yanbu' | 'badr' | 'riyadh'
+  workType: 'full-time' | 'part-time' | 'seasonal'
   target?: string
   vacancies: number
   qualification?: string
   salaryMin?: number
   salaryMax?: number
   salaryText?: string
-  gender: 'male' | 'female' | 'any'
+  gender: 'male' | 'female' | 'both'
   hours?: string
   duration?: string
   status: 'draft' | 'active' | 'closed'

@@ -3,6 +3,8 @@ import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import JobCard from "~/components/JobCard.vue";
 import Pagination from "~/components/Pagination.vue";
+import { jobGenderLabel } from "~/services/analyticsLabels";
+import { cityLabel, workTypeLabel } from "~/services/jobLabels";
 
 definePageMeta({
   layout: "dashboard",
@@ -38,6 +40,24 @@ const filters = ref({
   gender: '',
   entityId: '',
 })
+
+const genderOptions = computed(() =>
+  (filterOptions.value.genders || []).map((g) =>
+    typeof g === 'string' ? { value: g, label: jobGenderLabel(g) } : g
+  )
+)
+
+const typeOptions = computed(() =>
+  (filterOptions.value.workTypes || []).map((t) =>
+    typeof t === 'string' ? { value: t, label: workTypeLabel(t) } : t
+  )
+)
+
+const locationOptions = computed(() =>
+  (filterOptions.value.locations || []).map((l) =>
+    typeof l === 'string' ? { value: l, label: cityLabel(l) } : l
+  )
+)
 
 const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
 
@@ -143,13 +163,13 @@ function markJobApplied(jobId) {
             <div
               class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
             >
-              <!-- Region -->
+              <!-- Gender -->
               <div class="w-full">
-                <label class="text-sm mb-2 block"> تاريخ النشر </label>
+                <label class="text-sm mb-2 block"> الجنس </label>
                 <CustomSelect
-                  :items="filterOptions.workTypes"
-                  placeholder="تاريخ النشر"
-                  v-model="filters.type"
+                  :items="genderOptions"
+                  placeholder="الجنس"
+                  v-model="filters.gender"
                   key="select-2"
                 />
               </div>
@@ -157,25 +177,25 @@ function markJobApplied(jobId) {
               <div class="w-full">
                 <label class="text-sm mb-2 block"> نوع الوظيفة </label>
                 <CustomSelect
-                  :items="filterOptions.workTypes"
+                  :items="typeOptions"
                   placeholder="اختر"
                   v-model="filters.type"
                   key="select-1"
                 />
               </div>
 
-              <!-- Employer -->
+              <!-- Location -->
               <div class="w-full">
                 <label class="text-sm mb-2 block"> الموقع </label>
                 <CustomSelect
-                  :items="filterOptions.locations"
+                  :items="locationOptions"
                   placeholder="الموقع"
                   v-model="filters.location"
                   key="select-4"
                 />
               </div>
 
-              <!-- Gender -->
+              <!-- Company -->
               <div class="w-full">
                 <label class="text-sm mb-2 block"> الشركة </label>
                 <CustomSelect
