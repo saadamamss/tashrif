@@ -15,7 +15,7 @@
       >
         <input
           :type="type"
-          class="text-sm rounded-2xl w-full h-[38px] px-2 bg-bg-light border border-primary/0 focus:border-primary outline-none placeholder:text-xs transition duration-300"
+          class="text-sm rounded-2xl w-full h-10 px-3 bg-bg-light border border-primary/0 focus:border-primary outline-none placeholder:text-xs transition duration-300"
           v-model="model"
           :placeholder="placeholder"
           :class="[props.class, { invalid: error }]"
@@ -43,10 +43,10 @@ const props = defineProps({
   name: { type: String, default: "" },
   rules: { type: String, default: "" },
   placeholder: { type: String, default: "" },
-  type: { type: String, default: "" },
+  type: { type: String, default: "text" },
   class: { type: String, default: "" },
   required: { type: Boolean, default: false },
-  height: { type: Number, default: 38 },
+  height: { type: Number, default: 40 },
   error: { type: String, default: "" },
 });
 </script>
