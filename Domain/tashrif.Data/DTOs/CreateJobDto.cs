@@ -44,10 +44,12 @@ public class CreateJobDto
 
     [Required(ErrorMessage = "ساعات العمل مطلوبة")]
     [MaxLength(50)]
+    [RegularExpression("^(6|8|10|12)$", ErrorMessage = "ساعات العمل غير صحيحة")]
     public string Hours { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "المدة مطلوبة")]
     [MaxLength(50)]
+    [RegularExpression("^(month|2months|3months|6months|year|2years|continuous)$", ErrorMessage = "المدة غير صحيحة")]
     public string Duration { get; set; } = string.Empty;
 
     public DateTime? EndDate { get; set; }

@@ -106,4 +106,53 @@ public class CreateJobDtoValidationTests
         Validate(dto).Should().ContainSingle()
             .Which.ErrorMessage.Should().Be("الموقع غير صحيح");
     }
+
+    [Theory]
+    [InlineData("month")]
+    [InlineData("2months")]
+    [InlineData("3months")]
+    [InlineData("6months")]
+    [InlineData("year")]
+    [InlineData("2years")]
+    [InlineData("continuous")]
+    public void Duration_CanonicalValues_PassValidation(string duration)
+    {
+        var dto = ValidDto("both");
+        dto.Duration = duration;
+        Validate(dto).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("شهر")]
+    [InlineData("موسم الحج")]
+    public void Duration_NonCanonicalValues_FailWithArabicMessage(string duration)
+    {
+        var dto = ValidDto("both");
+        dto.Duration = duration;
+        Validate(dto).Should().ContainSingle()
+            .Which.ErrorMessage.Should().Be("المدة غير صحيحة");
+    }
+
+    [Theory]
+    [InlineData("6")]
+    [InlineData("8")]
+    [InlineData("10")]
+    [InlineData("12")]
+    public void Hours_CanonicalValues_PassValidation(string hours)
+    {
+        var dto = ValidDto("both");
+        dto.Hours = hours;
+        Validate(dto).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("8 ساعات")]
+    [InlineData("8h")]
+    public void Hours_NonCanonicalValues_FailWithArabicMessage(string hours)
+    {
+        var dto = ValidDto("both");
+        dto.Hours = hours;
+        Validate(dto).Should().ContainSingle()
+            .Which.ErrorMessage.Should().Be("ساعات العمل غير صحيحة");
+    }
 }
