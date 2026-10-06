@@ -73,6 +73,7 @@ public class RegisterEntityDto
     public string Nationality { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "رقم السجل التجاري مطلوب")]
-    [RegularExpression(@"^\d{10}$", ErrorMessage = "رقم السجل التجاري يجب أن يكون 10 أرقام")]
+    // CR accepts any number of digits (matches frontend: numeric only, no length rule).
+    [RegularExpression(@"^\d+$", ErrorMessage = "رقم السجل التجاري يجب أن يكون أرقام فقط")]
     public string CommercialReg { get; set; } = string.Empty;
 }

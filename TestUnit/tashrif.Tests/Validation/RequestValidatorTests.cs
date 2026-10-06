@@ -31,14 +31,39 @@ public class RequestValidatorTests
     }
 
     [Fact]
-    public void Validate_ShortCommercialReg_Throws400WithArabicMessage()
+    public void Validate_ShortNumericCommercialReg_Passes()
     {
-        // This is the user-14 shape ("5566") — must no longer slip through registration.
+        // 2026-10-02: CR accepts any number of digits (matches frontend) — "5566" (the
+        // old user-14 shape) must now be accepted, only non-numeric input is rejected.
         var dto = ValidEntityDto();
         dto.CommercialReg = "5566";
 
         var act = () => RequestValidator.Validate(dto);
-        act.Should().Throw<ArgumentException>();
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_NonNumericCommercialReg_Throws400WithArabicMessage()
+    {
+        var dto = ValidEntityDto();
+        dto.CommercialReg = "55a6";
+
+        var act = () => RequestValidator.Validate(dto);
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("رقم السجل التجاري يجب أن يكون أرقام فقط");
+    }
+
+    [Fact]
+    public void Validate_LongNationalId_StillThrows400()
+    {
+        // NationalId stays EXACTLY 10 digits (frontend now matches with length:10) —
+        // an 11-digit id must keep being rejected by the backend.
+        var dto = ValidEntityDto();
+        dto.NationalId = "70012345678";
+
+        var act = () => RequestValidator.Validate(dto);
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("رقم الهوية يجب أن يكون 10 أرقام");
     }
 
     [Fact]
@@ -70,5 +95,24 @@ public class RequestValidatorTests
         var act = () => RequestValidator.Validate(dto);
         act.Should().Throw<ArgumentException>()
             .WithMessage("رقم الهوية يجب أن يكون 10 أرقام");
+    }
+
+    [Fact]
+    public void Validate_Exactly10DigitIndividualNationalId_Passes()
+    {
+        var dto = new RegisterIndividualDto
+        {
+            FirstName = "سارة",
+            LastName = "علي",
+            NationalId = "1012345678",
+            Password = "TestPass123",
+            Phone = "+966500000000",
+            Email = "s@b.com",
+            Gender = "female",
+            Nationality = "سعودي",
+        };
+
+        var act = () => RequestValidator.Validate(dto);
+        act.Should().NotThrow();
     }
 }
