@@ -13,9 +13,8 @@ const emits = defineEmits<{
 }>();
 
 const isExpired = computed(() => {
-    const end = props.contract?.endDate;
-    if (!end) return false;
-    return new Date(end) <= new Date();
+    const c = props.contract;
+    return !!c && c.status === 'expired';
 });
 
 const fileSizeText = computed(() => {
@@ -93,6 +92,10 @@ const downloadContract = () => {
                 توقيع العقد الإلكترونى
             </button>
             <span v-else-if="contract.status === 'sent' && isExpired"
+                class="flex-1 text-center text-sm font-bold text-red-500 bg-red-500/10 rounded-xl py-2.5">
+                انتهت صلاحية توقيع العقد
+            </span>
+            <span v-else-if="contract.status === 'expired'"
                 class="flex-1 text-center text-sm font-bold text-red-500 bg-red-500/10 rounded-xl py-2.5">
                 انتهت صلاحية توقيع العقد
             </span>

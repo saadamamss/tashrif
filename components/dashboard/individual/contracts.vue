@@ -4,7 +4,11 @@ import ExpandArea from "~/components/ExpandArea.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
 
-const statusOptions = ['الكل', 'قادمة', 'منتهية', 'ملغية']
+const statusOptions = [
+  { value: 'sent', label: 'مرسلة' },
+  { value: 'signed', label: 'موقعة' },
+  { value: 'expired', label: 'منتهية' },
+]
 const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
@@ -14,10 +18,16 @@ const contracts = ref([]);
 const signContractOpen = ref(false);
 const signContractTarget = ref(null);
 
-onMounted(async () => {
+const filters = ref({
+  status: '',
+})
+
+async function fetchContracts() {
   loading.value = true
   try {
-    const { data, error } = await useApi().get('/contracts')
+    const params = {}
+    if (filters.value.status) params.status = filters.value.status
+    const { data, error } = await useApi().get('/contracts', params)
     if (error) {
       useToast().show(error, "error")
       return
@@ -26,7 +36,18 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+function applyFilters() {
+  fetchContracts()
+}
+
+function resetFilters() {
+  filters.value = { status: '' }
+  fetchContracts()
+}
+
+onMounted(fetchContracts)
 
 const openSignContract = (contract) => {
   signContractTarget.value = contract
@@ -58,28 +79,11 @@ const openSignContract = (contract) => {
             <hr />
           </div>
           <div class="py-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-              <!-- Region -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+              <!-- Status -->
               <div class="w-full">
-                <label class="text-sm mb-2 block"> تاريخ المقابلة </label>
-                <CustomSelect :items="statusOptions" placeholder="تاريخ المقابلة" key="select-2" />
-              </div>
-              <!-- Job Type -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> نوع الوظيفة </label>
-                <CustomSelect :items="statusOptions" placeholder="اختر" key="select-1" />
-              </div>
-
-              <!-- Employer -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> الموقع </label>
-                <CustomSelect :items="statusOptions" placeholder="الموقع" key="select-4" />
-              </div>
-
-              <!-- Gender -->
-              <div class="w-full">
-                <label class="text-sm mb-2 block"> الشركة </label>
-                <CustomSelect :items="statusOptions" placeholder="الشركة" key="select-3" />
+                <label class="text-sm mb-2 block"> الحالة </label>
+                <CustomSelect :items="statusOptions" placeholder="الحالة" v-model="filters.status" key="select-1" />
               </div>
             </div>
           </div>
@@ -87,9 +91,9 @@ const openSignContract = (contract) => {
             <hr />
           </div>
           <div class="flex justify-between items-center">
-            <button class="btn-outline text-sm px-10">إعادة تعيين</button>
+            <button class="btn-outline text-sm px-10" @click="resetFilters">إعادة تعيين</button>
 
-            <button class="btn-primary text-sm px-10">تطبيق</button>
+            <button class="btn-primary text-sm px-10" @click="applyFilters">تطبيق</button>
           </div>
         </div>
       </ExpandArea>

@@ -60,6 +60,10 @@
           <button class="block shadow-sm w-10 h-10 p-3 bg-white rounded-lg" @click="$emit('showContract', contract)">
             <EyeIcon />
           </button>
+
+          <button v-if="contract.status !== 'signed'" class="block shadow-sm w-10 h-10 p-3 bg-white rounded-lg" @click="$emit('editContract', contract)" aria-label="تعديل العقد">
+            <Edit />
+          </button>
         </div>
       </div>
     </div>
@@ -76,7 +80,7 @@ const props = defineProps({
 
 const logoSrc = computed(()=> buildImageUrl(props.contract?.userAvatar, "/images/avatar-1.png"))
 const statusLabel = computed(() => {
-  const labels = { sent: 'تم إرسال العقد', signed: 'تم التوقيع', cancelled: 'ملغي' }
+  const labels = { sent: 'تم إرسال العقد', signed: 'تم التوقيع', expired: 'منتهية الصلاحية', cancelled: 'ملغي' }
   return labels[props.contract.status] || 'تم إرسال العقد'
 })
 </script>

@@ -72,9 +72,10 @@ const statusHistory = ref([]);
 const statusHistoryLoading = ref(false);
 
 const logoSrc = computed(()=> buildImageUrl(application.value?.job?.entityLogo , '/images/partner-3.svg'))
-const isContractExpired = computed(() =>
-  !!contract.value && contract.value.status !== 'signed' && isPast(contract.value.endDate)
-)
+const isContractExpired = computed(() => {
+  const c = contract.value
+  return !!c && c.status === 'expired'
+})
 const contractFileSize = computed(() => {
   const bytes = Number(contract.value?.fileSize) || 0
   if (!bytes) return ''
