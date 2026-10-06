@@ -14,10 +14,12 @@ public class CreateJobDto
 
     [Required(ErrorMessage = "الموقع مطلوب")]
     [MaxLength(100)]
+    [RegularExpression("^(makkah|madinah|jeddah|taif|mina|arafat|muzdalifah|rabigh|khulais|bahrah|jumum|allith|qunfudhah|yanbu|badr|riyadh)$", ErrorMessage = "الموقع غير صحيح")]
     public string Location { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "نوع العمل مطلوب")]
     [MaxLength(50)]
+    [RegularExpression("^(full-time|part-time|seasonal)$", ErrorMessage = "نوع العمل غير صحيح")]
     public string Type { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "الراتب مطلوب")]
@@ -37,6 +39,7 @@ public class CreateJobDto
 
     [Required(ErrorMessage = "الجنس مطلوب")]
     [MaxLength(20)]
+    [RegularExpression("^(male|female|both)$", ErrorMessage = "الجنس غير صحيح")]
     public string Gender { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "ساعات العمل مطلوبة")]
