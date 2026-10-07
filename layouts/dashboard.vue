@@ -20,6 +20,17 @@ const toggleSideNav = () => {
   sideOpen.value = !sideOpen.value;
 };
 
+// Realtime boot lives here (not in Header, not in a global plugin): this layout
+// mounts only on dashboard entry — direct load or SPA navigation — and never on
+// public pages, so notifications/SignalR never fire on the website.
+const { boot, teardown } = useRealtimeBoot();
+const { isAuthenticated } = useAuth();
+watch(isAuthenticated, (authed) => {
+  if (!authed) teardown();
+});
+boot();
+onUnmounted(() => teardown());
+
 const paths = ["dashboard-publish-job"];
 const isHidden = computed(() => {
   return paths.includes(route.name);

@@ -22,6 +22,9 @@ export default defineConfig({
       '~': resolve(__dirname),
       '@': resolve(__dirname),
       '~~': resolve(__dirname),
+      // Mirrors Nuxt: `<img src="~/assets/...">` is rewritten by the Vue
+      // plugin with `~` stripped, so bare `assets/...` must still resolve.
+      assets: resolve(__dirname, 'assets'),
     },
   },
 })

@@ -45,7 +45,12 @@
               <span class="block w-12 h-12 flex items-center justify-center relative">
                 <BellIcon />
                 <span
-                  v-if="unreadCount > 0"
+                  v-if="loading"
+                  class="absolute top-1 start-1 w-5 h-5 bg-gray-200 rounded-full animate-pulse"
+                  aria-hidden="true"
+                />
+                <span
+                  v-else-if="unreadCount > 0"
                   class="absolute top-1 start-1 w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center"
                 >
                   {{ unreadCount > 9 ? '+9' : unreadCount }}
@@ -132,8 +137,8 @@ import DropDown from "../elements/DropDown.vue";
 import { buildImageUrl } from "~/services/help";
 
 const { logout, user } = useAuth();
-const { notifications, unreadCount, loading, loadingMore, hasMore, fetchNotifications, loadMore, addNotification, markAsRead } = useNotifications();
-const { start, on, isConnected } = useSignalr();
+const { notifications, unreadCount, loading, loadingMore, hasMore, loadMore, addNotification, markAsRead } = useNotifications();
+const { on } = useSignalr();
 
 const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, '/images/profile-image.svg'));
 
@@ -147,15 +152,9 @@ function formatTime(dateStr) {
   return d.toLocaleDateString("ar-SA");
 }
 
-onMounted(async () => {
-  // 1. Fetch existing notifications from DB
-  await fetchNotifications();
-
-  // 2. Connect to SignalR for live notifications
-  if (!isConnected.value) {
-    await start();
-  }
-
+onMounted(() => {
+  // Startup (fetch + connect) lives in layouts/dashboard.vue via useRealtimeBoot.
+  // Header only subscribes to live events here.
   on("NewApplication", (data) => {
     addNotification({
       id: data.id || Date.now(),
