@@ -19,7 +19,7 @@ const confirmUserId = ref(null);
 const confirmLoading = ref(false);
 
 const filters = ref({ search: "", type: "", status: "" });
-const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 10 });
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 10, onChange: () => fetchUsers() });
 
 const typeOptions = [
   { label: "الكل", value: "" },
@@ -116,11 +116,6 @@ const applyFilters = () => {
 const resetFilters = () => {
   filters.value = { search: "", type: "", status: "" };
   page.value = 1;
-  fetchUsers();
-};
-
-const handlePageChange = (p) => {
-  goToPage(p);
   fetchUsers();
 };
 
@@ -252,7 +247,7 @@ onMounted(() => {
               :current-page="page"
               :total-pages="totalPages"
               :per-page="perPage"
-              @page-changed="handlePageChange"
+              @page-changed="goToPage"
               @per-page-change="onPerPageChange"
             />
           </div>

@@ -131,7 +131,7 @@
           :current-page="page"
           :total-pages="totalPages"
           :per-page="perPage"
-          @page-changed="handlePageChange"
+          @page-changed="goToPage"
           @per-page-change="onPerPageChange"
         />
       </div>
@@ -164,6 +164,15 @@ useHead({
       content:
         "تصفح الوظائف الموسمية المتاحة في موسم الحج والعمرة، وقدّم على الفرص التي تناسب مهاراتك وخبراتك.",
     },
+    { property: "og:title", content: "الوظائف الموسمية | منصة تشريف" },
+    {
+      property: "og:description",
+      content:
+        "اكتشف الوظائف الموسمية المتاحة في موسم الحج والعمرة، وقدّم على الفرص التي تناسب مهاراتك وخبراتك.",
+    },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: "/og-image.svg" },
+    { name: "twitter:card", content: "summary" },
   ],
 });
 
@@ -223,68 +232,78 @@ const locationOptions = computed(() =>
 );
 
 const { page, perPage, total, totalPages, goToPage, onPerPageChange } =
-  usePagination({ perPage: 9 });
+  usePagination({ perPage: 9, onChange: () => refreshJobs() });
 
-const handlePageChange = (p) => {
-  goToPage(p);
-  fetchJobs();
-};
-
-async function fetchFilterOptions() {
+// SSR rule: loaders RETURN data (payload transfers return values only — ref
+// writes inside a loader never reach the client). One apply step then writes
+// refs identically on server and client. Same endpoints, same states.
+async function loadFilterOptions() {
   try {
     const { data, error } = await useApi().get("/jobs/filter-options");
-    if (error) {
-      useToast().show(error, "error");
-      return;
-    }
-    if (data) {
-      filterOptions.value = data;
-    }
+    if (error) return { options: null, error };
+    return { options: data, error: null };
   } catch (err) {
     console.error("Failed to load filter options:", err);
+    return { options: null, error: null };
   }
 }
 
-async function fetchJobs() {
-  loading.value = true;
-  error.value = null;
-  try {
-    const params = { page: page.value, limit: perPage.value };
-    if (filters.value.type) params.type = filters.value.type;
-    if (filters.value.location) params.location = filters.value.location;
-    if (filters.value.gender) params.gender = filters.value.gender;
-    if (filters.value.entityId) params.entityId = filters.value.entityId;
+async function loadJobsList() {
+  const params = { page: page.value, limit: perPage.value };
+  if (filters.value.type) params.type = filters.value.type;
+  if (filters.value.location) params.location = filters.value.location;
+  if (filters.value.gender) params.gender = filters.value.gender;
+  if (filters.value.entityId) params.entityId = filters.value.entityId;
 
+  try {
     const { data, error } = await useApi().get("/jobs", params);
-    if (error) {
-      error.value = error;
-      useToast().show(error, "error");
-      return;
-    }
-    items.value = data?.items || [];
-    total.value = data?.total || 0;
+    if (error) return { items: [], total: 0, error };
+    return { items: data?.items || [], total: data?.total || 0, error: null };
   } catch (err) {
-    error.value = err?.message || "حدث خطأ في تحميل الوظائف";
-    useToast().show("حدث خطأ في تحميل الوظائف", "error");
-  } finally {
-    loading.value = false;
+    return { items: [], total: 0, error: err?.message || "حدث خطأ في تحميل الوظائف" };
   }
 }
 
 function applyFilters() {
   page.value = 1;
-  fetchJobs();
+  refreshJobs();
 }
 
-onMounted(() => {
-  const q = useRoute().query
-  if (q.type) filters.value.type = String(q.type)
-  if (q.location) filters.value.location = String(q.location)
-  if (q.gender) filters.value.gender = String(q.gender)
-  if (q.entityId) filters.value.entityId = isNaN(Number(q.entityId)) ? String(q.entityId) : Number(q.entityId)
-  fetchFilterOptions();
-  fetchJobs();
-});
+// Filters init from the URL — moved from onMounted to setup so SSR honors
+// shared links (e.g. /jobs?type=full-time). Same values on client mounts.
+const q = useRoute().query
+if (q.type) filters.value.type = String(q.type)
+if (q.location) filters.value.location = String(q.location)
+if (q.gender) filters.value.gender = String(q.gender)
+if (q.entityId) filters.value.entityId = isNaN(Number(q.entityId)) ? String(q.entityId) : Number(q.entityId)
+
+// SSR-first (no damage): the SAME two fetches run blocking in setup, so SSR HTML
+// already contains options + list. Interactions just re-run the list via
+// refreshJobs() — identical states (loading/error/items), identical template.
+const [{ data: filterOptionsData }, { data: jobsData, refresh: refreshJobsData }] =
+  await Promise.all([
+    useAsyncData('public-jobs-filter-options', () => loadFilterOptions()),
+    useAsyncData('public-jobs-list', () => loadJobsList()),
+  ])
+
+function applySsrState() {
+  if (filterOptionsData.value?.options) filterOptions.value = filterOptionsData.value.options
+  items.value = jobsData.value?.items || []
+  total.value = jobsData.value?.total || 0
+  error.value = jobsData.value?.error || null
+  loading.value = false
+  if (import.meta.client) {
+    if (filterOptionsData.value?.error) useToast().show(filterOptionsData.value.error, "error")
+    if (jobsData.value?.error) useToast().show(jobsData.value.error, "error")
+  }
+}
+applySsrState()
+
+async function refreshJobs() {
+  loading.value = true
+  await refreshJobsData()
+  applySsrState()
+}
 
 function retry() {
   window.location.reload();

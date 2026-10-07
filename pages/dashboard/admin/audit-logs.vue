@@ -23,7 +23,7 @@ const filters = ref({
 });
 const userSearchRef = ref(null);
 
-const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 12 });
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 12, onChange: () => fetchLogs() });
 
 const entityTypeOptions = [
   { label: "الكل", value: "" },
@@ -73,11 +73,6 @@ const resetFilters = () => {
   filters.value = { userId: null, action: "", entityType: "", from: "", to: "" };
   userSearchRef.value?.clear?.();
   page.value = 1;
-  fetchLogs();
-};
-
-const handlePageChange = (p) => {
-  goToPage(p);
   fetchLogs();
 };
 
@@ -190,7 +185,7 @@ const retry = () => fetchLogs();
             :current-page="page"
             :total-pages="totalPages"
             :per-page="perPage"
-            @page-changed="handlePageChange"
+            @page-changed="goToPage"
             @per-page-change="onPerPageChange"
           />
         </div>

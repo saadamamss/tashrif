@@ -39,7 +39,7 @@ const typeOptions = computed(() =>
   )
 )
 
-const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9, onChange: () => fetchJobs() })
 
 async function fetchFilterOptions() {
   try {
@@ -88,11 +88,6 @@ function applyFilters() {
 function resetFilters() {
   filters.value = { type: '', status: '' }
   page.value = 1
-  fetchJobs()
-}
-
-function handlePageChange(p) {
-  goToPage(p)
   fetchJobs()
 }
 
@@ -207,7 +202,7 @@ function retry() {
           :current-page="page"
           :total-pages="totalPages"
           :per-page="perPage"
-          @page-changed="handlePageChange"
+          @page-changed="goToPage"
           @per-page-change="onPerPageChange"
         />
       </div>

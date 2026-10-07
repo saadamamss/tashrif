@@ -47,7 +47,7 @@
 
 <script setup>
 import CustomSelect from "./elements/CustomSelect.vue";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { jobGenderLabel } from "~/services/analyticsLabels";
 import { cityLabel, workTypeLabel } from "~/services/jobLabels";
 
@@ -95,18 +95,20 @@ function search() {
   navigateTo({ path: "/jobs", query })
 }
 
-onMounted(async () => {
+// SSR rule: loader RETURNS (payload transfers return values only), apply step
+// writes the ref identically on server and client.
+const { data: heroOptionsData } = await useAsyncData('landing-filter-options', async () => {
   try {
     const { data, error } = await useApi().get('/jobs/filter-options')
-    if (error) {
-      useToast().show(error, "error")
-      return
-    }
-    if (data) {
-      filterOptions.value = data
-    }
-  } catch (e) { console.error(e) }
+    return { options: data || null, error: error || null }
+  } catch (e) { console.error(e); return { options: null, error: null } }
 })
+if (heroOptionsData.value?.options) {
+  filterOptions.value = heroOptionsData.value.options
+}
+if (import.meta.client && heroOptionsData.value?.error) {
+  useToast().show(heroOptionsData.value.error, "error")
+}
 </script>
 
 <style lang="scss" scoped>

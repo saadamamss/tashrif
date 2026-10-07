@@ -54,20 +54,22 @@ import JobCard from "./JobCard.vue";
 import ChevronLeftIcon from "./icons/ChevronLeftIcon.vue";
 import ChevronRightIcon from "./icons/ChevronRightIcon.vue";
 
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 
 const modules = [Navigation, Scrollbar];
 defineEmits(['apply']);
 
 const jobs = ref([])
-onMounted(async () => {
+// SSR rule: loader RETURNS (payload transfers return values only), apply step
+// writes the ref identically on server and client.
+const { data: landingJobsData } = await useAsyncData('landing-jobs', async () => {
   try {
     const { data, error } = await useApi().get('/jobs?limit=8')
-    if (error) {
-      useToast().show(error, "error")
-      return
-    }
-    if (data) jobs.value = data.items || data
-  } catch (e) { console.error(e) }
+    return { jobs: data?.items || data || [], error: error || null }
+  } catch (e) { console.error(e); return { jobs: [], error: null } }
 })
+if (landingJobsData.value?.jobs) jobs.value = landingJobsData.value.jobs
+if (import.meta.client && landingJobsData.value?.error) {
+  useToast().show(landingJobsData.value.error, "error")
+}
 </script>

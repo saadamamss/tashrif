@@ -69,4 +69,38 @@ describe('usePagination', () => {
     expect(pag.perPage.value).toBe(12)
     expect(pag.page.value).toBe(1)
   })
+
+  it('calls onChange after page change', async () => {
+    const { usePagination } = await import('../../composables/usePagination')
+    const onChange = vi.fn()
+    const pag = usePagination({ perPage: 9, onChange })
+    pag.total.value = 50
+    pag.goToPage(2)
+
+    expect(onChange).toHaveBeenCalledOnce()
+  })
+
+  it('does not call onChange on no-op page change', async () => {
+    const { usePagination } = await import('../../composables/usePagination')
+    const onChange = vi.fn()
+    const pag = usePagination({ perPage: 9, onChange })
+    pag.goToPage(1)
+    pag.goToPage(0)
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('calls onChange on per-page change and skips it when nothing changed', async () => {
+    const { usePagination } = await import('../../composables/usePagination')
+    const onChange = vi.fn()
+    const pag = usePagination({ perPage: 9, onChange })
+    pag.total.value = 50
+
+    pag.onPerPageChange(12)
+    expect(onChange).toHaveBeenCalledOnce()
+
+    onChange.mockClear()
+    pag.onPerPageChange(12)
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })

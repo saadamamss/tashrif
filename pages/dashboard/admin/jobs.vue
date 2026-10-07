@@ -17,7 +17,7 @@ const confirmJobId = ref(null);
 const confirmLoading = ref(false);
 
 const filters = ref({ search: "", status: "" });
-const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 });
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9, onChange: () => fetchJobs() });
 
 const statusOptions = [
   { label: "الكل", value: "" },
@@ -80,11 +80,6 @@ const applyFilters = () => {
 const resetFilters = () => {
   filters.value = { search: "", status: "" };
   page.value = 1;
-  fetchJobs();
-};
-
-const handlePageChange = (p) => {
-  goToPage(p);
   fetchJobs();
 };
 
@@ -176,7 +171,7 @@ onMounted(fetchJobs);
             :current-page="page"
             :total-pages="totalPages"
             :per-page="perPage"
-            @page-changed="handlePageChange"
+            @page-changed="goToPage"
             @per-page-change="onPerPageChange"
           />
         </div>

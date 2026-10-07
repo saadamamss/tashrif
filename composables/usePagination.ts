@@ -4,6 +4,7 @@ import { ref, computed, watch } from 'vue'
 export function usePagination(options: {
   perPage?: number
   routeQuery?: boolean
+  onChange?: () => void
 } = {}) {
   const route = useRoute()
   const router = useRouter()
@@ -25,6 +26,7 @@ export function usePagination(options: {
     if (options.routeQuery !== false) {
       router.push({ query: { ...route.query, page: p || undefined } })
     }
+    options.onChange?.()
   }
 
   function nextPage() {
@@ -36,11 +38,13 @@ export function usePagination(options: {
   }
 
   function onPerPageChange(val: number) {
+    const changed = val !== perPage.value || page.value !== 1
     perPage.value = val
     page.value = 1
     if (options.routeQuery !== false) {
       router.push({ query: { ...route.query, page: undefined } })
     }
+    if (changed) options.onChange?.()
   }
 
   return {

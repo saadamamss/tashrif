@@ -23,7 +23,7 @@ const loading = ref(false);
 const error = ref(null);
 const items = ref([]);
 
-const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9, onChange: () => fetchApplications() })
 
 const filters = ref({
   status: '',
@@ -55,7 +55,6 @@ async function fetchApplications() {
   }
 }
 
-watch(page, fetchApplications)
 onMounted(fetchApplications)
 
 function applyFilters() {

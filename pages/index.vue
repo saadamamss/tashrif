@@ -10,7 +10,11 @@ useHead({
   title: 'منصة تشريف',
   meta: [
     { name: "description", content: "منصة توظيف موسمي لخدمة ضيوف الرحمن في موسم الحج والعمرة. اكتشف الوظائف الموسمية المتاحة وتقدم الآن." },
+    { property: "og:title", content: "منصة تشريف | التوظيف الموسمي للحج والعمرة" },
+    { property: "og:description", content: "منصة توظيف موسمي لخدمة ضيوف الرحمن في موسم الحج والعمرة. اكتشف الوظائف الموسمية المتاحة وتقدم الآن." },
+    { property: "og:type", content: "website" },
     { property: "og:image", content: "/og-image.svg" },
+    { name: "twitter:card", content: "summary" },
   ],
 })
 

@@ -59,7 +59,7 @@ const locationOptions = computed(() =>
   )
 )
 
-const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9 })
+const { page, perPage, total, totalPages, goToPage, onPerPageChange } = usePagination({ perPage: 9, onChange: () => fetchJobs() })
 
 async function fetchFilterOptions() {
   try {
@@ -110,11 +110,6 @@ function applyFilters() {
 function resetFilters() {
   filters.value = { type: '', location: '', gender: '', entityId: '' }
   page.value = 1
-  fetchJobs()
-}
-
-function handlePageChange(p) {
-  goToPage(p)
   fetchJobs()
 }
 
@@ -252,7 +247,7 @@ function markJobApplied(jobId) {
           :current-page="page"
           :total-pages="totalPages"
           :per-page="perPage"
-          @page-changed="handlePageChange"
+          @page-changed="goToPage"
           @per-page-change="onPerPageChange"
         />
       </div>
