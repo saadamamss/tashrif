@@ -1,5 +1,7 @@
 <script setup>
-import { defineAsyncComponent, computed } from "vue";
+import IndividualHome from "~/components/dashboard/individual/home.vue";
+import CompanyHome from "~/components/dashboard/company/home.vue";
+import AdminHome from "~/components/dashboard/admin/home.vue";
 
 definePageMeta({
   layout: "dashboard",
@@ -12,28 +14,13 @@ useHead({
 })
 
 const { userType } = useAuth();
-
-const currentHomeComponent = computed(() => {
-  if (!userType.value) return null;
-
-  return defineAsyncComponent(() => {
-    if (userType.value === "admin") {
-      return import("~/components/dashboard/admin/home.vue");
-    }
-    return userType.value === "individual"
-      ? import("~/components/dashboard/individual/home.vue")
-      : import("~/components/dashboard/company/home.vue");
-  });
-});
 </script>
 
 <template>
   <div>
-    <Suspense>
-      <component :is="currentHomeComponent" v-if="currentHomeComponent" />
-      <template #fallback>
-        <UiLoadingSkeleton :count="8" :columns="2" height="180px" />
-      </template>
-    </Suspense>
+    <IndividualHome v-if="userType === 'individual'" />
+    <CompanyHome v-else-if="userType === 'entity'" />
+    <AdminHome v-else-if="userType === 'admin'" />
+    <UiLoadingSkeleton v-else :count="8" :columns="2" height="180px" />
   </div>
 </template>

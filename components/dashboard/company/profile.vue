@@ -1,7 +1,4 @@
 <script setup>
-import { Swiper, SwiperSlide } from "swiper/vue";
-import "swiper/css";
-import PercentCircle from "~/components/PercentCircle.vue";
 import Earth from "~/components/icons/earth.vue";
 import Identity from "~/components/icons/identity.vue";
 import Calender from "~/components/icons/calender.vue";
@@ -17,10 +14,13 @@ import ZipCode from "~/components/icons/zip-code.vue";
 import BriefcaseIcon from "~/components/icons/BriefcaseIcon.vue";
 import PersonIcon from "~/components/icons/person.vue";
 import FileIcon from "~/components/icons/file.vue";
+import ProfileHeroSection from "~/components/dashboard/home/ProfileHeroSection.vue";
+import CompletionSection from "~/components/dashboard/home/CompletionSection.vue";
+import ProfileInfoSection from "~/components/dashboard/profile/ProfileInfoSection.vue";
 import EditEntityProfile from "~/components/EditEntityProfile.vue";
 import { buildImageUrl } from "~/services/help";
 
-const loading = ref(false);
+const loading = ref(true);
 const editProfile = ref(false);
 const companyData = ref({ name: '', email: '', phone: '', nationalId: '', companyField: '', sector: '', companySize: '', commercialReg: '', country: '', city: '', zone: '', district: '', street: '', zipcode: '', website: '', facebookUrl: '', twitterUrl: '', youtubeUrl: '', logoUrl: '' })
 const contactPerson = ref(null)
@@ -28,6 +28,12 @@ const stats = ref({ totalJobs: 0, activeJobs: 0, totalApplicants: 0 })
 const profileCompletion = ref(0)
 
 const logoSrc = computed(() => buildImageUrl(companyData.value.logoUrl, '/images/partner-3.svg'));
+
+const statsItems = computed(() => [
+  { value: stats.value.totalJobs, label: 'وظائفى المنشورة', icon: BriefcaseIcon, iconProps: { width: '22', height: '22', color: '#ECB42B' } },
+  { value: stats.value.activeJobs, label: 'الوظائف النشطة', icon: PersonIcon, iconProps: { width: '22', height: '22', color: '#ECB42B' } },
+  { value: stats.value.totalApplicants, label: 'إجمالي المتقدمين', icon: FileIcon, iconProps: { width: '24', height: '24', color: '#ECB42B' } },
+])
 
 const userComunicationInformation = computed(() => {
   const cp = contactPerson.value || {}
@@ -144,177 +150,46 @@ onMounted(async () => {
 </script>
 <template>
   <div class="px-4 lg:px-0">
-    <section
-      class="bg-white profile-statistics rounded-xl shadow-sm overflow-hidden min-h-[495px]"
+    <ProfileHeroSection
+      :avatar-src="logoSrc"
+      :name="companyData.name"
+      :subtitle="companyData.companyField"
+      :stats-items="statsItems"
+      :columns="3"
+      :loading="loading"
     >
-      <div class="container-fluid">
-        <div class="back-image h-[197px] overflow-hidden">
-          <img
-            src="~/assets/images/profile-back.png"
-            class="w-full h-full object-cover"
-            alt="back-profile"
-          />
-        </div>
-        <div class="px-8 pb-8">
-          <div
-            class="flex flex-col sm:flex-row justify-between gap-6 items-center -mt-16"
-          >
-            <div class="text-center sm:text-right">
-              <div
-                class="border-4 border-bg-light mx-auto sm:mx-0 rounded-full w-32 h-32 mb-4 overflow-hidden bg-white"
-              >
-                <img
-                  :src="logoSrc"
-                  class="w-full h-full object-cover"
-                  alt="user avatar"
-                />
-              </div>
-              <div>
-                <h1 class="text-xl font-bold mb-3">{{ companyData.name }}</h1>
-                <p class="text-base text-gray-500">{{ companyData.companyField }}</p>
-              </div>
-            </div>
-
-            <div class="text-center sm:text-right">
-              <button
-                @click="editProfile = true"
-                class="flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
-              >
-                <EditSmall />
-                <span> تعديل الملف الشخصى </span>
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
-            <div
-              class="statistic-card p-4 flex justify-between bg-white border border-2 rounded-xl"
-            >
-              <div>
-                <h1
-                  class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
-                >
-                  {{ stats.totalJobs }}
-                </h1>
-                <h3 class="text-sm text-muted">وظائفى المنشورة</h3>
-              </div>
-              <span>
-                <BriefcaseIcon width="22" height="22" color="#ECB42B" />
-              </span>
-            </div>
-            <div
-              class="statistic-card p-4 flex justify-between bg-white border border-2 rounded-xl"
-            >
-              <div>
-                <h1
-                  class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
-                >
-                  {{ stats.activeJobs }}
-                </h1>
-                <h3 class="text-sm text-muted">مقابلات العمل</h3>
-              </div>
-              <span>
-                <PersonIcon width="22" height="22" color="#ECB42B" />
-              </span>
-            </div>
-
-            <div
-              class="statistic-card p-4 flex justify-between bg-white border border-2 rounded-xl"
-            >
-              <div>
-                <h1
-                  class="md:text-[32px] font-extrabold mb-2 text-[#333] leading-[1.05]"
-                >
-                  {{ stats.totalApplicants }}
-                </h1>
-                <h3 class="text-sm text-muted">عروض العمل</h3>
-              </div>
-              <span>
-                <FileIcon width="24" height="24" color="#ECB42B" />
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!--  -->
-    <section class="complete-profile bg-white rounded-xl shadow-sm mt-4">
-      <div class="container-fluid p-6 sm:p-8">
-        <div
-          class="flex flex-col md:flex-row gap-8 md:gap-6 items-start justify-between"
+      <template #actions>
+        <button
+          @click="editProfile = true"
+          class="flex items-center justify-center gap-2 bg-bg-light px-4 py-3 rounded-full text-sm border border-primary/0 hover:border-primary transition"
         >
-          <div class="flex flex-col xs:flex-row gap-6 max-w-[760px]">
-            <PercentCircle
-              :percent="profileCompletion"
-              gradient-start="#ECB42B05"
-              gradient-middle="#ECB42B01"
-              gradient-end="#ECB42B"
-              :size="94"
-            />
-            <div>
-              <h1 class="text-base font-semibold mb-3">أستكمل ملفك الشخصي</h1>
-              <p class="text-sm text-muted">
-                استكمالك لملفك الشخصي يساعدنا في ترشيح الوظائف الأنسب لك، ويزيد
-                من فرص قبولك لدى الجهات. أضف معلوماتك الشخصية، مؤهلاتك، وخبراتك
-                العملية لتظهر بشكل احترافي أمام أصحاب العمل.
-              </p>
-            </div>
-          </div>
-          <div class="">
-            <button
-              @click="editProfile = true"
-              class="btn-primary text-nowrap text-sm px-8"
-            >
-              إستكمل ملفك الشخصى
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
+          <EditSmall />
+          <span> تعديل الملف الشخصى </span>
+        </button>
+      </template>
+    </ProfileHeroSection>
+
+    <CompletionSection :percent="profileCompletion" :loading="loading" @action="editProfile = true" />
 
     <!-- personal information  -->
-    <div class="px-6 rounded-xl bg-white shadow-sm mt-4">
-      <div class="py-6 border-b-2 flex justify-between items-center">
-        <h1 class="text-base font-bold">البيانات الشخصية</h1>
+    <ProfileInfoSection
+      title="البيانات الشخصية"
+      :items="Object.values(userInformation)"
+      :loading="loading"
+      :skeleton-count="11"
+    >
+      <template #header-action>
         <NuxtLink to="/dashboard/change-password" class="text-sm text-primary hover:underline">
           تغيير كلمة المرور
         </NuxtLink>
-      </div>
-      <div class="py-6">
-        <div class="grid xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-          <div
-            class="flex items-start gap-2"
-            v-for="i in Object.values(userInformation)"
-          >
-            <component :is="i.icon"> </component>
-            <div class="text-xs">
-              <span class="block text-icon-muted mb-2">{{ i.key }}</span>
-              <span class="block text-slate-800 font-bold">{{ i.value }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="px-6 rounded-xl bg-white shadow-sm mt-4">
-      <div class="py-6 border-b-2">
-        <h1 class="text-base font-bold">بيانات الإتصال</h1>
-      </div>
-      <div class="py-6">
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-          <div
-            class="flex items-start gap-2"
-            v-for="i in Object.values(userComunicationInformation)"
-          >
-            <component :is="i.icon"> </component>
-            <div class="text-xs">
-              <span class="block text-icon-muted mb-2">{{ i.key }}</span>
-              <span class="block text-slate-800 font-bold">{{ i.value }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </template>
+    </ProfileInfoSection>
+    <ProfileInfoSection
+      title="بيانات الإتصال"
+      :items="Object.values(userComunicationInformation)"
+      :loading="loading"
+      :skeleton-count="5"
+    />
 
     <EditEntityProfile v-model="editProfile" @saved="loadProfile" />
   </div>

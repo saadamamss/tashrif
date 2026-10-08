@@ -1,5 +1,7 @@
 <script setup>
-import { defineAsyncComponent, computed } from "vue";
+import IndividualProfile from "~/components/dashboard/individual/profile.vue";
+import CompanyProfile from "~/components/dashboard/company/profile.vue";
+import AdminProfile from "~/components/dashboard/admin/profile.vue";
 
 definePageMeta({
   layout: "dashboard",
@@ -12,30 +14,13 @@ useHead({
 })
 
 const { userType } = useAuth();
-
-const currentHomeComponent = computed(() => {
-  if (!userType.value) return null;
-
-  return defineAsyncComponent(() => {
-    // Admin has no individual/entity profile endpoints — show a read-only
-    // profile card instead of loading the entity profile (which 403s).
-    if (userType.value === "admin") {
-      return import("~/components/dashboard/admin/profile.vue");
-    }
-    return userType.value === "individual"
-      ? import("~/components/dashboard/individual/profile.vue")
-      : import("~/components/dashboard/company/profile.vue");
-  });
-});
 </script>
 
 <template>
   <div>
-    <Suspense>
-      <component :is="currentHomeComponent" v-if="currentHomeComponent" />
-      <template #fallback>
-        <UiLoadingSkeleton :count="3" height="300px" />
-      </template>
-    </Suspense>
+    <IndividualProfile v-if="userType === 'individual'" />
+    <CompanyProfile v-else-if="userType === 'entity'" />
+    <AdminProfile v-else-if="userType === 'admin'" />
+    <UiLoadingSkeleton v-else :count="3" height="300px" />
   </div>
 </template>

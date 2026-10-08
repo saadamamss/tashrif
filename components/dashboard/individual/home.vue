@@ -65,8 +65,8 @@ onMounted(async () => {
     const [appsRes, allJobsRes] = await Promise.allSettled([
       useApi().get('/applications?limit=8'),
       useApi().get('/jobs?limit=8'),
+      loadProfile(),
     ])
-    await loadProfile()
     if (appsRes.status === 'fulfilled' && appsRes.value.data) applications.value = appsRes.value.data.items || appsRes.value.data
     if (allJobsRes.status === 'fulfilled' && allJobsRes.value.data) jobs.value = allJobsRes.value.data.items || allJobsRes.value.data
     for (const res of [appsRes, allJobsRes]) {
