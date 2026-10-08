@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DemographicsChart from '~/components/analytics/DemographicsChart.vue'
+import AnalyticsSkeleton from '~/components/analytics/AnalyticsSkeleton.vue'
 import FunnelChart from '~/components/analytics/FunnelChart.vue'
 import StatCard from '~/components/analytics/StatCard.vue'
 import TimelineChart from '~/components/analytics/TimelineChart.vue'
@@ -25,7 +26,7 @@ onMounted(fetchAnalytics)
       <button v-if="error" class="text-sm text-primary underline" @click="fetchAnalytics">إعادة المحاولة</button>
     </div>
 
-    <UiLoadingSkeleton v-if="loading" :count="5" :columns="3" height="110px" />
+    <AnalyticsSkeleton v-if="loading" />
     <UiErrorState v-else-if="error" :message="error" @retry="fetchAnalytics" />
 
     <template v-else-if="analytics">

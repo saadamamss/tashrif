@@ -2,6 +2,7 @@
 import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import JobCard from "~/components/JobCard.vue";
+import JobCardSkeleton from "~/components/JobCardSkeleton.vue";
 import Pagination from "~/components/Pagination.vue";
 import { jobGenderLabel } from "~/services/analyticsLabels";
 import { cityLabel, workTypeLabel } from "~/services/jobLabels";
@@ -23,7 +24,7 @@ const toggleFilterAria = () => {
 
 const applyDialog = ref(false);
 const selectedJobId = ref(null);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref(null);
 const items = ref([]);
 
@@ -229,7 +230,9 @@ function markJobApplied(jobId) {
         </div>
       </div>
       <div class="jobs-container py-8">
-        <UiLoadingSkeleton v-if="loading" :count="12" :columns="3" height="280px" />
+        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <JobCardSkeleton v-for="i in 9" :key="i" />
+        </div>
         <UiErrorState v-else-if="error" :message="error" @retry="retry" />
         <UiEmptyState v-else-if="!items.length" title="لا توجد وظائف" description="لم يتم العثور على وظائف متاحة حالياً" />
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

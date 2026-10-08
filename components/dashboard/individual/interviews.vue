@@ -1,5 +1,6 @@
 <script setup>
 import InterviewCard from "~/components/InterviewCard.vue";
+import InterviewCardSkeleton from "~/components/InterviewCardSkeleton.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import ExpandArea from "~/components/ExpandArea.vue";
 
@@ -12,7 +13,7 @@ const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
 };
-const loading = ref(false);
+const loading = ref(true);
 const items = ref([]);
 
 const filters = ref({
@@ -117,7 +118,11 @@ onMounted(fetchInterviews)
         </div>
       </div>
       <div class="jobs-container py-8">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <InterviewCardSkeleton v-for="i in 6" :key="i" />
+        </div>
+        <UiEmptyState v-else-if="!items.length" title="لا توجد مقابلات" description="لم يتم تحديد أي مقابلة لك بعد" />
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <InterviewCard v-for="item in items" :key="item.id" :interview="item" />
         </div>
       </div>

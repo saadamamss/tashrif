@@ -1,6 +1,7 @@
 <script setup>
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import JobOfferCard from "~/components/JobOfferCard.vue";
+import JobOfferCardSkeleton from "~/components/JobOfferCardSkeleton.vue";
 import Pagination from "~/components/Pagination.vue";
 import { workTypeLabel } from "~/services/jobLabels";
 
@@ -19,7 +20,7 @@ const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
 };
 
-const loading = ref(false);
+const loading = ref(true);
 const error = ref(null);
 const items = ref([]);
 
@@ -182,7 +183,9 @@ function retry() {
         </div>
       </div>
       <div class="jobs-container py-8">
-        <UiLoadingSkeleton v-if="loading" :count="12" :columns="3" height="200px" />
+        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <JobOfferCardSkeleton v-for="i in 9" :key="i" />
+        </div>
         <UiErrorState v-else-if="error" :message="error" @retry="retry" />
         <UiEmptyState v-else-if="!items.length" title="لا توجد وظائف منشورة" description="لم تقم بنشر أي وظيفة بعد" cta-text="نشر وظيفة جديدة" cta-link="/dashboard/publish-job" />
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

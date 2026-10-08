@@ -28,7 +28,7 @@ const breadcrumbs = computed(() => [
 ]);
 
 const applyDialog = ref(false);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref(null);
 const job = ref(null);
 const route = useRoute();

@@ -1,5 +1,6 @@
 <script setup>
-import { defineAsyncComponent, computed } from "vue";
+import IndividualContracts from "~/components/dashboard/individual/contracts.vue";
+import CompanyContracts from "~/components/dashboard/company/contracts.vue";
 
 definePageMeta({
   layout: "dashboard",
@@ -12,25 +13,12 @@ useHead({
 })
 
 const { userType } = useAuth();
-
-const currentHomeComponent = computed(() => {
-  if (!userType.value) return null;
-
-  return defineAsyncComponent(() =>
-    userType.value === "individual"
-      ? import("~/components/dashboard/individual/contracts.vue")
-      : import("~/components/dashboard/company/contracts.vue")
-  );
-});
 </script>
 
 <template>
   <div>
-    <Suspense>
-      <component :is="currentHomeComponent" v-if="currentHomeComponent" />
-      <template #fallback>
-        <UiLoadingSkeleton :count="8" :columns="2" height="180px" />
-      </template>
-    </Suspense>
+    <IndividualContracts v-if="userType === 'individual'" />
+    <CompanyContracts v-else-if="userType === 'entity'" />
+    <UiLoadingSkeleton v-else :count="8" :columns="2" height="180px" />
   </div>
 </template>

@@ -7,12 +7,13 @@ import CustomTabs from "~/components/elements/CustomTabs.vue";
 import JobShortlist from "~/components/JobShortlist.vue";
 import JobInterviews from "~/components/JobInterviews.vue";
 import ApplicantCard from "~/components/ApplicantCard.vue";
+import ApplicantCardSkeleton from "~/components/ApplicantCardSkeleton.vue";
 import FilterDrawer from "~/components/FilterDrawer.vue";
 import SendInterview from "~/components/SendInterview.vue";
 import SendContract from "~/components/SendContract.vue";
 
 const error = ref(null);
-const applicantsLoading = ref(false);
+const applicantsLoading = ref(true);
 const route = useRoute();
 
 definePageMeta({
@@ -355,7 +356,6 @@ onMounted(() => loadApplicants({ initial: true }));
         </template>
         <template #applicants>
           <UiErrorState v-if="error" :message="error?.message || 'حدث خطأ' " @retry="() => loadApplicants({ initial: true })" />
-          <UiLoadingSkeleton v-else-if="applicantsLoading" :count="6" :columns="2" height="160px" />
           <template v-else>
           <div :class="displayMethod">
             <ArrowTabs
@@ -408,7 +408,10 @@ onMounted(() => loadApplicants({ initial: true }));
               </template>
 
               <template #new>
-                <UiEmptyState v-if="!filteredApplicants.length && !applicantsLoading" title="لا يوجد متقدمون جدد" description="لم يتقدم أحد لهذه الوظيفة بعد" />
+                <div v-if="applicantsLoading" class="grid applicant-grid gap-4">
+                  <ApplicantCardSkeleton v-for="i in 6" :key="i" />
+                </div>
+                <UiEmptyState v-else-if="!filteredApplicants.length && !applicantsLoading" title="لا يوجد متقدمون جدد" description="لم يتقدم أحد لهذه الوظيفة بعد" />
                 <div v-else-if="selectedApplicants.length">
                   <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-6 mb-4">
                     <h2 class="text-sm lg:text-lg font-medium text-muted">
@@ -430,7 +433,7 @@ onMounted(() => loadApplicants({ initial: true }));
                     </div>
                   </div>
                 </div>
-                <div class="grid applicant-grid gap-4">
+                <div v-if="!applicantsLoading" class="grid applicant-grid gap-4">
                   <ApplicantCard
                     v-for="applicant in filteredApplicants"
                     :key="applicant.id"
@@ -451,7 +454,10 @@ onMounted(() => loadApplicants({ initial: true }));
                 </div>
               </template>
               <template #shortlist>
-                <UiEmptyState v-if="!filteredApplicants.length" title="لا يوجد مرشحين" description="لم يتم ترشيح أي متقدم بعد" />
+                <div v-if="applicantsLoading" class="grid applicant-grid gap-4">
+                  <ApplicantCardSkeleton v-for="i in 6" :key="i" />
+                </div>
+                <UiEmptyState v-else-if="!filteredApplicants.length" title="لا يوجد مرشحين" description="لم يتم ترشيح أي متقدم بعد" />
                 <JobShortlist v-else
                   :shor-list="applicants.filter(a => a.status === 'shortlisted')"
                   :job-title="jobDetails?.title"
@@ -464,7 +470,10 @@ onMounted(() => loadApplicants({ initial: true }));
                 />
               </template>
               <template #interviews>
-                <UiEmptyState v-if="!filteredApplicants.length" title="لا توجد مقابلات" description="لم يتم جدولة أي مقابلات بعد" />
+                <div v-if="applicantsLoading" class="grid applicant-grid gap-4">
+                  <ApplicantCardSkeleton v-for="i in 6" :key="i" />
+                </div>
+                <UiEmptyState v-else-if="!filteredApplicants.length" title="لا توجد مقابلات" description="لم يتم جدولة أي مقابلات بعد" />
                 <JobInterviews v-else
                   :interview-list="applicants.filter(a => a.status === 'interview')"
                   :job-title="jobDetails?.title"
@@ -477,7 +486,10 @@ onMounted(() => loadApplicants({ initial: true }));
                 />
               </template>
               <template #contract>
-                <UiEmptyState v-if="!applicants.filter(a => a.status === 'contract_sent').length" title="لم يتم إرسال عقود" description="لم يتم إرسال أي عقد بعد" />
+                <div v-if="applicantsLoading" class="grid applicant-grid gap-4">
+                  <ApplicantCardSkeleton v-for="i in 6" :key="i" />
+                </div>
+                <UiEmptyState v-else-if="!applicants.filter(a => a.status === 'contract_sent').length" title="لم يتم إرسال عقود" description="لم يتم إرسال أي عقد بعد" />
                 <div v-else class="grid applicant-grid gap-4">
                   <ApplicantCard
                     v-for="applicant in applicants.filter(a => a.status === 'contract_sent')"
@@ -494,7 +506,10 @@ onMounted(() => loadApplicants({ initial: true }));
                 </div>
               </template>
               <template #accepted>
-                <UiEmptyState v-if="!applicants.filter(a => a.status === 'accepted').length" title="لم يقبل أحد" description="لم يقبل أي مرشح العقد بعد" />
+                <div v-if="applicantsLoading" class="grid applicant-grid gap-4">
+                  <ApplicantCardSkeleton v-for="i in 6" :key="i" />
+                </div>
+                <UiEmptyState v-else-if="!applicants.filter(a => a.status === 'accepted').length" title="لم يقبل أحد" description="لم يقبل أي مرشح العقد بعد" />
                 <div v-else class="grid applicant-grid gap-4">
                   <ApplicantCard
                     v-for="applicant in applicants.filter(a => a.status === 'accepted')"
@@ -511,7 +526,10 @@ onMounted(() => loadApplicants({ initial: true }));
                 </div>
               </template>
               <template #refused>
-                <UiEmptyState v-if="!applicants.filter(a => a.status === 'refused').length" title="لا يوجد رافضين" description="لم يرفض أي مرشح العقد" />
+                <div v-if="applicantsLoading" class="grid applicant-grid gap-4">
+                  <ApplicantCardSkeleton v-for="i in 6" :key="i" />
+                </div>
+                <UiEmptyState v-else-if="!applicants.filter(a => a.status === 'refused').length" title="لا يوجد رافضين" description="لم يرفض أي مرشح العقد" />
                 <div v-else class="grid applicant-grid gap-4">
                   <ApplicantCard
                     v-for="applicant in applicants.filter(a => a.status === 'refused')"

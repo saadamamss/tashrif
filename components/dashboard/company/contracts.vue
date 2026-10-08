@@ -1,5 +1,6 @@
 <script setup>
 import CompanyContractCard from "~/components/CompanyContractCard.vue";
+import CompanyContractCardSkeleton from "~/components/CompanyContractCardSkeleton.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import ExpandArea from "~/components/ExpandArea.vue";
 import Pdf from "~/components/icons/pdf.vue";
@@ -15,7 +16,7 @@ const filterAreaExpands = ref(false);
 const toggleFilterAria = () => {
   filterAreaExpands.value = !filterAreaExpands.value;
 };
-const loading = ref(false);
+const loading = ref(true);
 const contracts = ref([]);
 const signContractOpen = ref(false);
 const signContractTarget = ref(null);
@@ -128,7 +129,11 @@ onMounted(fetchContracts)
       </div>
 
       <div class="jobs-container py-8">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <CompanyContractCardSkeleton v-for="i in 6" :key="i" />
+        </div>
+        <UiEmptyState v-else-if="!contracts.length" title="لا توجد عقود" description="لم تقم بإرسال أي عقد بعد" />
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <CompanyContractCard
             v-for="contract in contracts"
             :key="contract.id"
