@@ -1,5 +1,6 @@
 <script setup>
 import ApplyJobDialog from "~/components/ApplyJobDialog.vue";
+import JobDetailsSkeleton from "~/components/JobDetailsSkeleton.vue";
 import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
 import { buildImageUrl } from "~/services/help";
@@ -62,7 +63,7 @@ onMounted(async () => {
 <template>
   <div class="px-4 lg:px-0">
     <Breadcrumbs :items="breadcrumbs" />
-    <UiLoadingSkeleton v-if="loading" :count="1" height="400px" rounded="2xl" />
+    <JobDetailsSkeleton v-if="loading" />
     <UiErrorState v-else-if="error" :message="error" @retry="onMounted" />
     <UiEmptyState v-else-if="!job" title="الوظيفة غير موجودة" description="لم نتمكن من العثور على الوظيفة المطلوبة" />
     <template v-else>

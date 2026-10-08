@@ -2,6 +2,7 @@
 import AddToCalendar from "~/components/AddToCalendar.vue";
 import Breadcrumbs from "~/components/elements/Breadcrumbs.vue";
 import CustomTabs from "~/components/elements/CustomTabs.vue";
+import JobRequestDetailsSkeleton from "~/components/JobRequestDetailsSkeleton.vue";
 import Pdf from "~/components/icons/pdf.vue";
 import SignContract from "~/components/SignContract.vue";
 import { buildImageUrl, formatDate, isPast } from "~/services/help";
@@ -152,7 +153,7 @@ async function refreshAfterSign() {
 <template>
   <div class="px-4 lg:px-0 mb-8">
     <Breadcrumbs :items="breadcrumbs" />
-    <UiLoadingSkeleton v-if="loading" :count="1" height="420px" rounded="2xl" />
+    <JobRequestDetailsSkeleton v-if="loading" />
     <template v-else-if="application">
     <!--  -->
     <div class="grid grid-cols-7 gap-6 items-start mt-4">

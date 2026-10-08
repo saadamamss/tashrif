@@ -1,5 +1,6 @@
 <script setup>
 import CustomSelect from "~/components/elements/CustomSelect.vue";
+import AdminAuditLogsSkeleton from "~/components/AdminAuditLogsSkeleton.vue";
 import { auditLabels, auditBadgeClasses } from "~/services/auditLabels";
 
 definePageMeta({
@@ -10,7 +11,12 @@ definePageMeta({
 
 useHead({ title: "سجل المراجعة" });
 
-const loading = ref(false);
+const loading = ref(true);
+const filterAreaExpands = ref(false);
+
+const toggleFilterAria = () => {
+  filterAreaExpands.value = !filterAreaExpands.value;
+};
 const error = ref(null);
 const items = ref([]);
 
@@ -84,12 +90,31 @@ const retry = () => fetchLogs();
 <template>
   <div class="px-4 lg:px-0">
     <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 md:p-8 mb-6">
-      <h1 class="text-base font-semibold mb-2">تصفية سجل المراجعة</h1>
-      <p class="text-sm text-muted mb-6">
-        سجل كامل لجميع العمليات الحساسة التي تمت على المنصة
-      </p>
+      <div class="flex gap-6 flex-row justify-between items-start">
+        <div>
+          <h1 class="text-base font-semibold mb-2">تصفية سجل المراجعة</h1>
+          <p class="text-sm text-muted mb-6">
+            سجل كامل لجميع العمليات الحساسة التي تمت على المنصة
+          </p>
+        </div>
+        <div>
+          <button
+            @click="toggleFilterAria"
+            class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
+            :aria-expanded="filterAreaExpands"
+            aria-label="تصفية"
+          >
+            <ChevronUp />
+          </button>
+        </div>
+      </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <ExpandArea :expand="filterAreaExpands">
+        <div>
+          <div class="py-4">
+            <hr />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div class="w-full">
           <label class="text-sm mb-2 block">المستخدم</label>
           <UserSearchSelect
@@ -124,12 +149,14 @@ const retry = () => fetchLogs();
         <button class="btn-outline text-sm px-10" @click="resetFilters">إعادة تعيين</button>
         <button class="btn-primary text-sm px-10" @click="applyFilters">تطبيق</button>
       </div>
+        </div>
+      </ExpandArea>
     </div>
 
     <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 md:p-8">
       <h1 class="text-base font-semibold mb-6">سجل العمليات</h1>
 
-      <UiLoadingSkeleton v-if="loading" :count="8" :columns="1" height="56px" />
+      <AdminAuditLogsSkeleton v-if="loading" />
       <UiErrorState v-else-if="error" :message="error" @retry="retry" />
       <UiEmptyState
         v-else-if="!items.length"

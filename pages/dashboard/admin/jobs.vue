@@ -1,5 +1,6 @@
 <script setup>
 import CustomSelect from "~/components/elements/CustomSelect.vue";
+import AdminJobsSkeleton from "~/components/AdminJobsSkeleton.vue";
 import { cityLabel } from "~/services/jobLabels";
 
 definePageMeta({
@@ -10,7 +11,12 @@ definePageMeta({
 
 useHead({ title: "إدارة الوظائف" });
 
-const loading = ref(false);
+const loading = ref(true);
+const filterAreaExpands = ref(false);
+
+const toggleFilterAria = () => {
+  filterAreaExpands.value = !filterAreaExpands.value;
+};
 const error = ref(null);
 const items = ref([]);
 const confirmJobId = ref(null);
@@ -89,7 +95,31 @@ onMounted(fetchJobs);
 <template>
   <div class="px-4 lg:px-0">
     <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 md:p-8 mb-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex gap-6 flex-row justify-between items-start">
+        <div>
+          <h1 class="md:text-base font-semibold mb-3">تصفية</h1>
+          <p class="text-sm text-muted">
+            قم بتخصيص نتائج البحث لعرض الوظائف التي تناسبك بشكل أفضل.
+          </p>
+        </div>
+        <div>
+          <button
+            @click="toggleFilterAria"
+            class="text-sm h-10 w-10 px-0 bg-bg-light rounded-full flex justify-center items-center border border-[#fff]/0 hover:border-primary transition"
+            :aria-expanded="filterAreaExpands"
+            aria-label="تصفية"
+          >
+            <ChevronUp />
+          </button>
+        </div>
+      </div>
+
+      <ExpandArea :expand="filterAreaExpands">
+        <div>
+          <div class="py-4">
+            <hr />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="w-full">
           <label class="text-sm mb-2 block">بحث</label>
           <input
@@ -109,12 +139,14 @@ onMounted(fetchJobs);
         <button class="btn-outline text-sm px-10" @click="resetFilters">إعادة تعيين</button>
         <button class="btn-primary text-sm px-10" @click="applyFilters">تطبيق</button>
       </div>
+        </div>
+      </ExpandArea>
     </div>
 
     <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 md:p-8">
       <h1 class="text-base font-semibold mb-6">جميع الوظائف</h1>
 
-      <UiLoadingSkeleton v-if="loading" :count="9" :columns="3" height="200px" />
+      <AdminJobsSkeleton v-if="loading" />
       <UiErrorState v-else-if="error" :message="error" @retry="fetchJobs" />
       <UiEmptyState
         v-else-if="!items.length"
