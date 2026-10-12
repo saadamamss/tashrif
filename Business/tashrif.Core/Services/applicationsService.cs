@@ -34,21 +34,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             .OrderByDescending(a => a.CreatedAt)
             .Skip((pagination.Page - 1) * pagination.Limit)
             .Take(pagination.Limit)
-            .Select(a => new ApplicationResponseDto
-            {
-                Id = a.Id,
-                JobId = a.job_id,
-                UserId = a.user_id,
-                UserName = a.user_Entity.name,
-                UserGender = a.user_Entity.gender,
-                UserCity = "",
-                AvatarUrl = a.user_Entity.avatar_url,
-                Qualification = a.qualification,
-                Experience = a.experience ?? "",
-                CvId = a.cv_id,
-                Status = a.status,
-                CreatedAt = a.CreatedAt,
-            })
+            .Select(ApplicationMapper.ListProjection)
             .ToListAsync();
 
         await PopulateJobsAsync(items);
@@ -76,27 +62,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         if (app.user_id != userId && app.job_Entity.entity_id != userId)
             throw new UnauthorizedAccessException("غير مصرح لك بمشاهدة هذا الطلب");
 
-        var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
-        var (cvFileName, cvFilePath) = await GetCvInfoAsync(app.cv_id);
-
-        return new ApplicationResponseDto
-        {
-            Id = app.Id,
-            JobId = app.job_id,
-            UserId = app.user_id,
-            UserName = app.user_Entity.name,
-            UserGender = app.user_Entity.gender,
-            UserCity = city,
-            AvatarUrl = app.user_Entity?.avatar_url,
-            Qualification = string.IsNullOrEmpty(app.qualification) ? qualification : app.qualification,
-            Experience = app.experience ?? "",
-            CvId = app.cv_id,
-            CvFileName = cvFileName,
-            CvFilePath = cvFilePath,
-            Status = app.status,
-            CreatedAt = app.CreatedAt,
-            Job = await BuildJobAsync(app.job_id),
-        };
+        return await BuildSingleResponseAsync(app);
     }
 
     public async Task<ApplicationResponseDto> ApplyAsync(ApplyJobDto dto, long userId)
@@ -130,8 +96,6 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         if (cv == null)
             throw new InvalidOperationException("السيرة الذاتية المحددة غير موجودة");
 
-        var (city, _) = await GetApplicantDetailsAsync(userId);
-
         var app = new applications
         {
             job_id = dto.JobId,
@@ -154,24 +118,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         var userQuery = await _unitOfWork.UsersRepository.GetQueryable();
         var user = await userQuery.FirstOrDefaultAsync(u => u.Id == userId);
 
-        return new ApplicationResponseDto
-        {
-            Id = app.Id,
-            JobId = app.job_id,
-            UserId = app.user_id,
-            UserName = user?.name ?? "",
-            UserGender = user?.gender,
-            UserCity = city,
-            AvatarUrl = app.user_Entity?.avatar_url,
-            Qualification = app.qualification,
-            Experience = app.experience ?? "",
-            CvId = app.cv_id,
-            CvFileName = cv.file_name,
-            CvFilePath = cv.file_path,
-            Status = app.status,
-            CreatedAt = app.CreatedAt,
-            Job = await BuildJobAsync(applyJob),
-        };
+        return await BuildSingleResponseAsync(app, knownCv: (cv.file_name, cv.file_path), userFallback: user, knownJob: applyJob);
     }
 
     public async Task<ApplicationResponseDto> UpdateStatusAsync(long id, string status, long userId)
@@ -203,27 +150,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         // Record status history
         await _statusHistory.RecordAsync(app.Id, oldStatus, status, userId);
 
-        var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
-        var (statusCvFileName, statusCvFilePath) = await GetCvInfoAsync(app.cv_id);
-
-        return new ApplicationResponseDto
-        {
-            Id = app.Id,
-            JobId = app.job_id,
-            UserId = app.user_id,
-            UserName = app.user_Entity?.name ?? "",
-            UserGender = app.user_Entity?.gender,
-            UserCity = city,
-            AvatarUrl = app.user_Entity?.avatar_url,
-            Qualification = string.IsNullOrEmpty(app.qualification) ? qualification : app.qualification,
-            Experience = app.experience ?? "",
-            CvId = app.cv_id,
-            CvFileName = statusCvFileName,
-            CvFilePath = statusCvFilePath,
-            Status = app.status,
-            CreatedAt = app.CreatedAt,
-            Job = await BuildJobAsync(app.job_id),
-        };
+        return await BuildSingleResponseAsync(app);
     }
 
     public async Task<ApplicationResponseDto> WithdrawAsync(long id, long userId)
@@ -253,27 +180,7 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
         // Record status history
         await _statusHistory.RecordAsync(app.Id, oldStatus, "withdrawn", userId);
 
-        var (city, qualification) = await GetApplicantDetailsAsync(app.user_id);
-        var (withdrawCvFileName, withdrawCvFilePath) = await GetCvInfoAsync(app.cv_id);
-
-        return new ApplicationResponseDto
-        {
-            Id = app.Id,
-            JobId = app.job_id,
-            UserId = app.user_id,
-            UserName = app.user_Entity?.name ?? "",
-            UserGender = app.user_Entity?.gender,
-            UserCity = city,
-            AvatarUrl = app.user_Entity?.avatar_url,
-            Qualification = string.IsNullOrEmpty(app.qualification) ? qualification : app.qualification,
-            Experience = app.experience ?? "",
-            CvId = app.cv_id,
-            CvFileName = withdrawCvFileName,
-            CvFilePath = withdrawCvFilePath,
-            Status = app.status,
-            CreatedAt = app.CreatedAt,
-            Job = await BuildJobAsync(app.job_id),
-        };
+        return await BuildSingleResponseAsync(app);
     }
 
     public async Task DeleteAsync(long id, long userId)
@@ -503,6 +410,39 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
                 app.CvFilePath = cv.file_path;
             }
         }
+    }
+
+    /// <summary>
+    /// Shared single-read response builder (gap #2): every one-off path — GetById, UpdateStatus,
+    /// Withdraw, Apply — resolved city + qualification-fallback + CV + job identically; the
+    /// duplication is what caused the 0c943a6 bug class. Optional values let ApplyAsync pass
+    /// its already-loaded CV/user without extra queries. Qualification fallback: the stored
+    /// application value wins; empty falls back to the applicant's best (latest) qualification
+    /// — matches every original single path.
+    /// </summary>
+    private async Task<ApplicationResponseDto> BuildSingleResponseAsync(
+        applications app,
+        (string? fileName, string? filePath)? knownCv = null,
+        users? userFallback = null,
+        jobs? knownJob = null)
+    {
+        var dto = ApplicationMapper.Map(app, userFallback);
+
+        // Gap #2 review fix (2026-10-12): the first version discarded the city
+        // (`var (_, ...)`) so every single read returned UserCity = "" — the same
+        // field-drop class as 0c943a6. Restore the value the old code set.
+        var (city, primaryQualification) = await GetApplicantDetailsAsync(app.user_id);
+        dto.UserCity = city;
+        if (string.IsNullOrEmpty(dto.Qualification))
+            dto.Qualification = primaryQualification;
+
+        var (cvFileName, cvFilePath) = knownCv ?? await GetCvInfoAsync(app.cv_id);
+        dto.CvFileName = cvFileName;
+        dto.CvFilePath = cvFilePath;
+
+        dto.Job = knownJob != null ? await BuildJobAsync(knownJob) : await BuildJobAsync(app.job_id);
+
+        return dto;
     }
 
     private async Task<(string city, string qualification)> GetApplicantDetailsAsync(long userId)

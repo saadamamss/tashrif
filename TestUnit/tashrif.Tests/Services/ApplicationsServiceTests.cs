@@ -179,6 +179,36 @@ public class ApplicationsServiceTests
     }
 
     [Fact]
+    public async Task GetById_ReturnsApplicantCity()
+    {
+        // Gap #2 review (2026-10-12): the first mapper version discarded the city on
+        // single reads (UserCity always ""). This pins the restored behavior.
+        var app = new applications
+        {
+            Id = 1,
+            job_id = 1,
+            user_id = 2,
+            status = "new",
+            qualification = "بكالوريوس",
+            user_Entity = new users { Id = 2, name = "User2", gender = "أنثى" },
+            job_Entity = new jobs { Id = 1, entity_id = 1 },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 1 } }.AsQueryable().BuildMock());
+        _profilesRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new individual_profiles { user_id = 2, city = "مكة" } }.AsQueryable().BuildMock());
+
+        var result = await _sut.GetByIdAsync(1, 2);
+
+        result.Should().NotBeNull();
+        result.UserName.Should().Be("User2");
+        result.UserCity.Should().Be("مكة");
+        result.Qualification.Should().Be("بكالوريوس");
+    }
+
+    [Fact]
     public async Task GetAll_IndividualSeesOnlyOwnApplications()
     {
         var apps = new List<applications>

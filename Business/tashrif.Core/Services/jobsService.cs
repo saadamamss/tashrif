@@ -385,21 +385,7 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
             .OrderByDescending(a => a.CreatedAt)
             .Skip((pagination.Page - 1) * pagination.Limit)
             .Take(pagination.Limit)
-            .Select(a => new ApplicationResponseDto
-            {
-                Id = a.Id,
-                JobId = a.job_id,
-                UserId = a.user_id,
-                UserName = a.user_Entity.name,
-                UserGender = a.user_Entity.gender,
-                UserCity = "",
-                AvatarUrl = a.user_Entity.avatar_url,
-                Qualification = a.qualification,
-                Experience = a.experience ?? "",
-                CvId = a.cv_id,
-                Status = a.status,
-                CreatedAt = a.CreatedAt,
-            })
+            .Select(ApplicationMapper.ListProjection)
             .ToListAsync();
 
         await PopulateApplicationCitiesAsync(items);
