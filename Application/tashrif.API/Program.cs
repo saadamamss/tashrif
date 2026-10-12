@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Events;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
@@ -8,7 +12,33 @@ using tashrif.API.Hubs;
 using tashrif.API.Services;
 using tashrif.Email;
 
+// Serilog structured logging (P1 #4): JSON to console (prod log drains) +
+// human-readable daily-rotating file (30-day retention). Logger created BEFORE
+// builder.Build() so startup failures log instead of dying silently.
+// File sink skipped on Railway (ephemeral disk, detected via RAILWAY_ENVIRONMENT).
+// Levels/sinks are code-defined here — no Serilog:* config keys are read.
+var serilogConfig = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .Enrich.FromLogContext();
+serilogConfig = serilogConfig.WriteTo.Console(new Serilog.Formatting.Compact.CompactJsonFormatter());
+// Railway mounts an ephemeral FS — a file sink there writes to storage that dies with
+// the container (console drain is the only durable sink), so skip it.
+// RAILWAY_ENVIRONMENT is Railway's standard env marker ("production"/inet). Locally it's unset → file sink on.
+var isRailwayEnv = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT"));
+if (!isRailwayEnv)
+{
+    serilogConfig = serilogConfig.WriteTo.File(
+        Path.Combine("logs", "tashrif-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
+}
+Log.Logger = serilogConfig.CreateLogger();
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 // Hosting platforms (Railway, etc.) assign a dynamic port via $PORT.
 // When present it wins over the appsettings Kestrel endpoint (:5001 local dev).
@@ -111,6 +141,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Admin", policy => policy.RequireRole("admin"));
 });
 
+// Health checks (P1 #4): DbContext canary — selects 1 at the provider level so it
+// runs even before migrations. (Response shape documented at the /healthz mapping below.)
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<tashrif.Context.tashrifDBContext>("database");
+
 // Add DbContext
 builder.Services.AddtashrifContextDependencies(builder.Configuration);
 
@@ -147,6 +182,19 @@ builder.Services.AddHostedService<ContractExpiryService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+// One structured line per request — logged at the very front so EVERY terminal
+// outcome (auth 401, middleware 400, exceptions → 500, uploads) is captured.
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.GetLevel = (httpContext, _, ex) =>
+        ex != null || httpContext.Response.StatusCode >= 500
+            ? LogEventLevel.Error
+            : httpContext.Response.StatusCode >= 400
+                ? LogEventLevel.Warning
+                : LogEventLevel.Information;
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -166,10 +214,31 @@ app.UseMiddleware<tashrif.API.Middleware.CookieToHeaderMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Health endpoint (P1 #4): unauthenticated liveness/readiness probe for Railway /
+// uptime monitors. 200 when the DB answers, 503 otherwise. Body is the DEFAULT
+// health-check writer's plain text ("Healthy" / "Unhealthy: …") — status-code
+// monitors are the consumer; no JSON writer is wired on purpose.
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    AllowCachingResponses = false,
+    ResultStatusCodes =
+    {
+        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+    },
+});
+
 app.MapHub<NotificationHub>("/hubs/notifications").RequireAuthorization();
 
 // Dev-only admin seed (D2): idempotent, no secrets in migrations.
 // Wrapped in try/catch so startup doesn't fail if the DB isn't reachable/migrated yet.
+
+// Host lifetime wrapped so Log.CloseAndFlushAsync() (finally) reliably flushes
+// Serilog's buffered/queued file entries on graceful shutdown OR host failure.
+try
+{
 if (app.Environment.IsDevelopment())
 {
     try
@@ -201,4 +270,11 @@ if (app.Environment.IsDevelopment())
     }
 }
 
-app.Run();
+await app.RunAsync();
+}
+finally
+{
+// Serilog tail-flush: buffered/queued file entries still in memory get written
+// before the process exits — without this 2-liner, crash-buffered entries are lost.
+await Log.CloseAndFlushAsync();
+}
