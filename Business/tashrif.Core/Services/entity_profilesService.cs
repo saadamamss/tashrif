@@ -61,6 +61,27 @@ public class entity_profilesService(IUnitOfWork unitOfWork) : Ientity_profilesSe
 
     public async Task<EntityProfileResponseDto> UpdateAsync(long userId, UpdateEntityProfileDto dto)
     {
+        // Gap #1 (2026-10-12): trim user-entered text before persisting (same as the individual
+        // profile update). LogoUrl is an internal upload path, not user-typed text — skipped.
+        dto.Name = dto.Name?.Trim();
+        dto.Phone = dto.Phone?.Trim();
+        dto.CompanyField = dto.CompanyField?.Trim();
+        dto.CompanySize = dto.CompanySize?.Trim();
+        dto.CommercialReg = dto.CommercialReg?.Trim();
+        dto.Sector = dto.Sector?.Trim();
+        dto.Country = dto.Country?.Trim();
+        dto.City = dto.City?.Trim();
+        dto.Zone = dto.Zone?.Trim();
+        dto.District = dto.District?.Trim();
+        dto.Street = dto.Street?.Trim();
+        dto.Zipcode = dto.Zipcode?.Trim();
+        dto.Province = dto.Province?.Trim();
+        dto.CompanyDesc = dto.CompanyDesc?.Trim();
+        if (dto.Website != null) dto.Website = dto.Website.Trim();
+        if (dto.TwitterAccount != null) dto.TwitterAccount = dto.TwitterAccount.Trim();
+        if (dto.FacebookAccount != null) dto.FacebookAccount = dto.FacebookAccount.Trim();
+        if (dto.YoutubeAccount != null) dto.YoutubeAccount = dto.YoutubeAccount.Trim();
+
         var profileQuery = await _unitOfWork.Entity_profilesRepository.GetQueryable();
         var profile = await profileQuery.FirstOrDefaultAsync(p => p.user_id == userId && !p.IsDeleted)
             ?? throw new KeyNotFoundException("الملف الشخصي غير موجود");

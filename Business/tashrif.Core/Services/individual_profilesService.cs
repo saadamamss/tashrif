@@ -41,6 +41,20 @@ public class individual_profilesService(IUnitOfWork unitOfWork) : Iindividual_pr
 
     public async Task<IndividualProfileResponseDto> UpdateAsync(long userId, UpdateIndividualProfileDto dto)
     {
+        // Gap #1 (2026-10-12): trim user-entered text before persisting (leading/trailing
+        // spaces were seen live in users.name). AvatarUrl is an internal upload path, not
+        // user-typed text — deliberately not trimmed.
+        dto.Name = dto.Name?.Trim();
+        dto.Phone = dto.Phone?.Trim();
+        dto.Gender = dto.Gender?.Trim();
+        dto.Nationality = dto.Nationality?.Trim();
+        dto.City = dto.City?.Trim();
+        dto.Zone = dto.Zone?.Trim();
+        dto.District = dto.District?.Trim();
+        dto.Street = dto.Street?.Trim();
+        dto.Zipcode = dto.Zipcode?.Trim();
+        dto.JobTitle = dto.JobTitle?.Trim();
+
         var profileQuery = await _unitOfWork.Individual_profilesRepository.GetQueryable();
         var profile = await profileQuery.FirstOrDefaultAsync(p => p.user_id == userId && !p.IsDeleted)
             ?? throw new KeyNotFoundException("الملف الشخصي غير موجود");

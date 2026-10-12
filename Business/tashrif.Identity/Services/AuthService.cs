@@ -7,6 +7,7 @@ using System.Text;
 using tashrif.Data.DTOs.Auth;
 using tashrif.Data.Interfaces;
 using tashrif.Data.Models;
+using tashrif.Data.Validation;
 using tashrif.Core;
 using tashrif.Identity.Interfaces;
 
@@ -48,6 +49,24 @@ public class AuthService : IAuthService
             throw new BadHttpRequestException("رقم الهوية مسجل مسبقاً", 409);
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+        // Gap #1 (2026-10-12): trim user-entered text before persisting. Validation ran on the
+        // RAW values in the controller (RequestValidator), so this only affects stored data —
+        // it cannot make a previously-invalid input pass. Password is deliberately NOT trimmed:
+        // its exact bytes are the credential. ID file / avatar paths are not user-typed text.
+        dto.FirstName = dto.FirstName.Trim();
+        dto.LastName = dto.LastName.Trim();
+        dto.Email = dto.Email.Trim();
+        dto.Phone = dto.Phone.Trim();
+        dto.Gender = dto.Gender.Trim();
+        dto.Nationality = dto.Nationality.Trim();
+
+        // Nit fix (2026-10-12): re-validate AFTER trimming. A whitespace-only value
+        // ("   ") passes [Required] on the raw input, then trims to "" — without this,
+        // an empty string would be stored in a required column. Trimming only strips,
+        // so this can only newly fail values that are effectively empty (same Arabic
+        // 400 style as the controller's pre-validation, via ExceptionMiddleware).
+        RequestValidator.Validate(dto);
 
         var user = new users
         {
@@ -97,6 +116,28 @@ public class AuthService : IAuthService
             throw new BadHttpRequestException("رقم الهوية مسجل مسبقاً", 409);
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+        // Gap #1 (2026-10-12): trim user-entered text before persisting (see the individual
+        // register branch for the rationale). Validation already ran on raw values.
+        dto.CompanyName = dto.CompanyName.Trim();
+        dto.Email = dto.Email.Trim();
+        dto.Phone = dto.Phone.Trim();
+        dto.CommercialReg = dto.CommercialReg.Trim();
+        dto.FieldName = dto.FieldName.Trim();
+        dto.Sector = dto.Sector.Trim();
+        dto.Country = dto.Country.Trim();
+        dto.Province = dto.Province.Trim();
+        dto.CompanyDesc = dto.CompanyDesc.Trim();
+        dto.CompanyWebsite = dto.CompanyWebsite.Trim();
+        if (dto.TwitterAccount != null) dto.TwitterAccount = dto.TwitterAccount.Trim();
+        if (dto.FacebookAccount != null) dto.FacebookAccount = dto.FacebookAccount.Trim();
+        if (dto.YoutubeAccount != null) dto.YoutubeAccount = dto.YoutubeAccount.Trim();
+        dto.Name = dto.Name.Trim();
+        dto.Role = dto.Role.Trim();
+        dto.Nationality = dto.Nationality.Trim();
+
+        // Nit fix (2026-10-12): same post-trim re-validation as the individual branch.
+        RequestValidator.Validate(dto);
 
         var user = new users
         {

@@ -51,6 +51,7 @@ public class AuthServiceTests
             FirstName = "أحمد",
             LastName = "محمد",
             NationalId = "1234567890",
+            Password = "password123",
             Phone = "+966501234567",
             Email = "test@test.com",
             Gender = "ذكر",
@@ -162,6 +163,7 @@ public class AuthServiceTests
             FirstName = "أحمد",
             LastName = "محمد",
             NationalId = "1234567890",
+            Password = "password123",
             Phone = "+966501234567",
             Email = "a@b.com",
             Gender = "male",
@@ -194,6 +196,7 @@ public class AuthServiceTests
             FirstName = "سارة",
             LastName = "علي",
             NationalId = "9876543210",
+            Password = "password123",
             Phone = "+966500000000",
             Email = "s@b.com",
             Gender = "female",
@@ -332,5 +335,160 @@ public class AuthServiceTests
 
         await act.Should().ThrowAsync<BadHttpRequestException>().WithMessage("*الحالية غير صحيحة*");
         _uowMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
+    // ---- Gap #1 (2026-10-12): user-entered text is trimmed before persisting ----
+    // Validation ran on RAW values in the controller, so trimming here only affects stored
+    // data (leading spaces were seen live in users.name). Password is never trimmed.
+
+    [Fact]
+    public async Task RegisterIndividual_TrimsUserEnteredText()
+    {
+        _userRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<users>().AsQueryable().BuildMock());
+        _userRepoMock.Setup(r => r.AddAsync(It.IsAny<users>())).Returns(Task.CompletedTask);
+        _profileRepoMock.Setup(r => r.AddAsync(It.IsAny<individual_profiles>())).Returns(Task.CompletedTask);
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        users? savedUser = null;
+        _userRepoMock.Setup(r => r.AddAsync(It.IsAny<users>()))
+            .Callback<users>(u => savedUser = u)
+            .Returns(Task.CompletedTask);
+
+        var dto = new RegisterIndividualDto
+        {
+            FirstName = "  أحمد  ",
+            LastName = " محمد ",
+            NationalId = "1234567890",
+            Password = "password123",
+            Phone = " +966501234567 ",
+            Email = " test@test.com ",
+            Gender = " male ",
+            Nationality = " سعودي ",
+        };
+
+        var result = await _sut.RegisterIndividualAsync(dto);
+
+        savedUser.Should().NotBeNull();
+        savedUser!.name.Should().Be("أحمد محمد");
+        savedUser!.email.Should().Be("test@test.com");
+        savedUser!.phone.Should().Be("+966501234567");
+        savedUser!.gender.Should().Be("male");
+        savedUser!.nationality.Should().Be("سعودي");
+        result.User.Name.Should().Be("أحمد محمد");
+    }
+
+    [Fact]
+    public async Task RegisterEntity_TrimsUserEnteredText()
+    {
+        _userRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<users>().AsQueryable().BuildMock());
+        _userRepoMock.Setup(r => r.AddAsync(It.IsAny<users>())).Returns(Task.CompletedTask);
+        _entityProfileRepoMock.Setup(r => r.AddAsync(It.IsAny<entity_profiles>())).Returns(Task.CompletedTask);
+        _contactPersonRepoMock.Setup(r => r.AddAsync(It.IsAny<contact_persons>())).Returns(Task.CompletedTask);
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        _fileStorageMock.Setup(f => f.SaveFileAsync(It.IsAny<IFormFile?>(), It.IsAny<string>()))
+            .ReturnsAsync("/uploads/logos/x.png");
+
+        users? savedUser = null;
+        entity_profiles? savedProfile = null;
+        contact_persons? savedContact = null;
+        _userRepoMock.Setup(r => r.AddAsync(It.IsAny<users>()))
+            .Callback<users>(u => savedUser = u)
+            .Returns(Task.CompletedTask);
+        _entityProfileRepoMock.Setup(r => r.AddAsync(It.IsAny<entity_profiles>()))
+            .Callback<entity_profiles>(p => savedProfile = p)
+            .Returns(Task.CompletedTask);
+        _contactPersonRepoMock.Setup(r => r.AddAsync(It.IsAny<contact_persons>()))
+            .Callback<contact_persons>(c => savedContact = c)
+            .Returns(Task.CompletedTask);
+
+        var dto = new RegisterEntityDto
+        {
+            CompanyName = " شركة اختبار ",
+            NationalId = "7001234567",
+            CommercialReg = " 1010123456 ",
+            Password = "TestPass123",
+            FieldName = " خدمات الحج ",
+            Sector = " حج وعمرة ",
+            Country = " السعودية ",
+            Province = " مكة المكرمة ",
+            CompanyDesc = " وصف تجريبي ",
+            CompanyWebsite = " https://example.com ",
+            Name = " مسؤول الاتصال ",
+            Email = " c@example.com ",
+            Phone = " +966500000002 ",
+            Role = " مدير ",
+            Nationality = " سعودي ",
+            CompanyLogo = new Mock<IFormFile>().Object,
+        };
+
+        var result = await _sut.RegisterEntityAsync(dto);
+
+        savedUser.Should().NotBeNull();
+        savedUser!.name.Should().Be("شركة اختبار");
+        savedProfile.Should().NotBeNull();
+        savedProfile!.commercial_reg.Should().Be("1010123456");
+        savedProfile!.company_field.Should().Be("خدمات الحج");
+        savedContact.Should().NotBeNull();
+        savedContact!.name.Should().Be("مسؤول الاتصال");
+        savedContact!.role.Should().Be("مدير");
+        result.User.Name.Should().Be("شركة اختبار");
+    }
+
+    // ---- Gap #1 nit fix (2026-10-12): whitespace-only input must NOT become "" ----
+    // "   " passes [Required] on the raw DTO, so without post-trim re-validation an
+    // empty string would be stored in a required column. Both tests also prove the
+    // row is never persisted (AddAsync never fires).
+
+    [Fact]
+    public async Task RegisterIndividual_WhitespaceOnlyName_Throws()
+    {
+        _userRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<users>().AsQueryable().BuildMock());
+
+        var dto = new RegisterIndividualDto
+        {
+            FirstName = "   ",
+            LastName = "محمد",
+            NationalId = "1234567890",
+            Password = "password123",
+            Phone = "+966501234567",
+            Email = "test@test.com",
+            Gender = "male",
+            Nationality = "سعودي",
+        };
+
+        Func<Task> act = () => _sut.RegisterIndividualAsync(dto);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("الاسم الأول مطلوب");
+        _userRepoMock.Verify(r => r.AddAsync(It.IsAny<users>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RegisterEntity_WhitespaceOnlyCompanyName_Throws()
+    {
+        _userRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<users>().AsQueryable().BuildMock());
+
+        var dto = new RegisterEntityDto
+        {
+            CompanyName = "   ",
+            NationalId = "7001234567",
+            CommercialReg = "1010123456",
+            Password = "TestPass123",
+            FieldName = "خدمات الحج",
+            Sector = "حج وعمرة",
+            Country = "السعودية",
+            Province = "مكة المكرمة",
+            CompanyDesc = "وصف تجريبي",
+            CompanyWebsite = "https://example.com",
+            Name = "مسؤول الاتصال",
+            Email = "c@example.com",
+            Phone = "+966500000002",
+            Role = "مدير",
+            Nationality = "سعودي",
+        };
+
+        Func<Task> act = () => _sut.RegisterEntityAsync(dto);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("اسم الشركة مطلوب");
+        _userRepoMock.Verify(r => r.AddAsync(It.IsAny<users>()), Times.Never);
     }
 }

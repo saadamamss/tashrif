@@ -307,7 +307,6 @@ public class ProfileServiceTests
             national_id = "2020202020",
             name = "Old Company",
             email = "info@company.com",
-            phone = null,
             type = "entity",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -393,5 +392,164 @@ public class ProfileServiceTests
         result.TwitterUrl.Should().Be("tw.com/new");
         result.YoutubeUrl.Should().Be("yt.com/new");
         result.ProfileCompletionPct.Should().Be(53);
+    }
+
+    // ---- Gap #1 (2026-10-12): profile-update text fields are trimmed before persisting ----
+
+    private static (Mock<IUnitOfWork> uow, Func<Task<IndividualProfileResponseDto>> act, Func<IndividualProfileResponseDto?> getResult)
+        MakeIndividualUpdateFixture()
+    {
+        var uowMock = new Mock<IUnitOfWork>();
+        var appsRepoMock = new Mock<IapplicationsRepository>();
+        var interviewsRepoMock = new Mock<IinterviewsRepository>();
+        var contractsRepoMock = new Mock<IcontractsRepository>();
+        var profilesRepoMock = new Mock<Iindividual_profilesRepository>();
+        var usersRepoMock = new Mock<IusersRepository>();
+
+        var user = new users
+        {
+            Id = 1,
+            national_id = "1012345678",
+            name = "Old Name",
+            email = "user@example.com",
+            type = "individual",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        var profile = new individual_profiles
+        {
+            Id = 1,
+            user_id = 1,
+            profile_completion_pct = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+
+        uowMock.SetupGet(u => u.ApplicationsRepository).Returns(appsRepoMock.Object);
+        uowMock.SetupGet(u => u.InterviewsRepository).Returns(interviewsRepoMock.Object);
+        uowMock.SetupGet(u => u.ContractsRepository).Returns(contractsRepoMock.Object);
+        uowMock.SetupGet(u => u.Individual_profilesRepository).Returns(profilesRepoMock.Object);
+        uowMock.SetupGet(u => u.UsersRepository).Returns(usersRepoMock.Object);
+        uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        usersRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new[] { user }.AsQueryable().BuildMock());
+        profilesRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new[] { profile }.AsQueryable().BuildMock());
+        appsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+        interviewsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<interviews>().AsQueryable().BuildMock());
+        contractsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<contracts>().AsQueryable().BuildMock());
+
+        usersRepoMock.Setup(r => r.Update(It.IsAny<users>()))
+            .Callback<users>(updated => { user.name = updated.name; user.phone = updated.phone; });
+        profilesRepoMock.Setup(r => r.Update(It.IsAny<individual_profiles>()))
+            .Callback<individual_profiles>(updated =>
+            {
+                profile.city = updated.city;
+                profile.zone = updated.zone;
+                profile.district = updated.district;
+                profile.street = updated.street;
+                profile.zipcode = updated.zipcode;
+                profile.job_title = updated.job_title;
+            });
+
+        IndividualProfileResponseDto? captured = null;
+        var service = new individual_profilesService(uowMock.Object);
+        return (uowMock, act: async () =>
+        {
+            captured = await service.UpdateAsync(1, new UpdateIndividualProfileDto
+            {
+                Name = "  سعد  ",
+                Phone = " 0500123456 ",
+                City = "  مكة  ",
+                JobTitle = "  مطور  ",
+            });
+            return captured!;
+        }, getResult: () => captured);
+    }
+
+    [Fact]
+    public async Task UpdateIndividualProfile_TrimsUserEnteredText()
+    {
+        var (_, act, _) = MakeIndividualUpdateFixture();
+
+        var result = await act();
+
+        result.Should().NotBeNull();
+        result.Name.Should().Be("سعد");
+        result.Phone.Should().Be("0500123456");
+        result.City.Should().Be("مكة");
+        result.JobTitle.Should().Be("مطور");
+    }
+
+    [Fact]
+    public async Task UpdateEntityProfile_TrimsUserEnteredText()
+    {
+        var uowMock = new Mock<IUnitOfWork>();
+        var profilesRepoMock = new Mock<Ientity_profilesRepository>();
+        var usersRepoMock = new Mock<IusersRepository>();
+        var contactsRepoMock = new Mock<Icontact_personsRepository>();
+        var jobsRepoMock = new Mock<IjobsRepository>();
+        var appsRepoMock = new Mock<IapplicationsRepository>();
+
+        var user = new users
+        {
+            Id = 1,
+            national_id = "2020202020",
+            name = "Old Company",
+            email = "info@company.com",
+            type = "entity",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        var profile = new entity_profiles
+        {
+            Id = 1,
+            user_id = 1,
+            profile_completion_pct = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+
+        uowMock.SetupGet(u => u.Entity_profilesRepository).Returns(profilesRepoMock.Object);
+        uowMock.SetupGet(u => u.UsersRepository).Returns(usersRepoMock.Object);
+        uowMock.SetupGet(u => u.Contact_personsRepository).Returns(contactsRepoMock.Object);
+        uowMock.SetupGet(u => u.JobsRepository).Returns(jobsRepoMock.Object);
+        uowMock.SetupGet(u => u.ApplicationsRepository).Returns(appsRepoMock.Object);
+        uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        profilesRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new[] { profile }.AsQueryable().BuildMock());
+        usersRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new[] { user }.AsQueryable().BuildMock());
+        contactsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<contact_persons>().AsQueryable().BuildMock());
+        jobsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<jobs>().AsQueryable().BuildMock());
+        appsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<applications>().AsQueryable().BuildMock());
+
+        usersRepoMock.Setup(r => r.Update(It.IsAny<users>()))
+            .Callback<users>(updated => { user.name = updated.name; user.phone = updated.phone; });
+        profilesRepoMock.Setup(r => r.Update(It.IsAny<entity_profiles>()))
+            .Callback<entity_profiles>(updated =>
+            {
+                profile.company_field = updated.company_field;
+                profile.commercial_reg = updated.commercial_reg;
+                profile.city = updated.city;
+                profile.website = updated.website;
+            });
+
+        var service = new entity_profilesService(uowMock.Object);
+        var result = await service.UpdateAsync(1, new UpdateEntityProfileDto
+        {
+            Name = "  شركة السعد  ",
+            Phone = " 0500999888 ",
+            CompanyField = " خدمات الحج ",
+            CommercialReg = " 1012345678 ",
+            City = "  الرياض  ",
+            Website = " https://new.sa ",
+        });
+
+        result.Should().NotBeNull();
+        result.Name.Should().Be("شركة السعد");
+        result.Phone.Should().Be("0500999888");
+        result.CompanyField.Should().Be("خدمات الحج");
+        result.CommercialReg.Should().Be("1012345678");
+        result.City.Should().Be("الرياض");
+        result.Website.Should().Be("https://new.sa");
     }
 }
