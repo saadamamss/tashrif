@@ -11,6 +11,7 @@ import ApplicantCardSkeleton from "~/components/ApplicantCardSkeleton.vue";
 import FilterDrawer from "~/components/FilterDrawer.vue";
 import SendInterview from "~/components/SendInterview.vue";
 import SendContract from "~/components/SendContract.vue";
+import { buildImageUrl } from "~/services/help";
 
 const error = ref(null);
 const applicantsLoading = ref(true);
@@ -51,6 +52,8 @@ const handleDisplayMethod = (method) => {
 };
 
 const activeTab = ref('new')
+
+const logoSrc = computed(()=>buildImageUrl(jobDetails.value?.entityLogo , '/images/partner-3.svg'))
 
 const filteredApplicants = computed(() => {
   const statusMap = {
@@ -314,7 +317,7 @@ onMounted(() => loadApplicants({ initial: true }));
                 </p>
                 <div class="flex items-center gap-2">
                   <span class="company-logo border rounded-md overflow-hidden py-1 px-2">
-                    <img :src="jobDetails?.entityLogo || '/images/partner-3.svg'" class="w-10 h-6 object-cover" />
+                    <img :src="logoSrc" class="w-10 h-6 object-cover" />
                   </span>
                   <span class="company-name text-sm text-dark">
                     {{ jobDetails?.entityName }}
