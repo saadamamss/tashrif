@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace tashrif.Core;
 
-public class cvsService(IUnitOfWork unitOfWork, IFileStorageService fileStorage) : IcvsService
+public class cvsService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, ILogger<cvsService> logger) : IcvsService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IFileStorageService _fileStorage = fileStorage;
+    private readonly ILogger<cvsService> _logger = logger;
 
     public async Task<IEnumerable<CvResponseDto>> GetAllByUserAsync(long userId)
     {
@@ -70,11 +72,21 @@ public class cvsService(IUnitOfWork unitOfWork, IFileStorageService fileStorage)
         if (entity.user_id != userId)
             throw new UnauthorizedAccessException("لا تملك صلاحية حذف هذه السيرة الذاتية");
 
-        await _fileStorage.DeleteFileAsync(entity.file_path);
-
+        // BUG-03 fix: soft-delete the row FIRST, then remove the file.
+        // If SaveChanges fails, the row stays live with its file intact (recoverable);
+        // if file deletion fails after, catch + log — a stray orphan file is harmless.
         entity.IsDeleted = true;
         entity.DeletedTime = DateTime.UtcNow;
         _unitOfWork.CvsRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
+
+        try
+        {
+            await _fileStorage.DeleteFileAsync(entity.file_path);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "CV {CvId} soft-deleted but file {FilePath} could not be removed", id, entity.file_path);
+        }
     }
 }

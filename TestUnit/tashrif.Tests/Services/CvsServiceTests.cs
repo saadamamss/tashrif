@@ -2,6 +2,7 @@ using tashrif.Core;
 using tashrif.Data.DTOs;
 using tashrif.Data.Interfaces;
 using tashrif.Data.Models;
+using Microsoft.Extensions.Logging;
 
 namespace tashrif.Tests.Services;
 
@@ -10,6 +11,7 @@ public class CvsServiceTests
     private readonly Mock<IUnitOfWork> _uowMock;
     private readonly Mock<IcvsRepository> _cvsRepoMock;
     private readonly Mock<IFileStorageService> _fileStorageMock;
+    private readonly Mock<ILogger<cvsService>> _loggerMock;
     private readonly cvsService _sut;
 
     public CvsServiceTests()
@@ -17,11 +19,12 @@ public class CvsServiceTests
         _cvsRepoMock = new Mock<IcvsRepository>();
         _uowMock = new Mock<IUnitOfWork>();
         _fileStorageMock = new Mock<IFileStorageService>();
+        _loggerMock = new Mock<ILogger<cvsService>>();
 
         _uowMock.SetupGet(u => u.CvsRepository).Returns(_cvsRepoMock.Object);
         _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-        _sut = new cvsService(_uowMock.Object, _fileStorageMock.Object);
+        _sut = new cvsService(_uowMock.Object, _fileStorageMock.Object, _loggerMock.Object);
     }
 
     [Fact]
@@ -124,5 +127,46 @@ public class CvsServiceTests
 
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
         _fileStorageMock.Verify(f => f.DeleteFileAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_SaveFails_FileNeverTouched_MarksEntityButPersistsNothing()
+    {
+        // Proves the BUG-03 inversion: DB commit is attempted BEFORE file deletion.
+        var cv = new cvs { Id = 1, user_id = 1, file_name = "cv.pdf", file_path = "/uploads/cvs/cv-1.pdf" };
+        _cvsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { cv }.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ThrowsAsync(new InvalidOperationException("db down"));
+
+        var act = () => _sut.DeleteAsync(1, 1);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _fileStorageMock.Verify(f => f.DeleteFileAsync(It.IsAny<string>()), Times.Never);
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Once);
+        cv.IsDeleted.Should().BeTrue(); // in-memory entity was marked; the DB write is what failed — file intact
+    }
+
+    [Fact]
+    public async Task Delete_FileDeleteFails_RowStaysDeleted_NoThrow()
+    {
+        // File gone-missing post-commit must not fail the request: orphan file, logged.
+        var cv = new cvs { Id = 1, user_id = 1, file_name = "cv.pdf", file_path = "/uploads/cvs/cv-1.pdf" };
+        _cvsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { cv }.AsQueryable().BuildMock());
+        _fileStorageMock.Setup(f => f.DeleteFileAsync(It.IsAny<string>()))
+            .ThrowsAsync(new IOException("disk gone"));
+
+        await _sut.DeleteAsync(1, 1);
+
+        cv.IsDeleted.Should().BeTrue();
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Once);
+        _loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("could not be removed")),
+                It.IsAny<IOException>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }
