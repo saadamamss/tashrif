@@ -165,6 +165,33 @@ public class ApplicationsServiceTests
             .WithMessage("*غير مفتوحة*");
     }
 
+    [Theory]
+    [InlineData("ahmed")]
+    [InlineData("AHMED")]
+    [InlineData("  ahmed  ")]
+    public async Task GetAll_Search_IsCaseInsensitive_AndTrimmed(string search)
+    {
+        // BUG-01+NIT-01 regression: applicant name matches lower, upper, and padded input.
+        var apps = new[]
+        {
+            new applications { Id = 1, user_id = 1, job_id = 1, status = "new",
+                user_Entity = new users { Id = 1, name = "Ahmed Hassan" },
+                job_Entity = new jobs { Id = 1, entity_id = 5, title = "t" }, CreatedAt = DateTime.UtcNow },
+            new applications { Id = 2, user_id = 2, job_id = 1, status = "new",
+                user_Entity = new users { Id = 2, name = "Khaled" },
+                job_Entity = new jobs { Id = 1, entity_id = 5, title = "t" }, CreatedAt = DateTime.UtcNow },
+        }.AsQueryable().BuildMock();
+        _appsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(apps);
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { new jobs { Id = 1, entity_id = 5, status = "active", title = "t" } }.AsQueryable().BuildMock());
+
+        var result = await _sut.GetAllAsync(
+            new PaginationDto { Page = 1, Limit = 10 }, 5, "entity", null, search);
+
+        result.Total.Should().Be(1);
+        result.Items.Should().ContainSingle(a => a.UserName == "Ahmed Hassan");
+    }
+
     [Fact]
     public async Task Apply_MissingJob_ThrowsKeyNotFound()
     {

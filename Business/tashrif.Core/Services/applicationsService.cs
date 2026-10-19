@@ -25,8 +25,12 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
             query = query.Where(a => a.status == status);
 
         query = query.Include(a => a.user_Entity).Include(a => a.job_Entity);
-        if (!string.IsNullOrEmpty(search))
-            query = query.Where(a => a.user_Entity.name.Contains(search));
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            // BUG-01+NIT-01: same normalization as jobsService — trim + lowercase input once.
+            var term = search.Trim().ToLower();
+            query = query.Where(a => a.user_Entity.name != null && a.user_Entity.name.ToLower().Contains(term));
+        }
 
         var total = await query.CountAsync();
 

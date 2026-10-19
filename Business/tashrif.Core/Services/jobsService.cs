@@ -16,8 +16,15 @@ public class jobsService(IUnitOfWork unitOfWork) : IjobsService
             query = query.Where(j => j.work_type == type);
         if (!string.IsNullOrEmpty(gender))
             query = query.Where(j => j.gender == gender);
-        if (!string.IsNullOrEmpty(search))
-            query = query.Where(j => j.title.Contains(search) || j.description.Contains(search));
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            // BUG-01+NIT-01: normalize input once (trim + lowercase), then compare lowercased.
+            // ToLower() (not Invariant) translates to SQL LOWER(); null-guards keep the
+            // pure-mock LINQ provider from throwing on nullable columns (unlike SQL LOWER(NULL)).
+            var term = search.Trim().ToLower();
+            query = query.Where(j => j.title.ToLower().Contains(term) ||
+                (j.description != null && j.description.ToLower().Contains(term)));
+        }
         if (!string.IsNullOrEmpty(location))
             query = query.Where(j => j.location == location);
         if (entityId.HasValue)

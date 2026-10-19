@@ -92,6 +92,30 @@ public class JobsServiceTests
         result.Items.Should().HaveCount(3);
     }
 
+    [Theory]
+    [InlineData("utc")]
+    [InlineData("UTC")]
+    [InlineData(" utc ")]
+    public async Task GetAll_Search_IsCaseInsensitive_AndTrimmed(string search)
+    {
+        // BUG-01+NIT-01 regression: "test utc" matches lower, upper, and padded input.
+        var jobs = new List<jobs>
+        {
+            new() { Id = 1, title = "test utc", description = "desc", status = "active", work_type = "x", entity_Entity = new users { name = "Entity", avatar_url = "" }, CreatedAt = DateTime.UtcNow },
+            new() { Id = 2, title = "other", description = "nothing here", status = "active", work_type = "x", entity_Entity = new users { name = "Entity", avatar_url = "" }, CreatedAt = DateTime.UtcNow },
+        }.AsQueryable().BuildMock();
+
+        _jobsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(jobs);
+        _benefitsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<job_benefits>().AsQueryable().BuildMock());
+        _conditionsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<job_conditions>().AsQueryable().BuildMock());
+        _responsibilitiesRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<job_responsibilities>().AsQueryable().BuildMock());
+
+        var result = await _sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, null, null, search);
+
+        result.Total.Should().Be(1);
+        result.Items.Should().ContainSingle(j => j.Id == 1);
+    }
+
     [Fact]
     public async Task GetAll_ReturnsApplicantCount()
     {

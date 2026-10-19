@@ -296,6 +296,21 @@ public class AdminServiceTests
         result.Items.Should().ContainSingle(u => u.Id == 2);
     }
 
+    [Theory]
+    [InlineData("AHMED@TEST.COM")]
+    [InlineData("  ahmed@test.com  ")]
+    public async Task GetUsersAsync_Search_IsCaseInsensitive_AndTrimmed(string search)
+    {
+        // BUG-01+NIT-01 regression: email matches upper and padded input.
+        SetupUsers(
+            MakeUser(1, "أحمد", "ahmed@test.com", "individual"),
+            MakeUser(2, "خالد", "khaled@test.com", "individual"));
+
+        var result = await _sut.GetUsersAsync(new AdminUserFilterDto { Search = search, Limit = 50 });
+
+        result.Items.Should().ContainSingle(u => u.Id == 1);
+    }
+
     [Fact]
     public async Task GetUserByIdAsync_ExistingUser_ReturnsUser()
     {

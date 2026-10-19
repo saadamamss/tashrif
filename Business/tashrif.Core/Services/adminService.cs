@@ -121,13 +121,14 @@ public class adminService(IUnitOfWork unitOfWork, IFileStorageService fileStorag
         else if (filter.Status == "deactivated")
             query = query.Where(u => u.IsDeleted);
 
-        if (!string.IsNullOrEmpty(filter.Search))
+        if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var search = filter.Search.Trim();
+            // BUG-01: adminService already trimmed — now also lowercase both sides.
+            var search = filter.Search.Trim().ToLower();
             query = query.Where(u =>
-                u.name.Contains(search) ||
-                u.email.Contains(search) ||
-                u.national_id.Contains(search));
+                (u.name != null && u.name.ToLower().Contains(search)) ||
+                (u.email != null && u.email.ToLower().Contains(search)) ||
+                (u.national_id != null && u.national_id.ToLower().Contains(search)));
         }
 
         var total = await query.CountAsync();
@@ -306,8 +307,13 @@ public class adminService(IUnitOfWork unitOfWork, IFileStorageService fileStorag
 
         if (!string.IsNullOrEmpty(status))
             query = query.Where(j => j.status == status);
-        if (!string.IsNullOrEmpty(search))
-            query = query.Where(j => j.title.Contains(search) || j.description.Contains(search));
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            // BUG-01+NIT-01: same normalization as jobsService.GetAllAsync.
+            var term = search.Trim().ToLower();
+            query = query.Where(j => j.title.ToLower().Contains(term) ||
+                (j.description != null && j.description.ToLower().Contains(term)));
+        }
 
         var total = await query.CountAsync();
 
