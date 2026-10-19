@@ -36,7 +36,7 @@ const formData = ref({
   vacancies: "",
   jobPlace: "",
   jobType: "",
-  targets: "",
+  gender: "",
   hours: "",
   duration: "",
   endDate: "",
@@ -75,8 +75,7 @@ const submitForm = async () => {
       description: formData.value.jobDesc,
       location: formData.value.jobPlace,
       type: formData.value.jobType,
-      target: formData.value.targets,
-      gender: formData.value.targets,
+      gender: formData.value.gender,
       hours: formData.value.hours,
       duration: formData.value.duration,
       endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : null,
@@ -186,21 +185,21 @@ const submitForm = async () => {
               </Field>
             </div>
             <div>
-              <label for="targets" class="text-sm mb-2 block">
-                الفئة المستهدفة
+              <label for="gender" class="text-sm mb-2 block">
+                الجنس
                 <span class="text-red-400">*</span>
               </label>
-              <Field name="targets" id="targets" v-model="formData.targets">
+              <Field name="gender" id="gender" v-model="formData.gender">
                 <CustomSelect
-                  placeholder="الفئة المستهدفة"
+                  placeholder="الجنس"
                   :items="[
                     { value: 'both', label: 'رجال ونساء' },
                     { value: 'male', label: 'رجال' },
                     { value: 'female', label: 'نساء' },
                   ]"
                   required
-                  v-model="formData.targets"
-                  :error="errors.targets"
+                  v-model="formData.gender"
+                  :error="errors.gender"
                 />
               </Field>
             </div>

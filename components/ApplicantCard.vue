@@ -175,10 +175,10 @@ const dropdownActions = computed(() => {
   const detailsAction = { label: 'تفاصيل الطلب', event: 'view-details' }
   switch (props.status) {
     case 'new':
+      // BUG-05: interviews start from `shortlisted` — offering it here would now 400.
       return [
         detailsAction,
         { label: 'إضافة للمرشحين', event: 'shortlist' },
-        { label: 'إجراء مقابلة', event: 'interview' },
         { label: 'رفض', event: 'refuse', danger: true },
       ]
     case 'shortlisted':

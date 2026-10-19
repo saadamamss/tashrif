@@ -107,7 +107,7 @@ interface Job {
   description: string
   location: string
   type: string
-  target: string
+  target?: string | null
   vacancies: number
   qualification: string
   salary: string

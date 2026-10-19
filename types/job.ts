@@ -7,7 +7,7 @@ export interface Job {
   description: string
   location: string
   type: string
-  target: string
+  target?: string | null
   vacancies: number
   qualification: string
   salary: string
@@ -30,7 +30,6 @@ export interface JobFormData {
   description: string
   location: string
   type: string
-  target: string
   vacancies: number
   qualification: string
   salary: string

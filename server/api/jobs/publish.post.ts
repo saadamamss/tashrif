@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     description: body.description || '',
     location: body.location || '',
     type: body.type || 'field',
-    target: body.target || '',
+    target: body.target ?? null,
     vacancies: Number(body.vacancies) || 1,
     qualification: body.qualification || '',
     salary: body.salary || '',

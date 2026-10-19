@@ -116,7 +116,7 @@ export interface Job {
   description: string
   location: 'makkah' | 'madinah' | 'jeddah' | 'taif' | 'mina' | 'arafat' | 'muzdalifah' | 'rabigh' | 'khulais' | 'bahrah' | 'jumum' | 'allith' | 'qunfudhah' | 'yanbu' | 'badr' | 'riyadh'
   workType: 'full-time' | 'part-time' | 'seasonal'
-  target?: string
+  target?: string | null
   vacancies: number
   qualification?: string
   salaryMin?: number
@@ -275,7 +275,6 @@ export interface JobFormData {
   description: string
   location: string
   workType: string
-  target: string
   vacancies: number
   qualification: string
   salaryText: string
