@@ -81,7 +81,8 @@ const submitForm = async () => {
       endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : null,
       vacancies: Number(formData.value.vacancies) || 0,
       qualification: formData.value.qualification,
-      salary: formData.value.salary,
+      // API contract: salary is a string. Force it here so no input path can send a number.
+      salary: String(formData.value.salary ?? ""),
       benefits: splitLines(formData.value.benefits),
       responsibilities: splitLines(formData.value.responsibilities),
       conditions: splitLines(formData.value.conditions),
