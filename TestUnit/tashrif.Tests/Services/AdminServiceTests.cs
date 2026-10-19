@@ -478,6 +478,24 @@ public class AdminServiceTests
         result.Items.Should().ContainSingle(j => j.Id == 1);
     }
 
+    [Theory]
+    [InlineData("utc")]
+    [InlineData("UTC")]
+    [InlineData(" utc ")]
+    public async Task GetAllJobsAsync_Search_IsCaseInsensitive_AndTrimmed(string search)
+    {
+        // BUG-01+NIT-01 regression for the fourth search site (admin jobs).
+        SetupJobs(
+            MakeJob(1, 10, "test utc", "active"),
+            MakeJob(2, 10, "وظيفة أخرى", "active"));
+
+        var result = await _sut.GetAllJobsAsync(
+            new tashrif.Data.Models.PaginationDto { Page = 1, Limit = 50 }, null, search);
+
+        result.Total.Should().Be(1);
+        result.Items.Should().ContainSingle(j => j.Id == 1);
+    }
+
     [Fact]
     public async Task DeactivateJobAsync_SetsStatusClosed()
     {

@@ -30,6 +30,15 @@ public class CreateJobDtoValidationTests
         return results;
     }
 
+    [Fact]
+    public void Target_IsOptional_PassValidation()
+    {
+        // BUG-02: the publish form no longer sends a target; the field must stay optional.
+        var dto = ValidDto("both");
+        dto.Target = null;
+        Validate(dto).Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData("male")]
     [InlineData("female")]

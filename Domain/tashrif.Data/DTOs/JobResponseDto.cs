@@ -13,7 +13,7 @@ public class JobResponseDto
     public string Description { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
-    public string Target { get; set; } = string.Empty;
+    public string? Target { get; set; }
     public int Vacancies { get; set; }
     public string Qualification { get; set; } = string.Empty;
     public string Salary { get; set; } = string.Empty;

@@ -475,4 +475,119 @@ public class ApplicationsServiceTests
         result.First().OldStatus.Should().Be("refused");
         result.First().NewStatus.Should().Be("new");
     }
+
+    // ── BUG-05 transition guard ───────────────────────────────────────
+
+    private void SetupApplicationForStatusChange(string status)
+    {
+        var app = new applications
+        {
+            Id = 1, job_id = 1, user_id = 2, status = status,
+            user_Entity = new users { name = "A" },
+            CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[]
+            {
+                new jobs { Id = 1, entity_id = 1, status = "active", entity_Entity = new users { name = "Entity" },
+                           CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            }.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+    }
+
+    [Theory]
+    [InlineData("new", "accepted")]
+    [InlineData("new", "interview")]
+    [InlineData("shortlisted", "accepted")]
+    [InlineData("interview", "new")]
+    [InlineData("contract_sent", "shortlisted")]
+    [InlineData("accepted", "new")]
+    [InlineData("withdrawn", "shortlisted")]
+    [InlineData("refused", "shortlisted")]
+    public async Task UpdateStatus_IllegalTransition_Throws(string from, string to)
+    {
+        SetupApplicationForStatusChange(from);
+
+        var act = () => _sut.UpdateStatusAsync(1, to, 1);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateStatus_EntityCannotSetWithdrawn()
+    {
+        SetupApplicationForStatusChange("new");
+
+        var act = () => _sut.UpdateStatusAsync(1, "withdrawn", 1);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateStatus_LegalTransition_UpdatesAndRecordsHistory()
+    {
+        SetupApplicationForStatusChange("new");
+
+        var result = await _sut.UpdateStatusAsync(1, "shortlisted", 1);
+
+        result.Status.Should().Be("shortlisted");
+        _statusHistoryMock.Verify(h => h.RecordAsync(1, "new", "shortlisted", 1), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_SelfTransition_IsNoOp()
+    {
+        SetupApplicationForStatusChange("shortlisted");
+
+        var result = await _sut.UpdateStatusAsync(1, "shortlisted", 1);
+
+        result.Status.Should().Be("shortlisted");
+        _uowMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+        _statusHistoryMock.Verify(h => h.RecordAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<long>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task BulkAction_Restore_WithdrawnApplication_FailsPerItem()
+    {
+        // Withdrawal is the individual's decision — an entity restore must not undo it.
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "withdrawn",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var result = await _sut.BulkActionAsync(new List<long> { 10 }, "restore", 1);
+
+        result.Should().ContainSingle();
+        result[0].Success.Should().BeFalse();
+        result[0].Error.Should().Contain("مرفوض");
+        apps[0].status.Should().Be("withdrawn");
+    }
+
+    [Fact]
+    public async Task BulkAction_MixedLegalAndIllegal_PartialSuccess()
+    {
+        var apps = new List<applications>
+        {
+            new() { Id = 10, job_id = 1, user_id = 2, status = "new",
+                     user_Entity = new users { name = "A" }, job_Entity = new jobs { entity_id = 1 } },
+            new() { Id = 11, job_id = 1, user_id = 3, status = "accepted",
+                     user_Entity = new users { name = "B" }, job_Entity = new jobs { entity_id = 1 } },
+        };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(apps.AsQueryable().BuildMock());
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var result = await _sut.BulkActionAsync(new List<long> { 10, 11 }, "shortlist", 1);
+
+        result.Should().ContainSingle(r => r.ApplicationId == 10 && r.Success);
+        result.Should().ContainSingle(r => r.ApplicationId == 11 && !r.Success);
+        apps.First(a => a.Id == 10).status.Should().Be("shortlisted");
+        apps.First(a => a.Id == 11).status.Should().Be("accepted");
+    }
 }

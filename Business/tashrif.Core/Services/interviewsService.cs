@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using tashrif.Data.Constants;
 
 namespace tashrif.Core;
 
@@ -102,6 +103,11 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
         if (job.entity_id != entityId)
             throw new UnauthorizedAccessException("لا تملك صلاحية جدولة مقابلة لهذا الطلب");
 
+        // BUG-05: only shortlisted applications enter the interview stage; re-scheduling an
+        // already-interview application is a legal self-transition (more than one interview).
+        if (!ApplicationStatusTransitions.IsLegal(app.status, "interview"))
+            throw new InvalidOperationException("لا يمكن جدولة مقابلة لهذا الطلب في حالته الحالية");
+
         var usersQuery = await _unitOfWork.UsersRepository.GetQueryable();
         var applicant = await usersQuery.FirstOrDefaultAsync(u => u.Id == app.user_id && !u.IsDeleted);
         var entityUser = await usersQuery.FirstOrDefaultAsync(u => u.Id == entityId && !u.IsDeleted);
@@ -132,8 +138,9 @@ public class interviewsService(IUnitOfWork unitOfWork, IstatusHistoryService sta
         _unitOfWork.ApplicationsRepository.Update(app);
         await _unitOfWork.SaveChangesAsync();
 
-        // Record status history
-        await _statusHistory.RecordAsync(dto.ApplicationId, oldStatus, "interview", entityId);
+        // Record status history only when the status actually changed (re-scheduling is a no-op).
+        if (oldStatus != "interview")
+            await _statusHistory.RecordAsync(dto.ApplicationId, oldStatus, "interview", entityId);
 
         return new InterviewResponseDto
         {

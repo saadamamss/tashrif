@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using tashrif.Data.Constants;
 
 namespace tashrif.Core;
 
@@ -87,6 +88,11 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
 
         if (job.entity_id != entityId)
             throw new UnauthorizedAccessException("لا تملك صلاحية الوصول");
+
+        // BUG-05: a contract may only follow a completed interview. Without this the
+        // public API allows new → contract_sent, skipping shortlist and interview.
+        if (!ApplicationStatusTransitions.IsLegal(app.status, "contract_sent"))
+            throw new BadHttpRequestException("لا يمكن إرسال العقد قبل اجتياز المقابلة", 400);
 
         string? fileUrl = null;
         if (dto.ContractFile != null)
@@ -264,15 +270,18 @@ public class contractsService(IUnitOfWork unitOfWork, IFileStorageService fileSt
         if (contract.end_date.HasValue && DateTime.UtcNow > contract.end_date.Value)
             throw new BadHttpRequestException("انتهت صلاحية توقيع العقد", 400);
 
+        // BUG-05: signing is the only legal contract_sent → accepted writer.
+        var appQueryForSign = await _unitOfWork.ApplicationsRepository.GetQueryable();
+        var appForSign = await appQueryForSign.FirstOrDefaultAsync(a => a.Id == contract.application_id && !a.IsDeleted)
+            ?? throw new KeyNotFoundException("الطلب غير موجود");
+        if (!ApplicationStatusTransitions.IsLegal(appForSign.status, "accepted"))
+            throw new BadHttpRequestException("لا يمكن قبول العقد قبل إرساله", 400);
+        var oldStatusForSign = appForSign.status;
+
         contract.status = "signed";
         contract.signed_at = DateTime.UtcNow;
         contract.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.ContractsRepository.Update(contract);
-
-        // Load application to capture old status before update
-        var appQueryForSign = await _unitOfWork.ApplicationsRepository.GetQueryable();
-        var appForSign = await appQueryForSign.FirstOrDefaultAsync(a => a.Id == contract.application_id && !a.IsDeleted);
-        var oldStatusForSign = appForSign?.status;
 
         var now = DateTime.UtcNow;
         var appQuery = await _unitOfWork.ApplicationsRepository.GetQueryable();

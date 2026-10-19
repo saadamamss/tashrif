@@ -13,7 +13,7 @@ public class jobs : ISharedColumns
     public string location { get; set; }
     [Required]
     public string work_type { get; set; }
-    public string target { get; set; }
+    public string? target { get; set; }
     [Required]
     public int vacancies { get; set; }
     public string qualification { get; set; }

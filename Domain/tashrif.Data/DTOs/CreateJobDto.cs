@@ -29,9 +29,10 @@ public class CreateJobDto
     [Range(1, 10000, ErrorMessage = "عدد الوظائف يجب أن يكون بين 1 و 10000")]
     public int Vacancies { get; set; }
 
-    [Required(ErrorMessage = "الهدف مطلوب")]
+    // Optional: the frontend no longer sends a target (BUG-02). Kept for API
+    // compatibility; the column is nullable so legacy junk can be cleaned safely.
     [MaxLength(100)]
-    public string Target { get; set; } = string.Empty;
+    public string? Target { get; set; }
 
     [Required(ErrorMessage = "المؤهل المطلوب مطلوب")]
     [MaxLength(200)]

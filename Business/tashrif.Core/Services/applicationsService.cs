@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using tashrif.Data.Constants;
 
 namespace tashrif.Core;
 
@@ -127,8 +128,11 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
 
     public async Task<ApplicationResponseDto> UpdateStatusAsync(long id, string status, long userId)
     {
-        var validStatuses = new[] { "new", "shortlisted", "interview", "contract_sent", "accepted", "refused", "withdrawn" };
-        if (!validStatuses.Contains(status))
+        // withdrawn is the individual's decision (WithdrawAsync). The DTO regex already
+        // rejects it, but the service stays authoritative.
+        if (status == "withdrawn")
+            throw new InvalidOperationException("لا يمكن للجهة تغيير حالة الطلب إلى مسحوب");
+        if (!ApplicationStatuses.All.Contains(status))
             throw new InvalidOperationException("حالة غير صالحة");
 
         var query = await _unitOfWork.ApplicationsRepository.GetQueryable();
@@ -144,6 +148,13 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
 
         if (job.entity_id != userId)
             throw new UnauthorizedAccessException("لا تملك صلاحية تعديل هذا الطلب");
+
+        if (!ApplicationStatusTransitions.IsLegal(app.status, status))
+            throw new InvalidOperationException("لا يمكن تغيير حالة الطلب إلى هذه الحالة");
+
+        // Self-transition: legal, but nothing to write or record.
+        if (app.status == status)
+            return await BuildSingleResponseAsync(app);
 
         var oldStatus = app.status;
         app.status = status;
@@ -258,6 +269,22 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
                 continue;
             }
 
+            // Per-item failure keeps a 50-item bulk op alive when one row is in the wrong
+            // state (the frontend renders results per item). Restore is limited to refused;
+            // self-transitions are legal no-ops.
+            if (!ApplicationStatusTransitions.IsLegal(app.status, targetStatus))
+            {
+                results.Add(new BulkActionResultDto
+                {
+                    ApplicationId = id,
+                    Success = false,
+                    Error = action == "restore"
+                        ? "لا يمكن استرجاع هذا الطلب إلا إذا كان مرفوضاً"
+                        : "لا يمكن تغيير حالة الطلب إلى هذه الحالة"
+                });
+                continue;
+            }
+
             idsToUpdate.Add(id);
             results.Add(new BulkActionResultDto
             {
@@ -280,7 +307,8 @@ public class applicationsService(IUnitOfWork unitOfWork, IstatusHistoryService s
                     .SetProperty(x => x.UpdatedAt, now));
 
             // Record status history for all successful applications in one save
-            var historyEntries = results.Where(r => r.Success)
+            // Self-transitions are legal no-ops (see the transition map) — no history row.
+            var historyEntries = results.Where(r => r.Success && r.OldStatus != r.NewStatus)
                 .Select(r => (r.ApplicationId, r.OldStatus, NewStatus: targetStatus))
                 .ToList();
             await _statusHistory.RecordBatchAsync(historyEntries, entityId);

@@ -90,7 +90,8 @@ public class ContractsServiceTests : IClassFixture<TestDatabaseFixture>
             qualification = "بكالوريوس",
             experience = "3 سنوات",
             cover_letter = "أرغب في العمل",
-            status = "new",
+            // BUG-05: contracts may only be sent after an interview.
+            status = "interview",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
@@ -551,5 +552,50 @@ public class ContractsServiceTests : IClassFixture<TestDatabaseFixture>
             afterSign.Items.Should().ContainSingle().Which.Id.Should().Be(sent.Id);
         }
         finally { scope.Dispose(); }
+    }
+
+    [Fact]
+    public async Task Send_ApplicationNotInterviewed_ThrowsBadHttpRequestException()
+    {
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+
+            // Skip shortlist/interview — previously this succeeded (BUG-05).
+            app.status = "new";
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+
+            var act = () => sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+            await act.Should().ThrowAsync<BadHttpRequestException>();
+        }
+        finally { }
+    }
+
+    [Fact]
+    public async Task Sign_ApplicationNotContractSent_ThrowsBadHttpRequestException()
+    {
+        var (sut, db, _) = _fixture.CreateScopedService();
+        try
+        {
+            await SeedTestData(db);
+            var app = await db.applications.FirstAsync();
+            var entity = await db.users.FirstAsync(u => u.type == "entity");
+            var individual = await db.users.FirstAsync(u => u.type == "individual");
+
+            var sent = await sut.SendAsync(new SendContractDto { ApplicationId = app.Id }, entity.Id);
+
+            var tracked = await db.applications.FirstAsync();
+            tracked.status = "refused";
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+
+            var act = () => sut.SignAsync(sent.Id, individual.Id);
+            await act.Should().ThrowAsync<BadHttpRequestException>();
+        }
+        finally { }
     }
 }

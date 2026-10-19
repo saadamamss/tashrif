@@ -860,7 +860,6 @@ namespace tashrif.Context.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("target")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("title")

@@ -272,6 +272,69 @@ public class InterviewsServiceTests
             .Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task Schedule_ApplicationNotShortlisted_Throws()
+    {
+        var app = new applications
+        {
+            Id = 1, job_id = 1, user_id = 2, status = "new",
+            CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+        };
+        var job = new jobs { Id = 1, entity_id = 10, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { job }.AsQueryable().BuildMock());
+
+        var dto = new ScheduleInterviewDto
+        {
+            ApplicationId = 1,
+            Method = "online",
+            Date = DateTime.UtcNow.AddDays(1),
+            Time = "10:00",
+        };
+
+        var act = () => _sut.ScheduleAsync(dto, 10);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task Schedule_ReschedulingAlreadyInterviewed_IsAllowedAndRecordsNoHistory()
+    {
+        var app = new applications
+        {
+            Id = 1, job_id = 1, user_id = 2, status = "interview",
+            CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
+        };
+        var job = new jobs { Id = 1, entity_id = 10, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        _appsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { app }.AsQueryable().BuildMock());
+        _jobsRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[] { job }.AsQueryable().BuildMock());
+        _usersRepoMock.Setup(r => r.GetQueryable())
+            .ReturnsAsync(new[]
+            {
+                new users { Id = 2, name = "المتقدم" },
+                new users { Id = 10, name = "الجهة" },
+            }.AsQueryable().BuildMock());
+        _interviewsRepoMock.Setup(r => r.AddAsync(It.IsAny<interviews>())).Returns(Task.CompletedTask);
+        _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        var dto = new ScheduleInterviewDto
+        {
+            ApplicationId = 1,
+            Method = "online",
+            Date = DateTime.UtcNow.AddDays(2),
+            Time = "11:00",
+        };
+
+        var result = await _sut.ScheduleAsync(dto, 10);
+
+        result.Should().NotBeNull();
+        _statusHistoryMock.Verify(h => h.RecordAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<long>()), Times.Never);
+    }
+
     [Theory]
     [InlineData("scheduled", -1, "past")]
     [InlineData("scheduled", 0, "upcoming")]

@@ -117,6 +117,28 @@ public class JobsServiceTests
     }
 
     [Fact]
+    public async Task GetAll_Search_MatchesDescriptionOnly()
+    {
+        // BUG-01 coverage: description is a nullable column — search must match it
+        // (and the null-guard must not throw in the in-memory provider).
+        var jobs = new List<jobs>
+        {
+            new() { Id = 1, title = "عنوان", description = "Seasonal UTC shift", status = "active", work_type = "x", entity_Entity = new users { name = "Entity", avatar_url = "" }, CreatedAt = DateTime.UtcNow },
+            new() { Id = 2, title = "آخر", description = null!, status = "active", work_type = "x", entity_Entity = new users { name = "Entity", avatar_url = "" }, CreatedAt = DateTime.UtcNow },
+        }.AsQueryable().BuildMock();
+
+        _jobsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(jobs);
+        _benefitsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<job_benefits>().AsQueryable().BuildMock());
+        _conditionsRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<job_conditions>().AsQueryable().BuildMock());
+        _responsibilitiesRepoMock.Setup(r => r.GetQueryable()).ReturnsAsync(new List<job_responsibilities>().AsQueryable().BuildMock());
+
+        var result = await _sut.GetAllAsync(new PaginationDto { Page = 1, Limit = 10 }, null, null, "utc");
+
+        result.Total.Should().Be(1);
+        result.Items.Should().ContainSingle(j => j.Id == 1);
+    }
+
+    [Fact]
     public async Task GetAll_ReturnsApplicantCount()
     {
         var jobsList = new List<jobs>
