@@ -81,7 +81,7 @@ const submitForm = async () => {
       endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : null,
       vacancies: Number(formData.value.vacancies) || 0,
       qualification: formData.value.qualification,
-      salary: formData.value.salary,
+      salary: String(formData.value.salary ?? ""),
       benefits: splitLines(formData.value.benefits),
       responsibilities: splitLines(formData.value.responsibilities),
       conditions: splitLines(formData.value.conditions),
@@ -238,7 +238,7 @@ const submitForm = async () => {
                 required
               >
                 <span
-                  class="block absolute h-[40px] flex items-center left-[0px] bottom-[0px] px-3 bg-white text-sm rounded-2xl shadow"
+                  class="block absolute h-[38px] flex items-center left-[1px] bottom-[1px] px-3 bg-white text-sm rounded-2xl shadow"
                   style="z-index: 1"
                 >
                   ريال سعودى
