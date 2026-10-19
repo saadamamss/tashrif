@@ -1,30 +1,26 @@
 <script setup>
-import { defineAsyncComponent, computed } from "vue";
-import { useUserStore } from "~/stores/userStore";
+import IndividualProfile from "~/components/dashboard/individual/profile.vue";
+import CompanyProfile from "~/components/dashboard/company/profile.vue";
+import AdminProfile from "~/components/dashboard/admin/profile.vue";
 
 definePageMeta({
   layout: "dashboard",
-  middleware: ["auth-global","auth-guard", "user-type"],
+  middleware: ["auth", "user-type"],
+  meta: { requiresAuth: true },
 });
 
-const userStore = useUserStore();
+useHead({
+  title: 'الملف الشخصي',
+})
 
-// Computed property for better reactivity
-const currentHomeComponent = computed(() => {
-  if (!userStore.userType) return null; // Handle loading state
-
-  return defineAsyncComponent(() =>
-    userStore.userType === "individual"
-      ? import("~/components/dashboard/individual/profile.vue")
-      : import("~/components/dashboard/company/profile.vue")
-  );
-});
+const { userType } = useAuth();
 </script>
 
 <template>
   <div>
-    <Suspense>
-      <component :is="currentHomeComponent" v-if="currentHomeComponent" />
-    </Suspense>
+    <IndividualProfile v-if="userType === 'individual'" />
+    <CompanyProfile v-else-if="userType === 'entity'" />
+    <AdminProfile v-else-if="userType === 'admin'" />
+    <UiLoadingSkeleton v-else :count="3" height="300px" />
   </div>
 </template>

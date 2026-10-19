@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/backend/api/(.*)", "destination": "https://tashrif-production.up.railway.app/api/$1" },
+    { "source": "/backend/hubs/(.*)", "destination": "https://tashrif-production.up.railway.app/hubs/$1" },
+    { "source": "/uploads/(.*)", "destination": "https://tashrif-production.up.railway.app/uploads/$1" }
+  ]
+}

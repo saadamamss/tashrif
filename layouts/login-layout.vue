@@ -1,5 +1,4 @@
 <template>
-  <div>
-    <slot></slot>
-  </div>
+  <slot />
+  <Toast />
 </template>

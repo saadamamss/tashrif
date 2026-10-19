@@ -12,12 +12,12 @@
   text-align: center;
 }
 .btn-primary:hover {
-  background-color: rgba($color: #f5f5f5, $alpha: 1);
+  background-color: rgba($color: $bg-light, $alpha: 1);
 }
 
 .btn-outline {
   @apply py-3 px-4 xs:px-6;
-  background-color: #ffffff;
+  background-color: #fff;
   border: solid 1px #e6e8e4;
   border-radius: 100px;
   transition: background-color 0.3s ease, border 0.3s ease;
@@ -29,7 +29,7 @@
 }
 
 .btn-outline:hover {
-  background-color: rgba($color: #f5f5f5, $alpha: 1);
+  background-color: rgba($color: $bg-light, $alpha: 1);
   border-color: rgba($color: $primary, $alpha: 1);
 }
 

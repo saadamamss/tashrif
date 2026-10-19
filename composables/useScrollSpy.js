@@ -1,11 +1,21 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
+/** @type {import('vue').Ref<string>} */
 const currentSection = ref("");
 
+/**
+ * @param {number} [offset=110]
+ * @returns {{
+ *   currentSection: import('vue').Ref<string>,
+ *   goToSection: (e: MouseEvent) => void,
+ *   scrollToSection: (id: string) => Promise<void>
+ * }}
+ */
 export default function (offset = 110) {
   const router = useRouter();
   const route = useRoute();
+  /** @type {IntersectionObserver | null} */
   let observer = null;
 
   const initObserver = () => {
@@ -19,8 +29,12 @@ export default function (offset = 110) {
     document.querySelectorAll("section[id]").forEach(s => observer.observe(s));
   };
 
+  /**
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
   const scrollToSection = async (id) => {
-    await nextTick(); // ننتظر الـ DOM يجهز
+    await nextTick();
     const element = document.getElementById(id);
     if (element) {
       const bodyRect = document.body.getBoundingClientRect().top;
@@ -35,16 +49,17 @@ export default function (offset = 110) {
     }
   };
 
+  /**
+   * @param {MouseEvent} e
+   */
   const goToSection = (e) => {
     e.preventDefault();
-    const href = e.currentTarget.getAttribute("href");
+    const href = /** @type {HTMLAnchorElement} */ (e.currentTarget).getAttribute("href");
     const id = href.replace(/^\/|#/g, '');
 
     if (route.path !== '/') {
       router.push("/").then(() => {
-        // ننتظر وقت كافي للتحميل ثم نقوم بالسكرول
         setTimeout(() => scrollToSection(id), 300);
-        // تأكيد إضافي بعد اكتمال تحميل الصور المحتمل
         setTimeout(() => scrollToSection(id), 800);
       });
     } else {
