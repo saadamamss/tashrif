@@ -1,5 +1,5 @@
 <template>
-  <section class="jobs-section py-12 md:py-16 bg-bg-light" id="jobs">
+  <section v-if="jobs.length" class="jobs-section py-12 md:py-16 bg-bg-light" id="jobs">
     <div class="px-0 section-content">
       <div class="mb-8 flex gap-6 sm:gap-4 flex-col sm:flex-row justify-between items-start max-w-[1300px] mx-auto px-4 sm:px-3 xl:px-0">
         <div>
