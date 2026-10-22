@@ -35,6 +35,7 @@ public class tashrifDBContext : DbContext
    public DbSet<notifications> notifications => Set<notifications>();
    public DbSet<messages> messages => Set<messages>();
    public DbSet<application_status_history> application_status_history => Set<application_status_history>();
+    public DbSet<email_verification_tokens> email_verification_tokens => Set<email_verification_tokens>();
 
    #endregion
 
@@ -62,6 +63,32 @@ public class tashrifDBContext : DbContext
             .WithMany()
             .HasForeignKey(h => h.changed_by)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // A verification token has no meaning without its user — hard-cascade it.
+        // (Soft-deleting a user does NOT delete tokens; they simply expire on their own.)
+        builder.Entity<email_verification_tokens>()
+            .HasOne(t => t.user_Entity)
+            .WithMany()
+            .HasForeignKey(t => t.user_id)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        #endregion
+
+        #region Indexes
+
+        // D12: one account per email address. The column is lowercased on write and
+        // normalized by the AddEmailVerification migration, so the index is effectively
+        // case-insensitive.
+        builder.Entity<users>()
+            .HasIndex(u => u.email)
+            .IsUnique()
+            .HasDatabaseName("IX_users_email");
+
+        // Token lookup is always by hash (the raw token never touches the DB).
+        builder.Entity<email_verification_tokens>()
+            .HasIndex(t => t.token_hash)
+            .IsUnique()
+            .HasDatabaseName("IX_email_verification_tokens_token_hash");
 
         #endregion
 

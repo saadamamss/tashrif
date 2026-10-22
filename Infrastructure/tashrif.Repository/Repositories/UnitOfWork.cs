@@ -23,6 +23,7 @@ public class UnitOfWork : IUnitOfWork
     public InotificationsRepository NotificationsRepository { get; }
     public ImessagesRepository MessagesRepository { get; }
     public Iapplication_status_historyRepository Application_status_historyRepository { get; }
+    public Iemail_verification_tokensRepository Email_verification_tokensRepository { get; }
 
     #endregion
 
@@ -47,7 +48,8 @@ public class UnitOfWork : IUnitOfWork
         Iaudit_logsRepository audit_logsRepository,
         InotificationsRepository notificationsRepository,
         ImessagesRepository messagesRepository,
-        Iapplication_status_historyRepository application_status_historyRepository
+        Iapplication_status_historyRepository application_status_historyRepository,
+        Iemail_verification_tokensRepository email_verification_tokensRepository
     )
     {
         _context = context;
@@ -70,6 +72,7 @@ public class UnitOfWork : IUnitOfWork
         NotificationsRepository = notificationsRepository;
         MessagesRepository = messagesRepository;
         Application_status_historyRepository = application_status_historyRepository;
+        Email_verification_tokensRepository = email_verification_tokensRepository;
     }
 
     #endregion

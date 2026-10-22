@@ -13,6 +13,12 @@ public class users : ISharedColumns
     public string name { get; set; }
     [Required]
     public string email { get; set; }
+    /// <summary>
+    /// True once the email on this row has been proven (D2). New registrations start
+    /// FALSE and are flipped by the verify-email flow; pre-existing users were
+    /// backfilled TRUE by the AddEmailVerification migration (D9).
+    /// </summary>
+    public bool is_email_verified { get; set; } = false;
     public string phone { get; set; }
     [Required]
     public string type { get; set; }

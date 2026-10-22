@@ -23,6 +23,7 @@ public static class tashrifRepositoryDependencies
         services.AddScoped<InotificationsRepository, notificationsRepository>();
         services.AddScoped<ImessagesRepository, messagesRepository>();
         services.AddScoped<Iapplication_status_historyRepository, application_status_historyRepository>();
+        services.AddScoped<Iemail_verification_tokensRepository, email_verification_tokensRepository>();
 
         services.AddScoped<IGenericRepository<users>, usersRepository>();
         services.AddScoped<IGenericRepository<individual_profiles>, individual_profilesRepository>();
@@ -32,6 +33,7 @@ public static class tashrifRepositoryDependencies
         services.AddScoped<IGenericRepository<notifications>, notificationsRepository>();
         services.AddScoped<IGenericRepository<messages>, messagesRepository>();
         services.AddScoped<IGenericRepository<application_status_history>, application_status_historyRepository>();
+        services.AddScoped<IGenericRepository<email_verification_tokens>, email_verification_tokensRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }

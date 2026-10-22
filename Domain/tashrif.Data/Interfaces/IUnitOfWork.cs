@@ -20,5 +20,6 @@ public interface IUnitOfWork
      InotificationsRepository NotificationsRepository { get; }
      ImessagesRepository MessagesRepository { get; }
      Iapplication_status_historyRepository Application_status_historyRepository { get; }
+    Iemail_verification_tokensRepository Email_verification_tokensRepository { get; }
      Task<int> SaveChangesAsync();
 }

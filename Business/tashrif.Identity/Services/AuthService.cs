@@ -48,6 +48,11 @@ public class AuthService : IAuthService
         if (existing != null)
             throw new BadHttpRequestException("رقم الهوية مسجل مسبقاً", 409);
 
+        // D12: users.email carries a UNIQUE index, so a duplicate registration would
+        // otherwise surface as a raw DbUpdateException → HTTP 500. Guard explicitly and
+        // return 409, mirroring the national_id conflict above.
+        await EnsureEmailIsAvailableAsync(dto.Email);
+
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
         // Gap #1 (2026-10-12): trim user-entered text before persisting. Validation ran on the
@@ -60,6 +65,12 @@ public class AuthService : IAuthService
         dto.Phone = dto.Phone.Trim();
         dto.Gender = dto.Gender.Trim();
         dto.Nationality = dto.Nationality.Trim();
+
+        // D12: emails are stored lowercase. The DB has a UNIQUE index on users.email and a
+        // BEFORE-trigger that lowercases on write; lowercasing here as well keeps the
+        // in-memory entity (and the value echoed back to the caller) consistent with what
+        // the database actually stores — EF would otherwise keep the un-normalized value.
+        dto.Email = dto.Email.ToLowerInvariant();
 
         // Nit fix (2026-10-12): re-validate AFTER trimming. A whitespace-only value
         // ("   ") passes [Required] on the raw input, then trims to "" — without this,
@@ -115,6 +126,9 @@ public class AuthService : IAuthService
         if (existing != null)
             throw new BadHttpRequestException("رقم الهوية مسجل مسبقاً", 409);
 
+        // D12: duplicate-email guard — see the individual register branch.
+        await EnsureEmailIsAvailableAsync(dto.Email);
+
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
         // Gap #1 (2026-10-12): trim user-entered text before persisting (see the individual
@@ -135,6 +149,9 @@ public class AuthService : IAuthService
         dto.Name = dto.Name.Trim();
         dto.Role = dto.Role.Trim();
         dto.Nationality = dto.Nationality.Trim();
+
+        // D12: emails are stored lowercase — see the individual register branch.
+        dto.Email = dto.Email.ToLowerInvariant();
 
         // Nit fix (2026-10-12): same post-trim re-validation as the individual branch.
         RequestValidator.Validate(dto);
@@ -267,6 +284,29 @@ public class AuthService : IAuthService
         await _uow.SaveChangesAsync();
 
         return MapToUserDto(user);
+    }
+
+    /// <summary>
+    /// D12 — rejects an email that is already taken.
+    /// The comparison is case-insensitive because emails are stored lowercase (both by
+    /// this service and by the DB trigger), so "A@x.com" collides with "a@x.com".
+    ///
+    /// IgnoreQueryFilters is REQUIRED here, not an optimisation: the global IsDeleted
+    /// filter would hide soft-deleted rows, but the UNIQUE index on users.email spans
+    /// ALL rows regardless of IsDeleted. Without this, registering the address of a
+    /// deactivated account would pass the guard and then blow up at SaveChanges with a
+    /// DbUpdateException → HTTP 500 instead of a clean 409.
+    /// </summary>
+    private async Task EnsureEmailIsAvailableAsync(string email)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var query = await _userRepo.GetQueryable();
+        query = query.IgnoreQueryFilters();
+
+        var emailTaken = await query.AnyAsync(u => u.email.ToLower() == normalizedEmail);
+
+        if (emailTaken)
+            throw new BadHttpRequestException("البريد الإلكتروني مستخدم مسبقا", 409);
     }
 
     private AuthResponseDto GenerateAuthResponse(users user)

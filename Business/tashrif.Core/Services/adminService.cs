@@ -44,8 +44,12 @@ public class adminService(IUnitOfWork unitOfWork, IFileStorageService fileStorag
             throw new UnauthorizedAccessException("لا تملك صلاحية الوصول");
 
         // Email uniqueness guard (error text mirrors AuthService.RegisterAsync)
+        // IgnoreQueryFilters: the UNIQUE index on users.email spans ALL rows, including
+        // soft-deleted ones, so the guard must see them too — otherwise an admin would
+        // set their email to a deactivated account's address and hit a 500 at save time.
         var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
         var emailQuery = await _unitOfWork.UsersRepository.GetQueryable();
+        emailQuery = emailQuery.IgnoreQueryFilters();
         var emailTaken = await emailQuery.AnyAsync(u =>
             u.Id != adminId && u.email.ToLower() == normalizedEmail);
 

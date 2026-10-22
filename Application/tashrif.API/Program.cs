@@ -258,6 +258,7 @@ if (app.Environment.IsDevelopment())
                 gender = "male",
                 nationality = "SA",
                 avatar_url = "",
+                is_email_verified = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             });

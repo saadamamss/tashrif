@@ -385,6 +385,56 @@ namespace tashrif.Context.Migrations
                     b.ToTable("cvs");
                 });
 
+            modelBuilder.Entity("tashrif.Data.email_verification_tokens", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("expires_at")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("last_error")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("sent_at")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("token_hash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("used_at")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("user_id")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("token_hash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_email_verification_tokens_token_hash");
+
+                    b.HasIndex("user_id");
+
+                    b.ToTable("email_verification_tokens");
+                });
+
             modelBuilder.Entity("tashrif.Data.entity_profiles", b =>
                 {
                     b.Property<long>("Id")
@@ -1051,6 +1101,9 @@ namespace tashrif.Context.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("is_email_verified")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1076,6 +1129,10 @@ namespace tashrif.Context.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("email")
+                        .IsUnique()
+                        .HasDatabaseName("IX_users_email");
 
                     b.ToTable("users");
                 });
@@ -1182,6 +1239,17 @@ namespace tashrif.Context.Migrations
                 });
 
             modelBuilder.Entity("tashrif.Data.cvs", b =>
+                {
+                    b.HasOne("tashrif.Data.users", "user_Entity")
+                        .WithMany()
+                        .HasForeignKey("user_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("user_Entity");
+                });
+
+            modelBuilder.Entity("tashrif.Data.email_verification_tokens", b =>
                 {
                     b.HasOne("tashrif.Data.users", "user_Entity")
                         .WithMany()
