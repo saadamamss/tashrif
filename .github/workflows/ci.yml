@@ -53,6 +53,10 @@ jobs:
         run: |
           echo "Jwt__Key=$(openssl rand -base64 32)" >> $GITHUB_ENV
           echo "Jwt__RefreshKey=$(openssl rand -base64 32)" >> $GITHUB_ENV
+          # Required since the email-verification phase: Program.cs fail-fasts
+          # on Frontend:BaseUrl, and the EF design-time host boots Program.cs.
+          # Never used for anything real in CI (migrations send no mail).
+          echo "Frontend__BaseUrl=http://localhost:3000" >> $GITHUB_ENV
 
       - name: Apply test DB migrations
         run: >
