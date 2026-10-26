@@ -20,34 +20,34 @@ const { currentSection, goToSection } = useScrollSpy();
             href="#home"
             :class="{ active: currentSection == 'home' }"
             @click.stop.prevent="goToSection"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
             >الرئيسية</a
           >
           <a
             href="#about"
             @click.stop.prevent="goToSection"
             :class="{ active: currentSection == 'about' }"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
             >عن المنصة</a
           >
           <nuxt-link
             to="/jobs"
             :class="{ active: currentSection == 'jobs' }"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
             >الوظائف</nuxt-link
           >
           <a
             href="#partners"
             @click.stop.prevent="goToSection"
             :class="{ active: currentSection == 'partners' }"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
             >الأخبار</a
           >
           <a
             href="#contact"
             @click.stop.prevent="goToSection"
             :class="{ active: currentSection == 'contact' }"
-            class="text-sm text-[#25343E] transition-colors"
+            class="text-sm text-surface transition-colors"
             >تواصل معنا</a
           >
         </div>

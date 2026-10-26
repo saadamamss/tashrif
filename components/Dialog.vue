@@ -1,8 +1,8 @@
 <template>
   <Transition name="modal">
-    <div v-if="model" class="modal-mask">
+    <div v-if="model" class="modal-mask" role="dialog" aria-modal="true">
       <div class="modal-container" @click.self="closeModal">
-        <div class="modal-content">
+        <div class="modal-content" role="document">
           <slot></slot>
         </div>
       </div>
@@ -12,7 +12,8 @@
 
 <script setup>
 const model = defineModel();
-const props = defineProps({
+
+defineProps({
   isOpen: {
     type: Boolean,
     default: false,
@@ -31,6 +32,9 @@ const props = defineProps({
   },
 });
 
+/**
+ * @type {import('vue').EmitsOptions}
+ */
 const emit = defineEmits(["close", "confirm"]);
 
 const closeModal = () => {
@@ -48,7 +52,6 @@ const confirmAction = () => {
 .modal-leave-active {
   transition: opacity 0.3s ease;
 }
-
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;

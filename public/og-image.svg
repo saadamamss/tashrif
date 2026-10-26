@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#25343E"/>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#grad)" opacity="0.15"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ECB42B;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#ECB42B;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <text x="600" y="250" font-family="sans-serif" font-size="80" font-weight="bold" fill="#ECB42B" text-anchor="middle">منصة تشريف</text>
+  <text x="600" y="320" font-family="sans-serif" font-size="28" fill="#929A9F" text-anchor="middle">Tashrif — Seasonal Hiring Platform</text>
+  <text x="600" y="380" font-family="sans-serif" font-size="22" fill="#667178" text-anchor="middle">Hajj &amp; Umrah Seasonal Employment</text>
+  <line x1="400" y1="420" x2="800" y2="420" stroke="#ECB42B" stroke-width="2" opacity="0.5"/>
+  <text x="600" y="470" font-family="sans-serif" font-size="18" fill="#667178" text-anchor="middle">خدمة ضيوف الرحمن شرف لنا</text>
+</svg>
