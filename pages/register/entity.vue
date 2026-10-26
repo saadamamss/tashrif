@@ -125,7 +125,7 @@ const onSubmit = async () => {
         useToast().show(error, "error")
         return
       }
-      useToast().show("تم إنشاء الحساب بنجاح", "success")
+      useToast().show("تم إنشاء حسابك بنجاح. يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب.", "success")
       clearForm()
       disableUnloadWarning()
       router.push("/register/success")

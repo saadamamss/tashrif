@@ -23,25 +23,12 @@ export default defineEventHandler(async (event) => {
     gender: body.gender,
     nationality: body.nationality,
     createdAt: new Date().toISOString(),
+    isEmailVerified: false,
   }
 
   users.push(newUser)
 
-  const token = generateToken(newUser.id, newUser.type)
-  const refreshToken = generateToken(newUser.id, newUser.type)
-
   return {
-    user: {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      type: newUser.type,
-      phone: newUser.phone,
-      nationalId: newUser.nationalId,
-      gender: newUser.gender,
-      nationality: newUser.nationality,
-    },
-    token,
-    refreshToken,
+    message: 'تم إنشاء الحساب بنجاح. يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب.',
   }
 })

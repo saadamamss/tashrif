@@ -6,12 +6,17 @@ const { showModal, closeModal, isLoginModalShow } = useLoginModal();
 
 const auth = useAuth();
 const route = useRoute();
+const router = useRouter();
 
 const formData = ref({});
 const isSubmitting = ref(false);
-const router = useRouter();
+const showResend = ref(false);
+// D8/B-1 fix (2026-10-22 review): resend is keyed by the NATIONAL ID (the login
+// credential) — never by email. The composable sends { nationalId }.
+const resendNationalId = ref("");
+const resending = ref(false);
 
-//
+////
 const closeModel = () => {
   closeModal();
 };
@@ -21,9 +26,16 @@ const handleSubmit = async () => {
     isSubmitting.value = true;
     auth.error.value = null;
 
-    const success = await auth.login({ nationalId: formData.value.nationalId, password: formData.value.password });
-    if (!success) {
+    const result = await auth.login({
+      nationalId: formData.value.nationalId,
+      password: formData.value.password,
+    });
+    if (!result.success) {
       useToast().show(auth.error.value || "فشل تسجيل الدخول", "error");
+      if (result.requiresVerification) {
+        showResend.value = true;
+        resendNationalId.value = formData.value.nationalId || "";
+      }
       return;
     }
 
@@ -36,6 +48,18 @@ const handleSubmit = async () => {
     useToast().show("حدث خطأ غير متوقع", "error");
   } finally {
     isSubmitting.value = false;
+  }
+};
+
+const handleResend = async () => {
+  resending.value = true;
+  const result = await auth.resendVerification(resendNationalId.value);
+  resending.value = false;
+  if (result.success) {
+    useToast().show("تم إعادة إرسال رابط التفعيل إلى بريدك الإلكتروني", "success");
+    showResend.value = false;
+  } else {
+    useToast().show(auth.error.value || "فشل إعادة الإرسال", "error");
   }
 };
 </script>
@@ -95,7 +119,22 @@ const handleSubmit = async () => {
                 </div>
 
                 <!--  -->
-                <div>
+                <div v-if="showResend" class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-900 direction:rtl text-align:right">
+                  <p class="mb-3 font-medium">لم يتم تفعيل بريدك الإلكتروني بعد</p>
+                  <p class="mb-3">يرجى التحقق من بريدك الإلكتروني والنقر على رابط التفعيل. لم تصل الرسالة؟</p>
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      @click="handleResend"
+                      :disabled="resending"
+                      class="btn-primary text-xs py-2 px-4"
+                    >
+                      <span v-if="resending">جاري الإرسال...</span>
+                      <span v-else>إعادة إرسال رابط التفعيل</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-else>
                   <div class="flex justify-between items-center">
                     <button
                       class="btn-outline text-sm h-[48px]"

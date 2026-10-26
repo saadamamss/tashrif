@@ -12,6 +12,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'بيانات الدخول غير صحيحة' })
   }
 
+  if (!user.isEmailVerified) {
+    throw createError({ statusCode: 403, statusMessage: 'يجب تفعيل بريدك الإلكتروني قبل تسجيل الدخول' })
+  }
+
   const accessToken = generateToken(user.id, user.type)
   const refreshToken = generateToken(user.id, user.type)
 
@@ -40,5 +44,6 @@ export default defineEventHandler(async (event) => {
     nationalId: user.nationalId,
     gender: user.gender,
     nationality: user.nationality,
+    isEmailVerified: user.isEmailVerified,
   }
 })

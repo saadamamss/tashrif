@@ -140,7 +140,7 @@ const { logout, user } = useAuth();
 const { notifications, unreadCount, loading, loadingMore, hasMore, loadMore, addNotification, markAsRead } = useNotifications();
 const { on } = useSignalr();
 
-const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, '/images/profile-image.svg'));
+const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, `https://ui-avatars.com/api/?name=${user.value?.name?.[0]}`));
 
 function formatTime(dateStr) {
   const d = new Date(dateStr);

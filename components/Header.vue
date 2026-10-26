@@ -256,7 +256,7 @@ const router = useRouter();
 const isMobileMenuOpen = ref(false);
 const { isAuthenticated, logout, user } = useAuth();
 
-const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, '/images/profile-image.svg'));
+const avatarSrc = computed(() => buildImageUrl(user.value?.avatarUrl, `https://ui-avatars.com/api/?name=${user.value?.name?.[0]}`));
 
 //
 const toggleMobileMenu = () => {

@@ -16,5 +16,6 @@ export default defineEventHandler(async (event) => {
     nationalId: user.nationalId,
     gender: user.gender,
     nationality: user.nationality,
+    isEmailVerified: user.isEmailVerified,
   }
 })

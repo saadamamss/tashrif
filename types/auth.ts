@@ -9,6 +9,7 @@ export interface User {
   nationality?: string
   avatarUrl?: string
   createdAt?: string
+  isEmailVerified?: boolean
 }
 
 export interface LoginCredentials {

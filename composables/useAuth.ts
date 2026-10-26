@@ -11,6 +11,7 @@ export function useAuth() {
   const isIndividual = computed(() => user.value?.type === "individual");
   const isEntity = computed(() => user.value?.type === "entity");
   const isAdmin = computed(() => user.value?.type === "admin");
+  const isEmailVerified = computed(() => user.value?.isEmailVerified || false);
 
   function setUser(u: User | null) {
     user.value = u;
@@ -43,11 +44,17 @@ export function useAuth() {
       const { data } = await api().post<User>("/auth/login", credentials);
       setUser(data);
       isInitialized.value = true;
-      return true;
+      return { success: true, requiresVerification: false };
     } catch (err: any) {
+      const status = err?.response?.status;
+      // 403 = account exists but email not verified → not a credentials error
+      if (status === 403) {
+        error.value = err?.response?.data?.message || "يجب تفعيل بريدك الإلكتروني قبل تسجيل الدخول";
+        return { success: false, requiresVerification: true };
+      }
       error.value =
         err?.response?.data?.message || err?.message || "Login failed";
-      return false;
+      return { success: false, requiresVerification: false };
     } finally {
       isLoading.value = false;
     }
@@ -57,16 +64,47 @@ export function useAuth() {
     isLoading.value = true;
     error.value = null;
     try {
-      const { data } = await api().post<User>("/auth/register", userData);
-      setUser(data);
+      // Registration is sessionless: backend returns 201 { message } only,
+      // no tokens, no user, no auto-login. Caller routes to check-inbox.
+      await api().post("/auth/register", userData);
       isInitialized.value = true;
-      return true;
+      return { success: true, requiresVerification: true };
     } catch (err: any) {
       error.value =
         err?.response?.data?.message || err?.message || "Registration failed";
-      return false;
+      return { success: false, requiresVerification: false };
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  async function verifyEmail(token: string) {
+    try {
+      const { data } = await api().get<User>("/auth/verify-email", {
+        params: { token },
+      });
+      setUser(data);
+      isInitialized.value = true;
+      return { success: true };
+    } catch (err: any) {
+      error.value =
+        err?.response?.data?.message || err?.message || "فشل تفعيل البريد الإلكتروني";
+      return { success: false };
+    }
+  }
+
+  // D8/B-1 fix (2026-10-22 review): resend is keyed by the NATIONAL ID — the same
+  // credential the user logs in with — never by email. The backend's
+  // ResendVerificationDto validates `nationalId` ([Required]) and any other payload
+  // is rejected with 400 before reaching the service.
+  async function resendVerification(nationalId: string) {
+    try {
+      await api().post("/auth/resend-verification", { nationalId });
+      return { success: true };
+    } catch (err: any) {
+      error.value =
+        err?.response?.data?.message || err?.message || "فشل إعادة إرسال رابط التفعيل";
+      return { success: false };
     }
   }
 
@@ -106,11 +144,14 @@ export function useAuth() {
     isIndividual,
     isEntity,
     isAdmin,
+    isEmailVerified,
     setUser,
     clearUser,
     init,
     login,
     register,
+    verifyEmail,
+    resendVerification,
     logout,
     changePassword,
   };

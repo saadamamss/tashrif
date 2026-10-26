@@ -18,7 +18,6 @@ import Dialog from "~/components/Dialog.vue";
 import CustomSelect from "~/components/elements/CustomSelect.vue";
 import FileInput from "~/components/elements/FileInput.vue";
 import TextInput from "~/components/elements/TextInput.vue";
-import OTPDialog from "~/components/OtpDialog.vue";
 import { Field, Form, ErrorMessage, defineRule } from "vee-validate";
 import { required, email, min, numeric, confirmed, length } from "@vee-validate/rules";
 import PhoneInput from "~/components/PhoneInput.vue";
@@ -32,12 +31,8 @@ defineRule("length", length);
 defineRule("confirmed", confirmed);
 
 const route = useRoute();
-const showOTPDialog = ref(false);
-if (route.query.otp) {
-  showOTPDialog.value = true;
-}
-
-// Initialize formData with all fields
+const router = useRouter();
+const isSubmitting = ref(false);
 const formData = ref({
   firstName: "",
   lastName: "",
@@ -50,6 +45,25 @@ const formData = ref({
   nationality: "",
   idFile: null,
 });
+const onSubmit = async (values) => {
+  isSubmitting.value = true;
+  try {
+    const payload = new FormData()
+    Object.entries(values).forEach(([key, val]) => {
+      if (val) payload.append(key, val)
+    })
+    if (formData.value.idFile) payload.append('idFile', formData.value.idFile)
+    const { error } = await useApi().post('/auth/register', payload)
+    if (error) {
+      useToast().show(error, "error")
+      return
+    }
+    useToast().show("تم إنشاء حسابك بنجاح. يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب.", "success")
+    router.push("/register/success")
+  } finally {
+    isSubmitting.value = false
+  }
+};
 
 const handleFileChange = (field, event) => {
   formData.value[field] = event.target.files[0];
@@ -65,27 +79,6 @@ const handlePhoneValidation = (validation) => {
 
 const handleCountryChange = (country) => {
   console.log("Country changed:", country);
-};
-const router = useRouter();
-const isSubmitting = ref(false);
-const onSubmit = async (values) => {
-  isSubmitting.value = true;
-  try {
-    const payload = new FormData()
-    Object.entries(values).forEach(([key, val]) => {
-      if (val) payload.append(key, val)
-    })
-    if (formData.value.idFile) payload.append('idFile', formData.value.idFile)
-    const { error } = await useApi().post('/auth/register', payload)
-    if (error) {
-      useToast().show(error, "error")
-      return
-    }
-    useToast().show("تم إنشاء الحساب بنجاح", "success")
-    router.push("/register/success")
-  } finally {
-    isSubmitting.value = false
-  }
 };
 </script>
 
@@ -287,9 +280,5 @@ const onSubmit = async (values) => {
         </Form>
       </div>
     </div>
-
-    <Dialog v-if="showOTPDialog" v-model="showOTPDialog">
-      <OTPDialog @cancel="showOTPDialog = false" />
-    </Dialog>
   </div>
 </template>

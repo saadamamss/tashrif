@@ -11,7 +11,7 @@ const avatarUploading = ref(false);
 const fileInput = ref(null);
 
 const avatarSrc = computed(() =>
-  buildImageUrl(user.value?.avatarUrl, "/images/avatar.png")
+  buildImageUrl(user.value?.avatarUrl, `https://ui-avatars.com/api/?name=${user.value?.name?.[0]}`)
 );
 
 const typeLabel = { admin: "مدير النظام" };

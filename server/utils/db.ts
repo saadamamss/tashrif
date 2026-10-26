@@ -9,6 +9,7 @@ interface User {
   gender?: string
   nationality?: string
   avatarUrl?: string
+  isEmailVerified?: boolean
   createdAt: string
 }
 
@@ -204,10 +205,10 @@ function hashPassword(pw: string): string {
 }
 
 const users: User[] = [
-  { id: 1, nationalId: '1010101010', password: hashPassword('individual'), name: 'عبدالله محمد الحربي', email: 'abdullah@gmail.com', phone: '0500000001', type: 'individual', gender: 'male', nationality: 'سعودي', avatarUrl: '/images/avatar-1.png', createdAt: '2025-01-15' },
-  { id: 2, nationalId: '2020202020', password: hashPassword('entity'), name: 'شركة نسك لخدمات الحجاج', email: 'info@nusk.com', phone: '0500000002', type: 'entity', avatarUrl: '/images/partner-3.svg', createdAt: '2025-01-10' },
-  { id: 3, nationalId: '3030303030', password: hashPassword('individual2'), name: 'سارة القحطاني', email: 'sara@gmail.com', phone: '0500000003', type: 'individual', gender: 'female', nationality: 'سعودية', avatarUrl: '/images/avatar-2.png', createdAt: '2025-02-01' },
-  { id: 4, nationalId: '4040404040', password: hashPassword('individual3'), name: 'محمد الشهري', email: 'mohammed@gmail.com', phone: '0500000004', type: 'individual', gender: 'male', nationality: 'سعودي', createdAt: '2025-02-10' },
+  { id: 1, nationalId: '1010101010', password: hashPassword('individual'), name: 'عبدالله محمد الحربي', email: 'abdullah@gmail.com', phone: '0500000001', type: 'individual', gender: 'male', nationality: 'سعودي', avatarUrl: '/images/avatar-1.png', isEmailVerified: true, createdAt: '2025-01-15' },
+  { id: 2, nationalId: '2020202020', password: hashPassword('entity'), name: 'شركة نسك لخدمات الحجاج', email: 'info@nusk.com', phone: '0500000002', type: 'entity', avatarUrl: '/images/partner-3.svg', isEmailVerified: true, createdAt: '2025-01-10' },
+  { id: 3, nationalId: '3030303030', password: hashPassword('individual2'), name: 'سارة القحطاني', email: 'sara@gmail.com', phone: '0500000003', type: 'individual', gender: 'female', nationality: 'سعودية', avatarUrl: '/images/avatar-2.png', isEmailVerified: true, createdAt: '2025-02-01' },
+  { id: 4, nationalId: '4040404040', password: hashPassword('individual3'), name: 'محمد الشهري', email: 'mohammed@gmail.com', phone: '0500000004', type: 'individual', gender: 'male', nationality: 'سعودي', isEmailVerified: true, createdAt: '2025-02-10' },
 ]
 
 const individualProfiles: IndividualProfile[] = [

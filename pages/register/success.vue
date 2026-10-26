@@ -7,12 +7,12 @@
 
       <div class="mb-8">
         <h1 class="text-2xl md:text-3xl font-bold mb-6">
-          تم إنشاء حسابك بنجاج!
+          تم إنشاء حسابك بنجاح!
         </h1>
         <p class="text-sm lg:text-base mb-6 text-[#75797C]">
-          شكرًا لك على إنشاء حسابك. ويمكنك تسجيل الدخول الى حسابك الآن.
+          شكرًا لك على إنشاء حسابك. يرجى التحقق من بريدك الإلكتروني والنقر على رابط التفعيل لتسجيل الدخول.
         </p>
-        <p class="text-sm lg:text-base text-[#75797C]">نتمنى لك التوفيق! 😊</p>
+        <p class="text-sm lg:text-base text-[#75797C]">لم تصل الرسالة؟ يمكنك طلب إعادة الإرسال من شاشة تسجيل الدخول. 😊</p>
       </div>
 
       <div class="flex justify-start">
@@ -21,7 +21,7 @@
           @click.prevent="goToLogin"
           class="btn-primary text-sm lg:px-10"
         >
-          تسجيل الدخول
+          الذهاب إلى تسجيل الدخول
         </a>
       </div>
     </div>
