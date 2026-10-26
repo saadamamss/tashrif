@@ -21,9 +21,11 @@ public class EmailVerificationDataModelTests
     private readonly Mock<Iindividual_profilesRepository> _profileRepoMock;
     private readonly Mock<Ientity_profilesRepository> _entityProfileRepoMock;
     private readonly Mock<Icontact_personsRepository> _contactPersonRepoMock;
+    private readonly Mock<IGenericRepository<email_verification_tokens>> _tokenRepoMock;
     private readonly Mock<IUnitOfWork> _uowMock;
     private readonly Mock<IConfiguration> _configMock;
     private readonly Mock<IFileStorageService> _fileStorageMock;
+    private readonly Mock<IClock> _clockMock;
     private readonly AuthService _sut;
 
     public EmailVerificationDataModelTests()
@@ -32,23 +34,28 @@ public class EmailVerificationDataModelTests
         _profileRepoMock = new Mock<Iindividual_profilesRepository>();
         _entityProfileRepoMock = new Mock<Ientity_profilesRepository>();
         _contactPersonRepoMock = new Mock<Icontact_personsRepository>();
+        _tokenRepoMock = new Mock<IGenericRepository<email_verification_tokens>>();
         _uowMock = new Mock<IUnitOfWork>();
         _configMock = new Mock<IConfiguration>();
         _fileStorageMock = new Mock<IFileStorageService>();
+        _clockMock = new Mock<IClock>();
 
         _configMock.Setup(c => c["Jwt:Key"]).Returns("SuperSecretKeyForTestPurposesOnly!@#$%");
         _configMock.Setup(c => c["Jwt:Issuer"]).Returns("test-issuer");
         _configMock.Setup(c => c["Jwt:Audience"]).Returns("test-audience");
         _configMock.Setup(c => c["Jwt:RefreshKey"]).Returns("SuperSecretRefreshKeyForTestPurposes!@#$%");
+        _clockMock.Setup(c => c.UtcNow).Returns(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         _sut = new AuthService(
             _userRepoMock.Object,
             _profileRepoMock.Object,
             _entityProfileRepoMock.Object,
             _contactPersonRepoMock.Object,
+            _tokenRepoMock.Object,
             _uowMock.Object,
             _configMock.Object,
-            _fileStorageMock.Object);
+            _fileStorageMock.Object,
+            _clockMock.Object);
     }
 
     private static RegisterIndividualDto MakeIndividualDto(string email = "new.user@test.com") => new()

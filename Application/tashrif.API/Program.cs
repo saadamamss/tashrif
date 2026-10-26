@@ -106,6 +106,31 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromHours(1)
             }));
+
+    // D8 — resend is keyed by national id and must not be usable as a mail-bomb.
+    options.AddPolicy("resend", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 3,
+                QueueLimit = 0,
+                Window = TimeSpan.FromHours(1)
+            }));
+
+    // A1/D4 — the verify link is one-shot, but a mail scanner may still hit the API
+    // directly. A generous per-minute cap keeps that from eating a real user's budget.
+    options.AddPolicy("verify", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 20,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
 });
 
 // Add JWT Authentication
@@ -116,6 +141,14 @@ static string GetRequiredConfig(IConfiguration configuration, string key) =>
 
 var jwtKey = GetRequiredConfig(builder.Configuration, "Jwt:Key");
 var jwtRefreshKey = GetRequiredConfig(builder.Configuration, "Jwt:RefreshKey");
+// B4/D14 — the verification link points at the FRONTEND page. It is fail-fast like the
+// other secrets: a missing value would silently produce links to nowhere, locking every
+// new user out of their account.
+//
+// SOURCE OF TRUTH: this value must match the frontend's NUXT_PUBLIC_APP_URL
+// (http://localhost:3000 in dev). The FRONTEND wins — it is what users actually visit —
+// so change both together.
+var frontendBaseUrl = GetRequiredConfig(builder.Configuration, "Frontend:BaseUrl");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "tashrif-api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "tashrif-client";
 
@@ -180,6 +213,10 @@ builder.Services.AddHostedService<JobExpiryService>();
 builder.Services.AddHostedService<ContractExpiryService>();
 
 var app = builder.Build();
+
+// The verification links point at the frontend — log it so a misconfigured value is
+// visible at startup instead of showing up as "the link does nothing" much later.
+app.Logger.LogInformation("Verification links will point to {FrontendBaseUrl}", frontendBaseUrl);
 
 // Configure the HTTP request pipeline
 // One structured line per request — logged at the very front so EVERY terminal

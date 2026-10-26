@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using tashrif.Data.DTOs.Auth;
 using tashrif.Data.Interfaces;
@@ -15,33 +16,45 @@ namespace tashrif.Identity.Services;
 
 public class AuthService : IAuthService
 {
+    /// <summary>How long a raw verification token stays usable (D5).</summary>
+    private const int VerificationTokenLifetimeHours = 24;
+
+    /// <summary>Arabic message returned when the email is not verified yet (D6 — 403).</summary>
+    private const string NotVerifiedMessage = "يجب تفعيل بريدك الإلكتروني قبل تسجيل الدخول";
+
     private readonly IGenericRepository<users> _userRepo;
     private readonly IGenericRepository<individual_profiles> _individualProfileRepo;
     private readonly IGenericRepository<entity_profiles> _entityProfileRepo;
     private readonly IGenericRepository<contact_persons> _contactPersonRepo;
+    private readonly IGenericRepository<email_verification_tokens> _tokenRepo;
     private readonly IUnitOfWork _uow;
     private readonly IConfiguration _config;
     private readonly IFileStorageService _fileStorage;
+    private readonly IClock _clock;
 
     public AuthService(
         IGenericRepository<users> userRepo,
         IGenericRepository<individual_profiles> individualProfileRepo,
         IGenericRepository<entity_profiles> entityProfileRepo,
         IGenericRepository<contact_persons> contactPersonRepo,
+        IGenericRepository<email_verification_tokens> tokenRepo,
         IUnitOfWork uow,
         IConfiguration config,
-        IFileStorageService fileStorage)
+        IFileStorageService fileStorage,
+        IClock clock)
     {
         _userRepo = userRepo;
         _individualProfileRepo = individualProfileRepo;
         _entityProfileRepo = entityProfileRepo;
         _contactPersonRepo = contactPersonRepo;
+        _tokenRepo = tokenRepo;
         _uow = uow;
         _config = config;
         _fileStorage = fileStorage;
+        _clock = clock;
     }
 
-    public async Task<AuthResponseDto> RegisterIndividualAsync(RegisterIndividualDto dto)
+    public async Task<RegisterResponseDto> RegisterIndividualAsync(RegisterIndividualDto dto)
     {
         var query = await _userRepo.GetQueryable();
         var existing = await query.FirstOrDefaultAsync(u => u.national_id == dto.NationalId && !u.IsDeleted);
@@ -116,10 +129,12 @@ public class AuthService : IAuthService
         await _individualProfileRepo.AddAsync(profile);
         await _uow.SaveChangesAsync();
 
-        return GenerateAuthResponse(user);
+        // D13: issue the verification token. The raw token is returned to the controller
+        // (in memory) so it can build the email link — it is never persisted in plaintext.
+        return await IssueVerificationTokenAsync(user, $"{dto.FirstName} {dto.LastName}");
     }
 
-    public async Task<AuthResponseDto> RegisterEntityAsync(RegisterEntityDto dto)
+    public async Task<RegisterResponseDto> RegisterEntityAsync(RegisterEntityDto dto)
     {
         var query = await _userRepo.GetQueryable();
         var existing = await query.FirstOrDefaultAsync(u => u.national_id == dto.NationalId && !u.IsDeleted);
@@ -221,7 +236,8 @@ public class AuthService : IAuthService
         await _contactPersonRepo.AddAsync(contactPerson);
         await _uow.SaveChangesAsync();
 
-        return GenerateAuthResponse(user);
+        // D13: same as the individual branch — issue the token, return it in memory.
+        return await IssueVerificationTokenAsync(user, dto.CompanyName);
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
@@ -231,6 +247,11 @@ public class AuthService : IAuthService
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.password_hash))
             throw new BadHttpRequestException("بيانات الدخول غير صحيحة", 401);
+
+        // D6: 403 (NOT 401) so the frontend's axios interceptor never enters the
+        // refresh-queue path for an unverified account — a 401 would trigger a refresh
+        // attempt and a silent logout instead of a "verify your email" message.
+        EnsureEmailIsVerified(user);
 
         return GenerateAuthResponse(user);
     }
@@ -245,6 +266,9 @@ public class AuthService : IAuthService
         var user = await _userRepo.GetByIdAsync(userId);
         if (user == null || user.IsDeleted)
             throw new BadHttpRequestException("المستخدم غير موجود", 404);
+
+        // D6: same 403 gate as login — a refresh must not resurrect an unverified session.
+        EnsureEmailIsVerified(user);
 
         return new AuthResponseDto
         {
@@ -261,6 +285,10 @@ public class AuthService : IAuthService
         if (user == null || user.IsDeleted)
             throw new BadHttpRequestException("المستخدم غير موجود", 404);
 
+        // B6: NOT a 403 here. `useAuth.init()` treats any error as "session invalid" and
+        // calls clearUser(), so an authenticated-but-unverified user would be silently
+        // logged out instead of being routed to the verification page. Return 200 with
+        // `isEmailVerified: false` and let the frontend middleware decide.
         return MapToUserDto(user);
     }
 
@@ -284,6 +312,190 @@ public class AuthService : IAuthService
         await _uow.SaveChangesAsync();
 
         return MapToUserDto(user);
+    }
+
+    /// <summary>
+    /// D11/B2 — redeems a raw verification token and signs the user in (D7 auto-login).
+    ///
+    /// <para>
+    /// The token is single-use: redeeming it sets <c>used_at</c> (the replay check),
+    /// and every OTHER live token for that user is soft-deleted, so only one live
+    /// token exists per user (D5). The global <c>IsDeleted</c> query filter then hides
+    /// the soft-deleted rows from the next lookup, which is what makes a rotated
+    /// token fail.
+    /// </para>
+    /// </summary>
+    public async Task<AuthResponseDto> VerifyEmailAsync(string rawToken)
+    {
+        if (string.IsNullOrWhiteSpace(rawToken))
+            throw new BadHttpRequestException("رابط التحقق غير صالح", 400);
+
+        var hash = HashToken(rawToken);
+        var tokenQuery = await _tokenRepo.GetQueryable();
+        var token = await tokenQuery.FirstOrDefaultAsync(t => t.token_hash == hash);
+
+        if (token == null)
+            throw new BadHttpRequestException("رابط التحقق غير صالح", 400);
+
+        if (token.used_at != null)
+            throw new BadHttpRequestException("رابط التحقق غير صالح", 400);
+
+        if (token.expires_at <= _clock.UtcNow)
+            throw new BadHttpRequestException("انتهت صلاحية رابط التحقق", 400);
+
+        var user = await _userRepo.GetByIdAsync(token.user_id);
+        if (user == null || user.IsDeleted)
+            throw new BadHttpRequestException("المستخدم غير موجود", 404);
+
+        // Mark the token as redeemed, then kill every other live token for this user.
+        token.used_at = _clock.UtcNow;
+        token.UpdatedAt = _clock.UtcNow;
+        _tokenRepo.Update(token);
+
+        await InvalidateSiblingTokensAsync(token.user_id, token.Id);
+
+        user.is_email_verified = true;
+        user.UpdatedAt = _clock.UtcNow;
+        _userRepo.Update(user);
+
+        await _uow.SaveChangesAsync();
+
+        return GenerateAuthResponse(user);
+    }
+
+    /// <summary>
+    /// D8/D11/B2 — re-issues a verification token for the account with the given
+    /// national id.
+    ///
+    /// <para>
+    /// The public endpoint always answers with the same generic message, so this method
+    /// returns the real outcome in a separate DTO that only the controller sees. An
+    /// unknown id, a soft-deleted account, and an already-verified account all produce
+    /// <c>ShouldSend = false</c> — no enumeration oracle.
+    /// </para>
+    /// </summary>
+    public async Task<ResendVerificationResultDto> ResendVerificationAsync(string nationalId)
+    {
+        var result = new ResendVerificationResultDto();
+
+        if (string.IsNullOrWhiteSpace(nationalId))
+            return result;
+
+        var query = await _userRepo.GetQueryable();
+        var user = await query.FirstOrDefaultAsync(u => u.national_id == nationalId && !u.IsDeleted);
+
+        // Unknown / soft-deleted / already-verified → identical generic outcome.
+        if (user == null || user.is_email_verified)
+            return result;
+
+        // Remember a previous delivery failure so the resend flow can surface it (D14).
+        var tokenQuery = await _tokenRepo.GetQueryable();
+        var previousTokens = await tokenQuery
+            .Where(t => t.user_id == user.Id)
+            .OrderByDescending(t => t.Id)
+            .ToListAsync();
+
+        result.PreviousDeliveryError = previousTokens
+            .FirstOrDefault(t => !string.IsNullOrEmpty(t.last_error))?.last_error;
+
+        // D5: single active token per user — soft-delete the old rows, then insert a new one.
+        await InvalidateSiblingTokensAsync(user.Id, null);
+
+        var issued = await IssueVerificationTokenAsync(user, user.name);
+
+        result.ShouldSend = true;
+        result.VerificationToken = issued.VerificationToken;
+        result.VerificationTokenId = issued.VerificationTokenId;
+        result.Email = issued.Email;
+        result.Name = issued.Name;
+
+        return result;
+    }
+
+    /// <summary>
+    /// D13 — mints a fresh token for the user and stores only its SHA-256 digest.
+    /// The raw token is returned to the caller (the controller) in memory.
+    /// </summary>
+    private async Task<RegisterResponseDto> IssueVerificationTokenAsync(users user, string displayName)
+    {
+        var rawToken = GenerateRawToken();
+
+        var token = new email_verification_tokens
+        {
+            user_id = user.Id,
+            token_hash = HashToken(rawToken),
+            expires_at = _clock.UtcNow.AddHours(VerificationTokenLifetimeHours),
+            CreatedAt = _clock.UtcNow,
+            UpdatedAt = _clock.UtcNow,
+        };
+
+        await _tokenRepo.AddAsync(token);
+        await _uow.SaveChangesAsync();
+
+        return new RegisterResponseDto
+        {
+            Message = "تم إنشاء الحساب بنجاح. يرجى تفعيل بريدك الإلكتروني.",
+            VerificationToken = rawToken,
+            VerificationTokenId = token.Id,
+            Email = user.email,
+            Name = displayName,
+        };
+    }
+
+    /// <summary>
+    /// Soft-deletes every live token of the user except <paramref name="exceptTokenId"/>
+    /// (pass null to kill them all). Soft-delete is the "token is dead" marker — the
+    /// global <c>IsDeleted</c> query filter then hides those rows from lookups.
+    /// </summary>
+    private async Task InvalidateSiblingTokensAsync(long userId, long? exceptTokenId)
+    {
+        var query = await _tokenRepo.GetQueryable();
+        var siblings = await query.Where(t => t.user_id == userId).ToListAsync();
+
+        var changed = false;
+        foreach (var sibling in siblings)
+        {
+            if (exceptTokenId.HasValue && sibling.Id == exceptTokenId.Value)
+                continue;
+
+            sibling.IsDeleted = true;
+            sibling.DeletedTime = _clock.UtcNow;
+            sibling.UpdatedAt = _clock.UtcNow;
+            _tokenRepo.Update(sibling);
+            changed = true;
+        }
+
+        if (changed)
+            await _uow.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// D6 — the login/refresh gate. 403 (not 401) so the frontend's axios interceptor
+    /// does not treat it as an expired session.
+    /// </summary>
+    private static void EnsureEmailIsVerified(users user)
+    {
+        if (!user.is_email_verified)
+            throw new BadHttpRequestException(NotVerifiedMessage, 403);
+    }
+
+    /// <summary>D4 — 256 bits of entropy, base64url-encoded (no padding, URL-safe).</summary>
+    private static string GenerateRawToken()
+    {
+        var bytes = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
+    }
+
+    /// <summary>D4 — the raw token is never stored; only its SHA-256 hex digest is.</summary>
+    private static string HashToken(string rawToken)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     /// <summary>
@@ -331,7 +543,8 @@ public class AuthService : IAuthService
             NationalId = user.national_id,
             Gender = user.gender,
             Nationality = user.nationality,
-            AvatarUrl = user.avatar_url
+            AvatarUrl = user.avatar_url,
+            IsEmailVerified = user.is_email_verified
         };
     }
 

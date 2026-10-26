@@ -6,6 +6,7 @@ using tashrif.Data;
 using tashrif.Data.DTOs.Auth;
 using tashrif.Identity.Interfaces;
 using tashrif.Identity.Services;
+using tashrif.Tests.Fakes;
 
 namespace tashrif.Tests.Services;
 
@@ -37,15 +38,18 @@ public class AuthServiceEmailDbTests : IClassFixture<TestDatabaseFixture>
         var scope = root.CreateScope();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var fileStorage = scope.ServiceProvider.GetRequiredService<IFileStorageService>();
+        var clock = new FakeClock();
 
         return new AuthService(
             uow.UsersRepository,
             uow.Individual_profilesRepository,
             uow.Entity_profilesRepository,
             uow.Contact_personsRepository,
+            uow.Email_verification_tokensRepository,
             uow,
             config,
-            fileStorage);
+            fileStorage,
+            clock);
     }
 
     private static RegisterIndividualDto MakeDto(string nationalId, string email) => new()

@@ -8,9 +8,11 @@ public class AuthServiceTests
     private readonly Mock<Iindividual_profilesRepository> _profileRepoMock;
     private readonly Mock<Ientity_profilesRepository> _entityProfileRepoMock;
     private readonly Mock<Icontact_personsRepository> _contactPersonRepoMock;
+    private readonly Mock<IGenericRepository<email_verification_tokens>> _tokenRepoMock;
     private readonly Mock<IUnitOfWork> _uowMock;
     private readonly Mock<IConfiguration> _configMock;
     private readonly Mock<IFileStorageService> _fileStorageMock;
+    private readonly Mock<IClock> _clockMock;
     private readonly AuthService _sut;
 
     public AuthServiceTests()
@@ -19,23 +21,28 @@ public class AuthServiceTests
         _profileRepoMock = new Mock<Iindividual_profilesRepository>();
         _entityProfileRepoMock = new Mock<Ientity_profilesRepository>();
         _contactPersonRepoMock = new Mock<Icontact_personsRepository>();
+        _tokenRepoMock = new Mock<IGenericRepository<email_verification_tokens>>();
         _uowMock = new Mock<IUnitOfWork>();
         _configMock = new Mock<IConfiguration>();
         _fileStorageMock = new Mock<IFileStorageService>();
+        _clockMock = new Mock<IClock>();
 
         _configMock.Setup(c => c["Jwt:Key"]).Returns("SuperSecretKeyForTestPurposesOnly!@#$%");
         _configMock.Setup(c => c["Jwt:Issuer"]).Returns("test-issuer");
         _configMock.Setup(c => c["Jwt:Audience"]).Returns("test-audience");
         _configMock.Setup(c => c["Jwt:RefreshKey"]).Returns("SuperSecretRefreshKeyForTestPurposes!@#$%");
+        _clockMock.Setup(c => c.UtcNow).Returns(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         _sut = new AuthService(
             _userRepoMock.Object,
             _profileRepoMock.Object,
             _entityProfileRepoMock.Object,
             _contactPersonRepoMock.Object,
+            _tokenRepoMock.Object,
             _uowMock.Object,
             _configMock.Object,
-            _fileStorageMock.Object);
+            _fileStorageMock.Object,
+            _clockMock.Object);
     }
 
     [Fact]
@@ -61,10 +68,10 @@ public class AuthServiceTests
         var result = await _sut.RegisterIndividualAsync(dto);
 
         result.Should().NotBeNull();
-        result.User.Should().NotBeNull();
-        result.User.Name.Should().Be("أحمد محمد");
-        result.Token.Should().NotBeNullOrEmpty();
-        result.RefreshToken.Should().NotBeNullOrEmpty();
+        result.Message.Should().NotBeNullOrEmpty();
+        result.Name.Should().Be("أحمد محمد");
+        result.Email.Should().Be("test@test.com");
+        result.VerificationToken.Should().NotBeNullOrEmpty();
         _userRepoMock.Verify(r => r.AddAsync(It.IsAny<users>()), Times.Once);
     }
 
@@ -132,7 +139,7 @@ public class AuthServiceTests
         var result = await _sut.RegisterEntityAsync(dto);
 
         result.Should().NotBeNull();
-        result.User.NationalId.Should().Be("7001234567");
+        result.Email.Should().Be("c@example.com");
         savedProfile.Should().NotBeNull();
         savedProfile!.commercial_reg.Should().Be("1010123456");
         savedProfile!.user_id.Should().Be(0);
@@ -224,7 +231,8 @@ public class AuthServiceTests
             email = "t@t.com",
             type = "individual",
             gender = "ذكر",
-            nationality = "سعودي"
+            nationality = "سعودي",
+            is_email_verified = true
         };
         _userRepoMock.Setup(r => r.GetQueryable())
             .ReturnsAsync(new[] { user }.AsQueryable().BuildMock());
@@ -374,7 +382,7 @@ public class AuthServiceTests
         savedUser!.phone.Should().Be("+966501234567");
         savedUser!.gender.Should().Be("male");
         savedUser!.nationality.Should().Be("سعودي");
-        result.User.Name.Should().Be("أحمد محمد");
+        result.Name.Should().Be("أحمد محمد");
     }
 
     [Fact]
@@ -431,7 +439,7 @@ public class AuthServiceTests
         savedContact.Should().NotBeNull();
         savedContact!.name.Should().Be("مسؤول الاتصال");
         savedContact!.role.Should().Be("مدير");
-        result.User.Name.Should().Be("شركة اختبار");
+        result.Name.Should().Be("شركة اختبار");
     }
 
     // ---- Gap #1 nit fix (2026-10-12): whitespace-only input must NOT become "" ----

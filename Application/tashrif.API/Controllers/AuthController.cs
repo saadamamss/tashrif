@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
+using tashrif.API.Services;
 using tashrif.Data.Constants;
 using tashrif.Data.DTOs.Auth;
 using tashrif.Data.Validation;
@@ -16,16 +17,35 @@ namespace tashrif.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-    private readonly IEmailService _emailService;
     private readonly IAuditService _auditService;
+    private readonly IBackgroundTaskQueue _taskQueue;
+    private readonly IConfiguration _config;
     private const string RefreshCookieName = "refresh_token";
     private const string AccessCookieName = "access_token";
 
-    public AuthController(IAuthService authService, IEmailService emailService, IAuditService auditService)
+    /// <summary>
+    /// The message returned by <c>POST /api/auth/resend-verification</c> — ALWAYS the
+    /// same, whatever the real outcome (D8). A different message for "no such account"
+    /// would be an enumeration oracle.
+    /// </summary>
+    private const string GenericResendMessage = "إذا كان الحساب موجوداً، فسيتم إرسال رسالة تفعيل جديدة.";
+
+    /// <summary>
+    /// NOTE: no <c>IEmailService</c> is injected here on purpose. The verification mail
+    /// is sent from a background task, which must resolve the scoped email service from
+    /// ITS OWN scope — a request-scoped instance captured by the closure would already
+    /// be disposed by the time the task runs.
+    /// </summary>
+    public AuthController(
+        IAuthService authService,
+        IAuditService auditService,
+        IBackgroundTaskQueue taskQueue,
+        IConfiguration config)
     {
         _authService = authService;
-        _emailService = emailService;
         _auditService = auditService;
+        _taskQueue = taskQueue;
+        _config = config;
     }
 
     /// <summary>Audit writes must never fail the user's operation — log &amp; continue.</summary>
@@ -57,14 +77,14 @@ public class AuthController : ControllerBase
 
     [EnableRateLimiting("register")]
     [HttpPost("register")]
-    public async Task<ActionResult<UserDto>> Register()
+    public async Task<ActionResult<object>> Register()
     {
         if (Request.ContentType == null || !Request.ContentType.Contains("multipart/form-data"))
             throw new BadHttpRequestException("التسجيل يتطلب إرسال البيانات كـ multipart/form-data", 415);
 
         var hasCompanyName = Request.Form.ContainsKey("companyName");
 
-        AuthResponseDto result;
+        RegisterResponseDto result;
         if (hasCompanyName)
         {
             var dto = new RegisterEntityDto
@@ -93,13 +113,6 @@ public class AuthController : ControllerBase
             // auto-validation never fires — enforce the DTO's DataAnnotations explicitly (both branches).
             RequestValidator.Validate(dto);
             result = await _authService.RegisterEntityAsync(dto);
-
-            _ = Task.Run(async () =>
-            {
-                var email = dto.Email;
-                var name = dto.CompanyName;
-                await _emailService.SendAsync(email, "مرحباً بك في تشريف", EmailTemplates.Welcome(name));
-            });
         }
         else
         {
@@ -118,18 +131,117 @@ public class AuthController : ControllerBase
             // Phase 3.7: enforce the DTO's DataAnnotations — hand-built DTOs skip [ApiController] validation.
             RequestValidator.Validate(dto);
             result = await _authService.RegisterIndividualAsync(dto);
+        }
 
-            _ = Task.Run(async () =>
+        // D3: no session is created — the account must be verified first. The raw token
+        // (D13) goes straight into the mail link and is NEVER returned to the browser.
+        EnqueueVerificationMail(result);
+
+        return StatusCode(StatusCodes.Status201Created, new { message = result.Message });
+    }
+
+    /// <summary>
+    /// A1 — the link targets the FRONTEND page, not the API. An email scanner that
+    /// prefetches the URL must not burn the single-use token.
+    /// </summary>
+    private string BuildVerificationLink(string rawToken)
+    {
+        var baseUrl = (_config["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
+        return $"{baseUrl}/verify-email?token={Uri.EscapeDataString(rawToken)}";
+    }
+
+    /// <summary>
+    /// D13/D14 — enqueues the verification mail and records the delivery outcome on the
+    /// token row (<c>sent_at</c> / <c>last_error</c>).
+    ///
+    /// <para>
+    /// The scoped <c>IEmailService</c> and <c>IUnitOfWork</c> are resolved from the task
+    /// scope, NOT captured from the request scope — the request scope is already disposed
+    /// by the time the background task runs. (This also fixes the pre-existing
+    /// scoped-service capture in this controller; the identical bug in
+    /// <c>ContractsController</c>/<c>InterviewsController</c> is tracked separately.)
+    /// </para>
+    /// </summary>
+    private void EnqueueVerificationMail(RegisterResponseDto result)
+    {
+        var link = BuildVerificationLink(result.VerificationToken);
+        var to = result.Email;
+        var name = result.Name;
+        var tokenId = result.VerificationTokenId;
+
+        _taskQueue.Enqueue(async scope =>
+        {
+            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+            var uow = scope.ServiceProvider.GetRequiredService<tashrif.Data.Interfaces.IUnitOfWork>();
+            var clock = scope.ServiceProvider.GetRequiredService<tashrif.Data.Interfaces.IClock>();
+
+            var (sent, error) = await emailService.TrySendAsync(
+                to,
+                "تأكيد بريدك الإلكتروني - تشريف",
+                EmailTemplates.VerifyEmail(name, link));
+
+            // D14: record what actually happened. A swallowed SMTP failure must not
+            // leave the user locked out with no signal.
+            var token = await uow.Email_verification_tokensRepository.GetByIdAsync(tokenId);
+            if (token != null)
             {
-                var email = dto.Email;
-                var name = $"{dto.FirstName} {dto.LastName}";
-                await _emailService.SendAsync(email, "مرحباً بك في تشريف", EmailTemplates.Welcome(name));
+                token.sent_at = sent ? clock.UtcNow : null;
+                token.last_error = sent ? null : error;
+                token.UpdatedAt = clock.UtcNow;
+                uow.Email_verification_tokensRepository.Update(token);
+                await uow.SaveChangesAsync();
+            }
+        });
+    }
+
+    /// <summary>
+    /// A1/D7 — redeems a verification token and signs the user in (auto-login).
+    ///
+    /// <para>
+    /// Called by the frontend verification page with the token from the query string —
+    /// the email link points at the PAGE, not at this endpoint, so an email scanner
+    /// that prefetches the link cannot burn the single-use token.
+    /// </para>
+    /// </summary>
+    [EnableRateLimiting("verify")]
+    [HttpGet("verify-email")]
+    public async Task<ActionResult<UserDto>> VerifyEmail([FromQuery] string token)
+    {
+        var result = await _authService.VerifyEmailAsync(token);
+        SetAccessTokenCookie(result.Token);
+        SetRefreshCookie(result.RefreshToken);
+        await TryLog(result.User.Id, AuditActions.AuthLogin, "users", result.User.Id, null, "email_verified");
+        return Ok(result.User);
+    }
+
+    /// <summary>
+    /// D8 — re-sends the verification mail.
+    ///
+    /// <para>
+    /// The response is ALWAYS the same generic message, whatever actually happened
+    /// (unknown id, deactivated account, already-verified account, or success) — a
+    /// different answer would let an attacker enumerate which national ids exist.
+    /// </para>
+    /// </summary>
+    [EnableRateLimiting("resend")]
+    [HttpPost("resend-verification")]
+    public async Task<ActionResult<object>> ResendVerification([FromBody] ResendVerificationDto dto)
+    {
+        var result = await _authService.ResendVerificationAsync(dto.NationalId);
+
+        if (result.ShouldSend)
+        {
+            EnqueueVerificationMail(new RegisterResponseDto
+            {
+                Message = GenericResendMessage,
+                VerificationToken = result.VerificationToken,
+                VerificationTokenId = result.VerificationTokenId,
+                Email = result.Email,
+                Name = result.Name,
             });
         }
 
-        SetAccessTokenCookie(result.Token);
-        SetRefreshCookie(result.RefreshToken);
-        return Ok(result.User);
+        return Ok(new { message = GenericResendMessage });
     }
 
     [Authorize]
