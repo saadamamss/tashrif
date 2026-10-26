@@ -133,7 +133,7 @@ defineExpose({ clear });
             @click="selectUser(user)"
           >
             <img
-              :src="buildImageUrl(user.avatarUrl, '/images/avatar.png')"
+              :src="buildImageUrl(user.avatarUrl, `https://ui-avatars.com/api/?name=${user.name?.[0]}`)"
               class="w-8 h-8 rounded-full object-cover"
               alt=""
             />

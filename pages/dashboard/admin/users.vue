@@ -229,7 +229,7 @@ onMounted(() => {
                   <td class="py-3 px-2">
                     <div class="flex items-center gap-3">
                       <img
-                        :src="buildImageUrl(user.avatarUrl, '/images/avatar.png')"
+                        :src="buildImageUrl(user.avatarUrl, `https://ui-avatars.com/api/?name=${user.name?.[0]}`)"
                         class="w-9 h-9 rounded-full object-cover"
                         alt=""
                       />

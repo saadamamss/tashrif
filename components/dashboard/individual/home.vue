@@ -26,7 +26,7 @@ const applications = ref([])
 const jobs = ref([])
 const route = useRoute()
 
-const avatarSrc = computed(() => buildImageUrl(userData.value.avatarUrl, '/images/avatar.png'));
+const avatarSrc = computed(() => buildImageUrl(userData.value?.avatarUrl, `https://ui-avatars.com/api/?name=${userData.value?.name?.[0]}`));
 
 const statsItems = computed(() => [
   { value: stats.value.pendingApps, label: 'الطلبات المكتملة', icon: FileIcon, iconProps: { width: '24', height: '24', color: '#ECB42B' } },

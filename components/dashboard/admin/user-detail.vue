@@ -10,7 +10,7 @@ const confirmDialog = ref(false);
 const actionLoading = ref(false);
 
 const avatarSrc = computed(() =>
-  buildImageUrl(props.user?.avatarUrl, "/images/avatar.png")
+  buildImageUrl(props.user?.avatarUrl, `https://ui-avatars.com/api/?name=${props.user?.name?.[0]}`)
 );
 
 const typeLabel = computed(() => {

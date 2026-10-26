@@ -17,7 +17,7 @@ describe('ProfileHeroSection', () => {
     ).default
     const wrapper = mount(ProfileHeroSection as any, {
       props: {
-        avatarSrc: '/images/avatar.png',
+        avatarSrc: `https://ui-avatars.com/api/?name=م+ح`,
         name: 'أحمد',
         subtitle: 'مشرف حجاج',
         statsItems: [{ value: 5, label: 'وظائفى المنشورة' }],
@@ -38,7 +38,7 @@ describe('ProfileHeroSection', () => {
     const FakeIcon = { template: '<span class="fake-icon" />' }
     const wrapper = mount(ProfileHeroSection as any, {
       props: {
-        avatarSrc: '/images/avatar.png',
+        avatarSrc: `https://ui-avatars.com/api/?name=م+ح`,
         name: 'أحمد',
         subtitle: 'مشرف حجاج',
         statsItems: [{ value: 5, label: 'وظائفى المنشورة', icon: FakeIcon }],
@@ -52,6 +52,6 @@ describe('ProfileHeroSection', () => {
     expect(wrapper.text()).toContain('أحمد')
     expect(wrapper.text()).toContain('مشرف حجاج')
     expect(wrapper.text()).toContain('وظائفى المنشورة')
-    expect(wrapper.find('img[alt="user avatar"]').attributes('src')).toBe('/images/avatar.png')
+    expect(wrapper.find('img[alt="user avatar"]').attributes('src')).toBe("https://ui-avatars.com/api/?name=م+ح")
   })
 })

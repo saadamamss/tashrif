@@ -209,7 +209,6 @@ import { toDateInputValue, buildImageUrl } from "~/services/help";
 const model = defineModel();
 const emit = defineEmits(["saved"]);
 
-const defaultAvatar = "/images/avatar.png";
 
 const genderOptions = [
   { value: "male", label: "ذكر" },
@@ -250,6 +249,8 @@ watch(model, async (open) => {
     // leave form empty on failure
   }
 });
+
+const defaultAvatar = computed(()=> `https://ui-avatars.com/api/?name=${formData.value?.name?.[0]}`);
 
 const handleAvatarChange = async (event) => {
   const file = event.target.files[0];
